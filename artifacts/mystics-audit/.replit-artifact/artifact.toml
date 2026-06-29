@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Mystics Audit"
+version = "1.0.0"
+id = "artifacts/mystics-audit"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24759
+
+[services.development]
+run = "pnpm --filter @workspace/mystics-audit run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mystics-audit", "run", "build" ]
+publicDir = "artifacts/mystics-audit/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24759"
+BASE_PATH = "/"

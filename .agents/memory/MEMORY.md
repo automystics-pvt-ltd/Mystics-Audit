@@ -1,0 +1,1 @@
+- [Mystics Audit orval hooks](mystics-audit-hooks.md) — hook naming, param types, and TS pitfalls with Orval + TQ v5 in this project

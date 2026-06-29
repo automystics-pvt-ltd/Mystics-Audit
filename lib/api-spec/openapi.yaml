@@ -1,22 +1,57 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Mystics Audit — Cloud-Based Accounting & GST Compliance SaaS API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Executive dashboard and KPIs
+  - name: companies
+    description: Company and organization setup
+  - name: accounts
+    description: Chart of accounts and general ledger
+  - name: journals
+    description: Journal entries
+  - name: invoices
+    description: Sales invoices and billing
+  - name: customers
+    description: Customer master and accounts receivable
+  - name: receipts
+    description: Payment receipts
+  - name: vendors
+    description: Vendor master and accounts payable
+  - name: bills
+    description: Vendor bills and payments
+  - name: bank
+    description: Bank and cash management
+  - name: expenses
+    description: Expense management
+  - name: purchases
+    description: Purchase orders and GRNs
+  - name: inventory
+    description: Inventory and item master
+  - name: gst
+    description: GST compliance and returns
+  - name: budgets
+    description: Budget management
+  - name: users
+    description: User management and RBAC
+  - name: audit
+    description: Audit trail
+  - name: reports
+    description: Financial reports
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +59,1369 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # DASHBOARD
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get executive dashboard KPIs
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/cashflow:
+    get:
+      operationId: getDashboardCashflow
+      tags: [dashboard]
+      summary: Get cash and bank balances
+      responses:
+        "200":
+          description: Cash flow overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CashflowSummary"
+
+  /dashboard/gst-status:
+    get:
+      operationId: getGstStatus
+      tags: [dashboard]
+      summary: GST filing status and due dates
+      responses:
+        "200":
+          description: GST filing status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GstFilingStatus"
+
+  /dashboard/aging-summary:
+    get:
+      operationId: getAgingSummary
+      tags: [dashboard]
+      summary: Receivables and payables aging summary
+      responses:
+        "200":
+          description: Aging summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgingSummary"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Recent transactions across all modules
+      responses:
+        "200":
+          description: Recent activity list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  # COMPANIES
+  /companies:
+    get:
+      operationId: listCompanies
+      tags: [companies]
+      summary: List all companies
+      responses:
+        "200":
+          description: List of companies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Company"
+    post:
+      operationId: createCompany
+      tags: [companies]
+      summary: Create a new company
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+
+  /companies/{id}:
+    get:
+      operationId: getCompany
+      tags: [companies]
+      summary: Get company by ID
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Company
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+    patch:
+      operationId: updateCompany
+      tags: [companies]
+      summary: Update company
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyUpdate"
+      responses:
+        "200":
+          description: Updated company
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+
+  # CHART OF ACCOUNTS
+  /accounts:
+    get:
+      operationId: listAccounts
+      tags: [accounts]
+      summary: List chart of accounts
+      parameters:
+        - { name: type, in: query, schema: { type: string } }
+        - { name: group, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Account"
+    post:
+      operationId: createAccount
+      tags: [accounts]
+      summary: Create a ledger account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+
+  /accounts/{id}:
+    get:
+      operationId: getAccount
+      tags: [accounts]
+      summary: Get account with ledger entries
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Account with ledger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountLedger"
+    patch:
+      operationId: updateAccount
+      tags: [accounts]
+      summary: Update account
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountUpdate"
+      responses:
+        "200":
+          description: Updated account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+
+  /accounts/trial-balance:
+    get:
+      operationId: getTrialBalance
+      tags: [accounts]
+      summary: Get trial balance for a date
+      parameters:
+        - { name: date, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Trial balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrialBalance"
+
+  # JOURNAL ENTRIES
+  /journals:
+    get:
+      operationId: listJournals
+      tags: [journals]
+      summary: List journal entries
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: List of journal entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JournalEntry"
+    post:
+      operationId: createJournal
+      tags: [journals]
+      summary: Create journal entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JournalInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+
+  /journals/{id}:
+    get:
+      operationId: getJournal
+      tags: [journals]
+      summary: Get journal entry
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Journal entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+
+  /journals/{id}/post:
+    post:
+      operationId: postJournal
+      tags: [journals]
+      summary: Post (approve) a draft journal entry
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Posted journal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+
+  /journals/{id}/reverse:
+    post:
+      operationId: reverseJournal
+      tags: [journals]
+      summary: Reverse a posted journal entry
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Reversal journal created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+
+  # INVOICES
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      summary: List sales invoices
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: type, in: query, schema: { type: string } }
+        - { name: customerId, in: query, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+    post:
+      operationId: createInvoice
+      tags: [invoices]
+      summary: Create a new invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [invoices]
+      summary: Get invoice by ID
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+    patch:
+      operationId: updateInvoice
+      tags: [invoices]
+      summary: Update invoice (draft only)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceUpdate"
+      responses:
+        "200":
+          description: Updated invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+    delete:
+      operationId: deleteInvoice
+      tags: [invoices]
+      summary: Delete draft invoice
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204":
+          description: Deleted
+
+  /invoices/{id}/post:
+    post:
+      operationId: postInvoice
+      tags: [invoices]
+      summary: Post invoice (generate IRN)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Posted invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /invoices/summary:
+    get:
+      operationId: getInvoiceSummary
+      tags: [invoices]
+      summary: Invoice summary by status for current month
+      responses:
+        "200":
+          description: Invoice summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceSummary"
+
+  # CUSTOMERS
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      summary: List customers
+      parameters:
+        - { name: search, in: query, schema: { type: string } }
+        - { name: type, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      summary: Create customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{id}:
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      summary: Get customer
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+    patch:
+      operationId: updateCustomer
+      tags: [customers]
+      summary: Update customer
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerUpdate"
+      responses:
+        "200":
+          description: Updated customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{id}/aging:
+    get:
+      operationId: getCustomerAging
+      tags: [customers]
+      summary: Get customer outstanding aging
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Customer aging
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerAging"
+
+  /customers/ar-aging:
+    get:
+      operationId: getArAging
+      tags: [customers]
+      summary: Accounts receivable aging report
+      responses:
+        "200":
+          description: AR aging summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArAgingReport"
+
+  # PAYMENT RECEIPTS
+  /receipts:
+    get:
+      operationId: listReceipts
+      tags: [receipts]
+      summary: List payment receipts
+      parameters:
+        - { name: customerId, in: query, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: List of receipts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Receipt"
+    post:
+      operationId: createReceipt
+      tags: [receipts]
+      summary: Record payment receipt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceiptInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+
+  /receipts/{id}:
+    get:
+      operationId: getReceipt
+      tags: [receipts]
+      summary: Get receipt
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Receipt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+
+  # VENDORS
+  /vendors:
+    get:
+      operationId: listVendors
+      tags: [vendors]
+      summary: List vendors
+      parameters:
+        - { name: search, in: query, schema: { type: string } }
+        - { name: isMsme, in: query, schema: { type: boolean } }
+      responses:
+        "200":
+          description: List of vendors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vendor"
+    post:
+      operationId: createVendor
+      tags: [vendors]
+      summary: Create vendor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+
+  /vendors/{id}:
+    get:
+      operationId: getVendor
+      tags: [vendors]
+      summary: Get vendor
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Vendor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+    patch:
+      operationId: updateVendor
+      tags: [vendors]
+      summary: Update vendor
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorUpdate"
+      responses:
+        "200":
+          description: Updated vendor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vendor"
+
+  /vendors/ap-aging:
+    get:
+      operationId: getApAging
+      tags: [vendors]
+      summary: Accounts payable aging report
+      responses:
+        "200":
+          description: AP aging report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApAgingReport"
+
+  # VENDOR BILLS
+  /bills:
+    get:
+      operationId: listBills
+      tags: [bills]
+      summary: List vendor bills
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: vendorId, in: query, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: List of bills
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VendorBill"
+    post:
+      operationId: createBill
+      tags: [bills]
+      summary: Create vendor bill
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorBillInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorBill"
+
+  /bills/{id}:
+    get:
+      operationId: getBill
+      tags: [bills]
+      summary: Get vendor bill
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Vendor bill
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorBill"
+    patch:
+      operationId: updateBill
+      tags: [bills]
+      summary: Update vendor bill
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VendorBillUpdate"
+      responses:
+        "200":
+          description: Updated bill
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorBill"
+
+  /bills/{id}/pay:
+    post:
+      operationId: payBill
+      tags: [bills]
+      summary: Record payment for a vendor bill
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillPaymentInput"
+      responses:
+        "200":
+          description: Payment recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorBill"
+
+  # BANK ACCOUNTS
+  /bank/accounts:
+    get:
+      operationId: listBankAccounts
+      tags: [bank]
+      summary: List bank accounts with balances
+      responses:
+        "200":
+          description: Bank accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BankAccount"
+    post:
+      operationId: createBankAccount
+      tags: [bank]
+      summary: Add bank account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BankAccountInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankAccount"
+
+  /bank/accounts/{id}/transactions:
+    get:
+      operationId: getBankTransactions
+      tags: [bank]
+      summary: Get bank transactions for reconciliation
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Bank transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BankTransaction"
+
+  /bank/accounts/{id}/reconcile:
+    post:
+      operationId: reconcileBankTransaction
+      tags: [bank]
+      summary: Match bank transaction to journal entry
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReconcileInput"
+      responses:
+        "200":
+          description: Reconciled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankTransaction"
+
+  # EXPENSES
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: List expense claims
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: employeeId, in: query, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: List of expense claims
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExpenseClaim"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Submit expense claim
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseClaim"
+
+  /expenses/{id}:
+    get:
+      operationId: getExpense
+      tags: [expenses]
+      summary: Get expense claim
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Expense claim
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseClaim"
+
+  /expenses/{id}/approve:
+    post:
+      operationId: approveExpense
+      tags: [expenses]
+      summary: Approve or reject expense claim
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalInput"
+      responses:
+        "200":
+          description: Approval recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseClaim"
+
+  /expenses/analytics:
+    get:
+      operationId: getExpenseAnalytics
+      tags: [expenses]
+      summary: Expense analytics by department and category
+      parameters:
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Expense analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseAnalytics"
+
+  # PURCHASE ORDERS
+  /purchases/orders:
+    get:
+      operationId: listPurchaseOrders
+      tags: [purchases]
+      summary: List purchase orders
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: vendorId, in: query, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: List of POs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PurchaseOrder"
+    post:
+      operationId: createPurchaseOrder
+      tags: [purchases]
+      summary: Create purchase order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseOrderInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseOrder"
+
+  /purchases/orders/{id}:
+    get:
+      operationId: getPurchaseOrder
+      tags: [purchases]
+      summary: Get purchase order
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Purchase order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseOrder"
+
+  /purchases/orders/{id}/approve:
+    post:
+      operationId: approvePurchaseOrder
+      tags: [purchases]
+      summary: Approve purchase order
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Approved PO
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseOrder"
+
+  /purchases/grn:
+    get:
+      operationId: listGrns
+      tags: [purchases]
+      summary: List goods receipt notes
+      parameters:
+        - { name: poId, in: query, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: List of GRNs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Grn"
+    post:
+      operationId: createGrn
+      tags: [purchases]
+      summary: Create goods receipt note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GrnInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Grn"
+
+  # INVENTORY
+  /inventory/items:
+    get:
+      operationId: listItems
+      tags: [inventory]
+      summary: List inventory items
+      parameters:
+        - { name: search, in: query, schema: { type: string } }
+        - { name: type, in: query, schema: { type: string } }
+        - { name: group, in: query, schema: { type: string } }
+        - { name: lowStock, in: query, schema: { type: boolean } }
+      responses:
+        "200":
+          description: List of items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+    post:
+      operationId: createItem
+      tags: [inventory]
+      summary: Create inventory item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryItemInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+
+  /inventory/items/{id}:
+    get:
+      operationId: getItem
+      tags: [inventory]
+      summary: Get item with stock position
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+    patch:
+      operationId: updateItem
+      tags: [inventory]
+      summary: Update inventory item
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryItemUpdate"
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+
+  /inventory/valuation:
+    get:
+      operationId: getInventoryValuation
+      tags: [inventory]
+      summary: Stock valuation report
+      responses:
+        "200":
+          description: Inventory valuation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryValuation"
+
+  # GST
+  /gst/itc-ledger:
+    get:
+      operationId: getItcLedger
+      tags: [gst]
+      summary: Input tax credit ledger (CGST/SGST/IGST)
+      parameters:
+        - { name: period, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: ITC ledger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItcLedger"
+
+  /gst/gstr1:
+    get:
+      operationId: getGstr1Data
+      tags: [gst]
+      summary: GSTR-1 return data for a period
+      parameters:
+        - { name: period, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: GSTR-1 data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Gstr1Data"
+
+  /gst/gstr3b:
+    get:
+      operationId: getGstr3bData
+      tags: [gst]
+      summary: GSTR-3B return data for a period
+      parameters:
+        - { name: period, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: GSTR-3B data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Gstr3bData"
+
+  /gst/reconciliation:
+    get:
+      operationId: getGstReconciliation
+      tags: [gst]
+      summary: GSTR-2B vs purchase register reconciliation
+      parameters:
+        - { name: period, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Reconciliation data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GstReconciliation"
+
+  # BUDGETS
+  /budgets:
+    get:
+      operationId: listBudgets
+      tags: [budgets]
+      summary: List budgets
+      parameters:
+        - { name: fiscalYear, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: List of budgets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Budget"
+    post:
+      operationId: createBudget
+      tags: [budgets]
+      summary: Create budget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BudgetInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Budget"
+
+  /budgets/{id}/vs-actual:
+    get:
+      operationId: getBudgetVsActual
+      tags: [budgets]
+      summary: Budget vs actual comparison
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Budget vs actual report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetVsActual"
+
+  # USERS
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List users
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Invite new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # AUDIT LOG
+  /audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [audit]
+      summary: List audit trail entries
+      parameters:
+        - { name: entityType, in: query, schema: { type: string } }
+        - { name: actionType, in: query, schema: { type: string } }
+        - { name: userId, in: query, schema: { type: integer } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+
+  # FINANCIAL REPORTS
+  /reports/profit-loss:
+    get:
+      operationId: getProfitLoss
+      tags: [reports]
+      summary: Profit and Loss statement
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+        - { name: comparePrior, in: query, schema: { type: boolean } }
+      responses:
+        "200":
+          description: P&L statement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfitLoss"
+
+  /reports/balance-sheet:
+    get:
+      operationId: getBalanceSheet
+      tags: [reports]
+      summary: Balance sheet as of date
+      parameters:
+        - { name: date, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Balance sheet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceSheet"
+
+  /reports/cash-flow:
+    get:
+      operationId: getCashFlow
+      tags: [reports]
+      summary: Cash flow statement
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string } }
+        - { name: to, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Cash flow statement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CashFlowStatement"
+
+  /reports/day-book:
+    get:
+      operationId: getDayBook
+      tags: [reports]
+      summary: Day book of all transactions
+      parameters:
+        - { name: date, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+        - { name: type, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Day book entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DayBookEntry"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +1429,1304 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    # DASHBOARD
+    DashboardSummary:
+      type: object
+      properties:
+        revenueMtd: { type: number }
+        revenueTarget: { type: number }
+        collectionEfficiency: { type: number }
+        grossMarginPct: { type: number }
+        dso: { type: number }
+        overdueReceivables: { type: number }
+        totalCashBank: { type: number }
+        gstNetPayable: { type: number }
+        budgetUtilizationPct: { type: number }
+        inventoryTurnover: { type: number }
+        revenueChart: { type: array, items: { $ref: "#/components/schemas/MonthlyValue" } }
+        expenseChart: { type: array, items: { $ref: "#/components/schemas/MonthlyValue" } }
+      required: [revenueMtd, collectionEfficiency, grossMarginPct, totalCashBank]
+
+    MonthlyValue:
+      type: object
+      properties:
+        month: { type: string }
+        value: { type: number }
+      required: [month, value]
+
+    CashflowSummary:
+      type: object
+      properties:
+        totalBalance: { type: number }
+        accounts: { type: array, items: { $ref: "#/components/schemas/BankBalanceItem" } }
+        inflows30Days: { type: number }
+        outflows30Days: { type: number }
+      required: [totalBalance, accounts]
+
+    BankBalanceItem:
+      type: object
+      properties:
+        accountName: { type: string }
+        bankName: { type: string }
+        balance: { type: number }
+        accountType: { type: string }
+      required: [accountName, balance]
+
+    GstFilingStatus:
+      type: object
+      properties:
+        currentPeriod: { type: string }
+        gstr1DueDate: { type: string }
+        gstr1Filed: { type: boolean }
+        gstr3bDueDate: { type: string }
+        gstr3bFiled: { type: boolean }
+        itcBalance: { $ref: "#/components/schemas/ItcBalance" }
+        filingHistory: { type: array, items: { $ref: "#/components/schemas/FilingHistoryItem" } }
+      required: [currentPeriod, gstr1DueDate, gstr3bDueDate]
+
+    ItcBalance:
+      type: object
+      properties:
+        cgst: { type: number }
+        sgst: { type: number }
+        igst: { type: number }
+        total: { type: number }
+      required: [cgst, sgst, igst, total]
+
+    FilingHistoryItem:
+      type: object
+      properties:
+        period: { type: string }
+        gstr1Filed: { type: boolean }
+        gstr3bFiled: { type: boolean }
+        filedDate: { type: ["string", "null"] }
+      required: [period, gstr1Filed, gstr3bFiled]
+
+    AgingSummary:
+      type: object
+      properties:
+        receivables: { $ref: "#/components/schemas/AgingBuckets" }
+        payables: { $ref: "#/components/schemas/AgingBuckets" }
+      required: [receivables, payables]
+
+    AgingBuckets:
+      type: object
+      properties:
+        current: { type: number }
+        days0to30: { type: number }
+        days31to60: { type: number }
+        days61to90: { type: number }
+        days91to180: { type: number }
+        days180plus: { type: number }
+        total: { type: number }
+      required: [current, days0to30, days31to60, days61to90, days91to180, days180plus, total]
+
+    ActivityItem:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string }
+        description: { type: string }
+        amount: { type: ["number", "null"] }
+        party: { type: ["string", "null"] }
+        timestamp: { type: string }
+        status: { type: string }
+      required: [id, type, description, timestamp, status]
+
+    # COMPANY
+    Company:
+      type: object
+      properties:
+        id: { type: integer }
+        legalName: { type: string }
+        tradeName: { type: ["string", "null"] }
+        pan: { type: ["string", "null"] }
+        cin: { type: ["string", "null"] }
+        gstin: { type: ["string", "null"] }
+        companyType: { type: string }
+        industry: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        website: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        city: { type: ["string", "null"] }
+        state: { type: ["string", "null"] }
+        pincode: { type: ["string", "null"] }
+        logoUrl: { type: ["string", "null"] }
+        fiscalYearStart: { type: string }
+        gstFilingFrequency: { type: string }
+        createdAt: { type: string }
+      required: [id, legalName, companyType, fiscalYearStart, gstFilingFrequency, createdAt]
+
+    CompanyInput:
+      type: object
+      properties:
+        legalName: { type: string }
+        tradeName: { type: string }
+        pan: { type: string }
+        cin: { type: string }
+        gstin: { type: string }
+        companyType: { type: string }
+        industry: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        website: { type: string }
+        address: { type: string }
+        city: { type: string }
+        state: { type: string }
+        pincode: { type: string }
+        fiscalYearStart: { type: string }
+        gstFilingFrequency: { type: string }
+      required: [legalName, companyType]
+
+    CompanyUpdate:
+      type: object
+      properties:
+        legalName: { type: string }
+        tradeName: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        website: { type: string }
+        address: { type: string }
+        city: { type: string }
+        state: { type: string }
+        pincode: { type: string }
+        gstFilingFrequency: { type: string }
+
+    # ACCOUNT
+    Account:
+      type: object
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        name: { type: string }
+        type: { type: string }
+        group: { type: string }
+        subGroup: { type: ["string", "null"] }
+        normalBalance: { type: string }
+        isParty: { type: boolean }
+        isBank: { type: boolean }
+        isCash: { type: boolean }
+        isActive: { type: boolean }
+        openingBalance: { type: number }
+        currentBalance: { type: number }
+        description: { type: ["string", "null"] }
+      required: [id, code, name, type, group, normalBalance, isParty, isBank, isCash, isActive, openingBalance, currentBalance]
+
+    AccountInput:
+      type: object
+      properties:
+        code: { type: string }
+        name: { type: string }
+        type: { type: string }
+        group: { type: string }
+        subGroup: { type: string }
+        normalBalance: { type: string }
+        isParty: { type: boolean }
+        isBank: { type: boolean }
+        isCash: { type: boolean }
+        openingBalance: { type: number }
+        description: { type: string }
+      required: [code, name, type, group, normalBalance]
+
+    AccountUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        isActive: { type: boolean }
+
+    AccountLedger:
+      type: object
+      properties:
+        account: { $ref: "#/components/schemas/Account" }
+        openingBalance: { type: number }
+        closingBalance: { type: number }
+        totalDebit: { type: number }
+        totalCredit: { type: number }
+        entries: { type: array, items: { $ref: "#/components/schemas/LedgerEntry" } }
+      required: [account, openingBalance, closingBalance, totalDebit, totalCredit, entries]
+
+    LedgerEntry:
+      type: object
+      properties:
+        id: { type: integer }
+        date: { type: string }
+        voucherNo: { type: string }
+        narration: { type: ["string", "null"] }
+        debit: { type: number }
+        credit: { type: number }
+        balance: { type: number }
+        type: { type: string }
+      required: [id, date, voucherNo, debit, credit, balance, type]
+
+    TrialBalance:
+      type: object
+      properties:
+        asOf: { type: string }
+        totalDebit: { type: number }
+        totalCredit: { type: number }
+        isBalanced: { type: boolean }
+        lines: { type: array, items: { $ref: "#/components/schemas/TrialBalanceLine" } }
+      required: [asOf, totalDebit, totalCredit, isBalanced, lines]
+
+    TrialBalanceLine:
+      type: object
+      properties:
+        accountCode: { type: string }
+        accountName: { type: string }
+        group: { type: string }
+        debit: { type: number }
+        credit: { type: number }
+      required: [accountCode, accountName, group, debit, credit]
+
+    # JOURNAL ENTRY
+    JournalEntry:
+      type: object
+      properties:
+        id: { type: integer }
+        voucherNo: { type: string }
+        voucherType: { type: string }
+        date: { type: string }
+        narration: { type: ["string", "null"] }
+        status: { type: string }
+        totalDebit: { type: number }
+        totalCredit: { type: number }
+        isBalanced: { type: boolean }
+        reversalOf: { type: ["integer", "null"] }
+        createdAt: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/JournalLine" } }
+      required: [id, voucherNo, voucherType, date, status, totalDebit, totalCredit, isBalanced, createdAt, lines]
+
+    JournalLine:
+      type: object
+      properties:
+        id: { type: integer }
+        accountId: { type: integer }
+        accountName: { type: string }
+        accountCode: { type: string }
+        debit: { type: number }
+        credit: { type: number }
+        narration: { type: ["string", "null"] }
+        partyName: { type: ["string", "null"] }
+        costCenter: { type: ["string", "null"] }
+      required: [id, accountId, accountName, accountCode, debit, credit]
+
+    JournalInput:
+      type: object
+      properties:
+        voucherType: { type: string }
+        date: { type: string }
+        narration: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/JournalLineInput" } }
+      required: [voucherType, date, lines]
+
+    JournalLineInput:
+      type: object
+      properties:
+        accountId: { type: integer }
+        debit: { type: number }
+        credit: { type: number }
+        narration: { type: string }
+        partyName: { type: string }
+        costCenter: { type: string }
+      required: [accountId, debit, credit]
+
+    # INVOICE
+    Invoice:
+      type: object
+      properties:
+        id: { type: integer }
+        invoiceNo: { type: string }
+        type: { type: string }
+        status: { type: string }
+        date: { type: string }
+        dueDate: { type: string }
+        customerId: { type: integer }
+        customerName: { type: string }
+        customerGstin: { type: ["string", "null"] }
+        placeOfSupply: { type: string }
+        taxableAmount: { type: number }
+        cgst: { type: number }
+        sgst: { type: number }
+        igst: { type: number }
+        tcs: { type: number }
+        totalAmount: { type: number }
+        paidAmount: { type: number }
+        balanceDue: { type: number }
+        irn: { type: ["string", "null"] }
+        ewbNo: { type: ["string", "null"] }
+        poReference: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/InvoiceLine" } }
+      required: [id, invoiceNo, type, status, date, dueDate, customerId, customerName, placeOfSupply, taxableAmount, cgst, sgst, igst, tcs, totalAmount, paidAmount, balanceDue, createdAt, lines]
+
+    InvoiceLine:
+      type: object
+      properties:
+        id: { type: integer }
+        itemId: { type: ["integer", "null"] }
+        description: { type: string }
+        hsnSac: { type: string }
+        quantity: { type: number }
+        unit: { type: string }
+        rate: { type: number }
+        discountPct: { type: number }
+        gstRate: { type: number }
+        taxableValue: { type: number }
+        cgst: { type: number }
+        sgst: { type: number }
+        igst: { type: number }
+        lineTotal: { type: number }
+      required: [id, description, hsnSac, quantity, unit, rate, discountPct, gstRate, taxableValue, cgst, sgst, igst, lineTotal]
+
+    InvoiceInput:
+      type: object
+      properties:
+        type: { type: string }
+        date: { type: string }
+        dueDate: { type: string }
+        customerId: { type: integer }
+        placeOfSupply: { type: string }
+        poReference: { type: string }
+        notes: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/InvoiceLineInput" } }
+      required: [type, date, dueDate, customerId, placeOfSupply, lines]
+
+    InvoiceLineInput:
+      type: object
+      properties:
+        itemId: { type: integer }
+        description: { type: string }
+        hsnSac: { type: string }
+        quantity: { type: number }
+        unit: { type: string }
+        rate: { type: number }
+        discountPct: { type: number }
+        gstRate: { type: number }
+      required: [description, hsnSac, quantity, unit, rate, gstRate]
+
+    InvoiceUpdate:
+      type: object
+      properties:
+        date: { type: string }
+        dueDate: { type: string }
+        poReference: { type: string }
+        notes: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/InvoiceLineInput" } }
+
+    InvoiceSummary:
+      type: object
+      properties:
+        totalDraft: { type: integer }
+        totalPosted: { type: integer }
+        totalOverdue: { type: integer }
+        totalDraftAmount: { type: number }
+        totalPostedAmount: { type: number }
+        totalOverdueAmount: { type: number }
+        collectedMtd: { type: number }
+        invoicedMtd: { type: number }
+      required: [totalDraft, totalPosted, totalOverdue, totalDraftAmount, totalPostedAmount, totalOverdueAmount, collectedMtd, invoicedMtd]
+
+    # CUSTOMER
+    Customer:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        type: { type: string }
+        gstin: { type: ["string", "null"] }
+        pan: { type: ["string", "null"] }
+        email: { type: string }
+        phone: { type: string }
+        whatsapp: { type: ["string", "null"] }
+        billingAddress: { type: ["string", "null"] }
+        city: { type: ["string", "null"] }
+        state: { type: ["string", "null"] }
+        pincode: { type: ["string", "null"] }
+        creditLimit: { type: number }
+        paymentTerms: { type: string }
+        currency: { type: string }
+        tdsCategory: { type: ["string", "null"] }
+        customerGroup: { type: ["string", "null"] }
+        openingBalance: { type: number }
+        currentBalance: { type: number }
+        isActive: { type: boolean }
+        createdAt: { type: string }
+      required: [id, name, type, email, phone, creditLimit, paymentTerms, currency, openingBalance, currentBalance, isActive, createdAt]
+
+    CustomerInput:
+      type: object
+      properties:
+        name: { type: string }
+        type: { type: string }
+        gstin: { type: string }
+        pan: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        whatsapp: { type: string }
+        billingAddress: { type: string }
+        city: { type: string }
+        state: { type: string }
+        pincode: { type: string }
+        creditLimit: { type: number }
+        paymentTerms: { type: string }
+        currency: { type: string }
+        tdsCategory: { type: string }
+        customerGroup: { type: string }
+        openingBalance: { type: number }
+      required: [name, type, email, phone, paymentTerms]
+
+    CustomerUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        billingAddress: { type: string }
+        creditLimit: { type: number }
+        paymentTerms: { type: string }
+        isActive: { type: boolean }
+
+    CustomerAging:
+      type: object
+      properties:
+        customerId: { type: integer }
+        customerName: { type: string }
+        current: { type: number }
+        days0to30: { type: number }
+        days31to60: { type: number }
+        days61to90: { type: number }
+        days91to180: { type: number }
+        days180plus: { type: number }
+        total: { type: number }
+      required: [customerId, customerName, current, days0to30, days31to60, days61to90, days91to180, days180plus, total]
+
+    ArAgingReport:
+      type: object
+      properties:
+        asOf: { type: string }
+        totals: { $ref: "#/components/schemas/AgingBuckets" }
+        customers: { type: array, items: { $ref: "#/components/schemas/CustomerAging" } }
+      required: [asOf, totals, customers]
+
+    # RECEIPT
+    Receipt:
+      type: object
+      properties:
+        id: { type: integer }
+        receiptNo: { type: string }
+        date: { type: string }
+        customerId: { type: integer }
+        customerName: { type: string }
+        paymentMode: { type: string }
+        grossAmount: { type: number }
+        tdsDeducted: { type: number }
+        settlementDiscount: { type: number }
+        netAmount: { type: number }
+        bankAccountId: { type: integer }
+        bankAccountName: { type: string }
+        referenceNo: { type: ["string", "null"] }
+        chequeNo: { type: ["string", "null"] }
+        chequeDate: { type: ["string", "null"] }
+        narration: { type: ["string", "null"] }
+        status: { type: string }
+        createdAt: { type: string }
+        allocations: { type: array, items: { $ref: "#/components/schemas/ReceiptAllocation" } }
+      required: [id, receiptNo, date, customerId, customerName, paymentMode, grossAmount, tdsDeducted, settlementDiscount, netAmount, bankAccountId, bankAccountName, netAmount, status, createdAt, allocations]
+
+    ReceiptAllocation:
+      type: object
+      properties:
+        invoiceId: { type: integer }
+        invoiceNo: { type: string }
+        allocatedAmount: { type: number }
+      required: [invoiceId, invoiceNo, allocatedAmount]
+
+    ReceiptInput:
+      type: object
+      properties:
+        date: { type: string }
+        customerId: { type: integer }
+        paymentMode: { type: string }
+        grossAmount: { type: number }
+        tdsDeducted: { type: number }
+        settlementDiscount: { type: number }
+        bankAccountId: { type: integer }
+        referenceNo: { type: string }
+        chequeNo: { type: string }
+        chequeDate: { type: string }
+        narration: { type: string }
+        allocations: { type: array, items: { $ref: "#/components/schemas/ReceiptAllocationInput" } }
+      required: [date, customerId, paymentMode, grossAmount, bankAccountId]
+
+    ReceiptAllocationInput:
+      type: object
+      properties:
+        invoiceId: { type: integer }
+        allocatedAmount: { type: number }
+      required: [invoiceId, allocatedAmount]
+
+    # VENDOR
+    Vendor:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        gstin: { type: ["string", "null"] }
+        pan: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        city: { type: ["string", "null"] }
+        state: { type: ["string", "null"] }
+        pincode: { type: ["string", "null"] }
+        isMsme: { type: boolean }
+        msmeRegistrationNo: { type: ["string", "null"] }
+        tdsSection: { type: ["string", "null"] }
+        paymentTerms: { type: string }
+        openingBalance: { type: number }
+        currentBalance: { type: number }
+        isActive: { type: boolean }
+        rating: { type: ["integer", "null"] }
+        createdAt: { type: string }
+      required: [id, name, isMsme, paymentTerms, openingBalance, currentBalance, isActive, createdAt]
+
+    VendorInput:
+      type: object
+      properties:
+        name: { type: string }
+        gstin: { type: string }
+        pan: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        address: { type: string }
+        city: { type: string }
+        state: { type: string }
+        pincode: { type: string }
+        isMsme: { type: boolean }
+        msmeRegistrationNo: { type: string }
+        tdsSection: { type: string }
+        paymentTerms: { type: string }
+        openingBalance: { type: number }
+      required: [name, paymentTerms]
+
+    VendorUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        isMsme: { type: boolean }
+        tdsSection: { type: string }
+        isActive: { type: boolean }
+        rating: { type: integer }
+
+    ApAgingReport:
+      type: object
+      properties:
+        asOf: { type: string }
+        totals: { $ref: "#/components/schemas/AgingBuckets" }
+        vendors: { type: array, items: { $ref: "#/components/schemas/VendorAging" } }
+      required: [asOf, totals, vendors]
+
+    VendorAging:
+      type: object
+      properties:
+        vendorId: { type: integer }
+        vendorName: { type: string }
+        isMsme: { type: boolean }
+        current: { type: number }
+        days0to30: { type: number }
+        days31to60: { type: number }
+        days61to90: { type: number }
+        days91plus: { type: number }
+        total: { type: number }
+        msmeBreachRisk: { type: boolean }
+      required: [vendorId, vendorName, isMsme, current, days0to30, days31to60, days61to90, days91plus, total, msmeBreachRisk]
+
+    # VENDOR BILL
+    VendorBill:
+      type: object
+      properties:
+        id: { type: integer }
+        billNo: { type: string }
+        vendorInvoiceNo: { type: ["string", "null"] }
+        vendorId: { type: integer }
+        vendorName: { type: string }
+        date: { type: string }
+        dueDate: { type: string }
+        poId: { type: ["integer", "null"] }
+        grnId: { type: ["integer", "null"] }
+        status: { type: string }
+        taxableAmount: { type: number }
+        cgst: { type: number }
+        sgst: { type: number }
+        igst: { type: number }
+        tdsAmount: { type: number }
+        totalAmount: { type: number }
+        paidAmount: { type: number }
+        balanceDue: { type: number }
+        isMsmeVendor: { type: boolean }
+        msmeBreachDate: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/BillLine" } }
+      required: [id, billNo, vendorId, vendorName, date, dueDate, status, taxableAmount, cgst, sgst, igst, tdsAmount, totalAmount, paidAmount, balanceDue, isMsmeVendor, createdAt, lines]
+
+    BillLine:
+      type: object
+      properties:
+        id: { type: integer }
+        description: { type: string }
+        hsnSac: { type: string }
+        quantity: { type: number }
+        unit: { type: string }
+        rate: { type: number }
+        gstRate: { type: number }
+        taxableValue: { type: number }
+        cgst: { type: number }
+        sgst: { type: number }
+        igst: { type: number }
+        lineTotal: { type: number }
+      required: [id, description, hsnSac, quantity, unit, rate, gstRate, taxableValue, cgst, sgst, igst, lineTotal]
+
+    VendorBillInput:
+      type: object
+      properties:
+        vendorId: { type: integer }
+        vendorInvoiceNo: { type: string }
+        date: { type: string }
+        dueDate: { type: string }
+        poId: { type: integer }
+        grnId: { type: integer }
+        notes: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/BillLineInput" } }
+      required: [vendorId, date, dueDate, lines]
+
+    BillLineInput:
+      type: object
+      properties:
+        description: { type: string }
+        hsnSac: { type: string }
+        quantity: { type: number }
+        unit: { type: string }
+        rate: { type: number }
+        gstRate: { type: number }
+      required: [description, hsnSac, quantity, unit, rate, gstRate]
+
+    VendorBillUpdate:
+      type: object
+      properties:
+        vendorInvoiceNo: { type: string }
+        dueDate: { type: string }
+        notes: { type: string }
+
+    BillPaymentInput:
+      type: object
+      properties:
+        date: { type: string }
+        amount: { type: number }
+        paymentMode: { type: string }
+        bankAccountId: { type: integer }
+        referenceNo: { type: string }
+        narration: { type: string }
+      required: [date, amount, paymentMode, bankAccountId]
+
+    # BANK
+    BankAccount:
+      type: object
+      properties:
+        id: { type: integer }
+        accountName: { type: string }
+        bankName: { type: string }
+        accountNo: { type: string }
+        ifsc: { type: string }
+        accountType: { type: string }
+        branch: { type: ["string", "null"] }
+        balance: { type: number }
+        isActive: { type: boolean }
+        lastReconciled: { type: ["string", "null"] }
+        createdAt: { type: string }
+      required: [id, accountName, bankName, accountNo, ifsc, accountType, balance, isActive, createdAt]
+
+    BankAccountInput:
+      type: object
+      properties:
+        accountName: { type: string }
+        bankName: { type: string }
+        accountNo: { type: string }
+        ifsc: { type: string }
+        accountType: { type: string }
+        branch: { type: string }
+        openingBalance: { type: number }
+      required: [accountName, bankName, accountNo, ifsc, accountType]
+
+    BankTransaction:
+      type: object
+      properties:
+        id: { type: integer }
+        bankAccountId: { type: integer }
+        date: { type: string }
+        description: { type: string }
+        debit: { type: number }
+        credit: { type: number }
+        balance: { type: number }
+        referenceNo: { type: ["string", "null"] }
+        status: { type: string }
+        matchedJournalId: { type: ["integer", "null"] }
+        matchConfidence: { type: ["number", "null"] }
+      required: [id, bankAccountId, date, description, debit, credit, balance, status]
+
+    ReconcileInput:
+      type: object
+      properties:
+        bankTransactionId: { type: integer }
+        journalId: { type: integer }
+      required: [bankTransactionId, journalId]
+
+    # EXPENSES
+    ExpenseClaim:
+      type: object
+      properties:
+        id: { type: integer }
+        claimNo: { type: string }
+        employeeId: { type: integer }
+        employeeName: { type: string }
+        submittedDate: { type: string }
+        totalAmount: { type: number }
+        approvedAmount: { type: ["number", "null"] }
+        status: { type: string }
+        currentApprover: { type: ["string", "null"] }
+        policyViolations: { type: integer }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/ExpenseLine" } }
+      required: [id, claimNo, employeeId, employeeName, submittedDate, totalAmount, status, policyViolations, createdAt, lines]
+
+    ExpenseLine:
+      type: object
+      properties:
+        id: { type: integer }
+        date: { type: string }
+        category: { type: string }
+        subCategory: { type: ["string", "null"] }
+        amount: { type: number }
+        currency: { type: string }
+        vendorName: { type: ["string", "null"] }
+        description: { type: string }
+        receiptUrl: { type: ["string", "null"] }
+        gstAmount: { type: number }
+        vendorGstin: { type: ["string", "null"] }
+        policyViolation: { type: boolean }
+        violationReason: { type: ["string", "null"] }
+      required: [id, date, category, amount, currency, description, gstAmount, policyViolation]
+
+    ExpenseInput:
+      type: object
+      properties:
+        notes: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/ExpenseLineInput" } }
+      required: [lines]
+
+    ExpenseLineInput:
+      type: object
+      properties:
+        date: { type: string }
+        category: { type: string }
+        subCategory: { type: string }
+        amount: { type: number }
+        currency: { type: string }
+        vendorName: { type: string }
+        description: { type: string }
+        gstAmount: { type: number }
+        vendorGstin: { type: string }
+      required: [date, category, amount, currency, description]
+
+    ApprovalInput:
+      type: object
+      properties:
+        action: { type: string }
+        comment: { type: string }
+        adjustedAmount: { type: number }
+      required: [action]
+
+    ExpenseAnalytics:
+      type: object
+      properties:
+        period: { type: string }
+        totalAmount: { type: number }
+        totalApproved: { type: number }
+        totalPending: { type: number }
+        byCategory: { type: array, items: { $ref: "#/components/schemas/ExpenseCategoryBreakdown" } }
+        byDepartment: { type: array, items: { $ref: "#/components/schemas/ExpenseDeptBreakdown" } }
+        policyViolations: { type: integer }
+      required: [period, totalAmount, totalApproved, totalPending, byCategory, byDepartment, policyViolations]
+
+    ExpenseCategoryBreakdown:
+      type: object
+      properties:
+        category: { type: string }
+        amount: { type: number }
+        count: { type: integer }
+        pct: { type: number }
+      required: [category, amount, count, pct]
+
+    ExpenseDeptBreakdown:
+      type: object
+      properties:
+        department: { type: string }
+        amount: { type: number }
+        budget: { type: number }
+        utilizationPct: { type: number }
+      required: [department, amount, budget, utilizationPct]
+
+    # PURCHASE ORDER
+    PurchaseOrder:
+      type: object
+      properties:
+        id: { type: integer }
+        poNo: { type: string }
+        vendorId: { type: integer }
+        vendorName: { type: string }
+        date: { type: string }
+        deliveryDate: { type: ["string", "null"] }
+        status: { type: string }
+        totalAmount: { type: number }
+        receivedAmount: { type: number }
+        billedAmount: { type: number }
+        notes: { type: ["string", "null"] }
+        approvedBy: { type: ["string", "null"] }
+        approvedAt: { type: ["string", "null"] }
+        createdAt: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/PoLine" } }
+      required: [id, poNo, vendorId, vendorName, date, status, totalAmount, receivedAmount, billedAmount, createdAt, lines]
+
+    PoLine:
+      type: object
+      properties:
+        id: { type: integer }
+        itemId: { type: ["integer", "null"] }
+        description: { type: string }
+        hsnSac: { type: string }
+        quantity: { type: number }
+        unit: { type: string }
+        rate: { type: number }
+        gstRate: { type: number }
+        receivedQty: { type: number }
+        billedQty: { type: number }
+        lineTotal: { type: number }
+      required: [id, description, hsnSac, quantity, unit, rate, gstRate, receivedQty, billedQty, lineTotal]
+
+    PurchaseOrderInput:
+      type: object
+      properties:
+        vendorId: { type: integer }
+        date: { type: string }
+        deliveryDate: { type: string }
+        notes: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/PoLineInput" } }
+      required: [vendorId, date, lines]
+
+    PoLineInput:
+      type: object
+      properties:
+        itemId: { type: integer }
+        description: { type: string }
+        hsnSac: { type: string }
+        quantity: { type: number }
+        unit: { type: string }
+        rate: { type: number }
+        gstRate: { type: number }
+      required: [description, hsnSac, quantity, unit, rate, gstRate]
+
+    Grn:
+      type: object
+      properties:
+        id: { type: integer }
+        grnNo: { type: string }
+        poId: { type: integer }
+        poNo: { type: string }
+        vendorId: { type: integer }
+        vendorName: { type: string }
+        date: { type: string }
+        status: { type: string }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/GrnLine" } }
+      required: [id, grnNo, poId, poNo, vendorId, vendorName, date, status, createdAt, lines]
+
+    GrnLine:
+      type: object
+      properties:
+        id: { type: integer }
+        poLineId: { type: integer }
+        description: { type: string }
+        quantityOrdered: { type: number }
+        quantityReceived: { type: number }
+        unit: { type: string }
+        rate: { type: number }
+      required: [id, poLineId, description, quantityOrdered, quantityReceived, unit, rate]
+
+    GrnInput:
+      type: object
+      properties:
+        poId: { type: integer }
+        date: { type: string }
+        notes: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/GrnLineInput" } }
+      required: [poId, date, lines]
+
+    GrnLineInput:
+      type: object
+      properties:
+        poLineId: { type: integer }
+        quantityReceived: { type: number }
+      required: [poLineId, quantityReceived]
+
+    # INVENTORY
+    InventoryItem:
+      type: object
+      properties:
+        id: { type: integer }
+        itemCode: { type: string }
+        name: { type: string }
+        type: { type: string }
+        group: { type: ["string", "null"] }
+        hsnSac: { type: string }
+        unit: { type: string }
+        gstRate: { type: number }
+        purchaseRate: { type: ["number", "null"] }
+        sellingRate: { type: ["number", "null"] }
+        mrp: { type: ["number", "null"] }
+        reorderLevel: { type: ["number", "null"] }
+        reorderQty: { type: ["number", "null"] }
+        valuationMethod: { type: string }
+        currentStock: { type: number }
+        stockValue: { type: number }
+        isActive: { type: boolean }
+        isBatchTracked: { type: boolean }
+        isSerialTracked: { type: boolean }
+        isExpiryTracked: { type: boolean }
+        createdAt: { type: string }
+      required: [id, itemCode, name, type, hsnSac, unit, gstRate, valuationMethod, currentStock, stockValue, isActive, isBatchTracked, isSerialTracked, isExpiryTracked, createdAt]
+
+    InventoryItemInput:
+      type: object
+      properties:
+        itemCode: { type: string }
+        name: { type: string }
+        type: { type: string }
+        group: { type: string }
+        hsnSac: { type: string }
+        unit: { type: string }
+        gstRate: { type: number }
+        purchaseRate: { type: number }
+        sellingRate: { type: number }
+        mrp: { type: number }
+        reorderLevel: { type: number }
+        reorderQty: { type: number }
+        valuationMethod: { type: string }
+        isBatchTracked: { type: boolean }
+        isSerialTracked: { type: boolean }
+        isExpiryTracked: { type: boolean }
+      required: [name, type, hsnSac, unit, gstRate, valuationMethod]
+
+    InventoryItemUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        sellingRate: { type: number }
+        purchaseRate: { type: number }
+        reorderLevel: { type: number }
+        reorderQty: { type: number }
+        isActive: { type: boolean }
+
+    InventoryValuation:
+      type: object
+      properties:
+        asOf: { type: string }
+        totalValue: { type: number }
+        totalItems: { type: integer }
+        lowStockItems: { type: integer }
+        lines: { type: array, items: { $ref: "#/components/schemas/ValuationLine" } }
+      required: [asOf, totalValue, totalItems, lowStockItems, lines]
+
+    ValuationLine:
+      type: object
+      properties:
+        itemId: { type: integer }
+        itemCode: { type: string }
+        itemName: { type: string }
+        currentQty: { type: number }
+        unit: { type: string }
+        avgCost: { type: number }
+        stockValue: { type: number }
+        isLowStock: { type: boolean }
+      required: [itemId, itemCode, itemName, currentQty, unit, avgCost, stockValue, isLowStock]
+
+    # GST
+    ItcLedger:
+      type: object
+      properties:
+        period: { type: string }
+        openingBalance: { $ref: "#/components/schemas/ItcBalance" }
+        availed: { $ref: "#/components/schemas/ItcBalance" }
+        reversed: { $ref: "#/components/schemas/ItcBalance" }
+        utilized: { $ref: "#/components/schemas/ItcBalance" }
+        closingBalance: { $ref: "#/components/schemas/ItcBalance" }
+      required: [period, openingBalance, availed, reversed, utilized, closingBalance]
+
+    Gstr1Data:
+      type: object
+      properties:
+        period: { type: string }
+        totalInvoices: { type: integer }
+        b2bAmount: { type: number }
+        b2cAmount: { type: number }
+        exportAmount: { type: number }
+        creditNoteAmount: { type: number }
+        totalTaxableValue: { type: number }
+        totalCgst: { type: number }
+        totalSgst: { type: number }
+        totalIgst: { type: number }
+        totalTax: { type: number }
+        isFilingReady: { type: boolean }
+        validationErrors: { type: array, items: { type: string } }
+      required: [period, totalInvoices, b2bAmount, b2cAmount, exportAmount, creditNoteAmount, totalTaxableValue, totalCgst, totalSgst, totalIgst, totalTax, isFilingReady, validationErrors]
+
+    Gstr3bData:
+      type: object
+      properties:
+        period: { type: string }
+        outwardSupplies: { type: number }
+        outwardTax: { type: number }
+        inwardRcm: { type: number }
+        itcAvailable: { $ref: "#/components/schemas/ItcBalance" }
+        itcReversed: { $ref: "#/components/schemas/ItcBalance" }
+        netItc: { $ref: "#/components/schemas/ItcBalance" }
+        taxPayableCash: { type: number }
+        taxPayableItc: { type: number }
+        totalLiability: { type: number }
+      required: [period, outwardSupplies, outwardTax, inwardRcm, itcAvailable, itcReversed, netItc, taxPayableCash, taxPayableItc, totalLiability]
+
+    GstReconciliation:
+      type: object
+      properties:
+        period: { type: string }
+        totalInPurchaseRegister: { type: integer }
+        totalIn2b: { type: integer }
+        matched: { type: integer }
+        unmatched: { type: integer }
+        mismatched: { type: integer }
+        unmatchedItcAmount: { type: number }
+        lines: { type: array, items: { $ref: "#/components/schemas/ReconciliationLine" } }
+      required: [period, totalInPurchaseRegister, totalIn2b, matched, unmatched, mismatched, unmatchedItcAmount, lines]
+
+    ReconciliationLine:
+      type: object
+      properties:
+        vendorGstin: { type: string }
+        vendorName: { type: string }
+        invoiceNo: { type: string }
+        invoiceDate: { type: string }
+        bookAmount: { type: number }
+        gstr2bAmount: { type: ["number", "null"] }
+        difference: { type: number }
+        status: { type: string }
+      required: [vendorGstin, vendorName, invoiceNo, invoiceDate, bookAmount, difference, status]
+
+    # BUDGET
+    Budget:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        fiscalYear: { type: string }
+        type: { type: string }
+        totalBudget: { type: number }
+        totalActual: { type: number }
+        utilizationPct: { type: number }
+        status: { type: string }
+        createdAt: { type: string }
+      required: [id, name, fiscalYear, type, totalBudget, totalActual, utilizationPct, status, createdAt]
+
+    BudgetInput:
+      type: object
+      properties:
+        name: { type: string }
+        fiscalYear: { type: string }
+        type: { type: string }
+        lines: { type: array, items: { $ref: "#/components/schemas/BudgetLineInput" } }
+      required: [name, fiscalYear, type, lines]
+
+    BudgetLineInput:
+      type: object
+      properties:
+        accountId: { type: integer }
+        department: { type: string }
+        annualAmount: { type: number }
+        monthlyAmounts: { type: array, items: { type: number } }
+      required: [accountId, annualAmount]
+
+    BudgetVsActual:
+      type: object
+      properties:
+        budgetId: { type: integer }
+        budgetName: { type: string }
+        fiscalYear: { type: string }
+        period: { type: ["string", "null"] }
+        lines: { type: array, items: { $ref: "#/components/schemas/BudgetVsActualLine" } }
+        totalBudget: { type: number }
+        totalActual: { type: number }
+        totalVariance: { type: number }
+      required: [budgetId, budgetName, fiscalYear, lines, totalBudget, totalActual, totalVariance]
+
+    BudgetVsActualLine:
+      type: object
+      properties:
+        accountCode: { type: string }
+        accountName: { type: string }
+        department: { type: ["string", "null"] }
+        annualBudget: { type: number }
+        periodBudget: { type: number }
+        periodActual: { type: number }
+        periodVariance: { type: number }
+        ytdBudget: { type: number }
+        ytdActual: { type: number }
+        ytdVariance: { type: number }
+        utilizationPct: { type: number }
+        alertLevel: { type: ["string", "null"] }
+      required: [accountCode, accountName, annualBudget, periodBudget, periodActual, periodVariance, ytdBudget, ytdActual, ytdVariance, utilizationPct]
+
+    # USER
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        roleLevel: { type: integer }
+        department: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        isActive: { type: boolean }
+        isMfaEnabled: { type: boolean }
+        lastLogin: { type: ["string", "null"] }
+        createdAt: { type: string }
+      required: [id, name, email, role, roleLevel, isActive, isMfaEnabled, createdAt]
+
+    UserInput:
+      type: object
+      properties:
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        department: { type: string }
+        phone: { type: string }
+      required: [name, email, role]
+
+    UserUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        role: { type: string }
+        department: { type: string }
+        isActive: { type: boolean }
+
+    # AUDIT LOG
+    AuditLog:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        userName: { type: string }
+        userRole: { type: string }
+        actionType: { type: string }
+        entityType: { type: string }
+        entityId: { type: ["integer", "null"] }
+        entityRef: { type: ["string", "null"] }
+        ipAddress: { type: ["string", "null"] }
+        timestamp: { type: string }
+        description: { type: string }
+      required: [id, userId, userName, userRole, actionType, entityType, timestamp, description]
+
+    # FINANCIAL REPORTS
+    ProfitLoss:
+      type: object
+      properties:
+        fromDate: { type: string }
+        toDate: { type: string }
+        revenueFromOperations: { type: number }
+        otherIncome: { type: number }
+        totalRevenue: { type: number }
+        openingStock: { type: number }
+        purchases: { type: number }
+        closingStock: { type: number }
+        cogs: { type: number }
+        grossProfit: { type: number }
+        grossMarginPct: { type: number }
+        operatingExpenses: { type: number }
+        ebitda: { type: number }
+        ebitdaMarginPct: { type: number }
+        depreciation: { type: number }
+        ebit: { type: number }
+        financeCharges: { type: number }
+        profitBeforeTax: { type: number }
+        pbtMarginPct: { type: number }
+        taxProvision: { type: number }
+        netProfit: { type: number }
+        netProfitMarginPct: { type: number }
+        priorPeriodComparison: { type: ["object", "null"] }
+      required: [fromDate, toDate, revenueFromOperations, otherIncome, totalRevenue, openingStock, purchases, closingStock, cogs, grossProfit, grossMarginPct, operatingExpenses, ebitda, ebitdaMarginPct, depreciation, ebit, financeCharges, profitBeforeTax, pbtMarginPct, taxProvision, netProfit, netProfitMarginPct]
+
+    BalanceSheet:
+      type: object
+      properties:
+        asOf: { type: string }
+        totalAssets: { type: number }
+        totalLiabilities: { type: number }
+        totalEquity: { type: number }
+        isBalanced: { type: boolean }
+        fixedAssets: { type: number }
+        currentAssets: { type: number }
+        bankCash: { type: number }
+        equity: { type: number }
+        longTermLiabilities: { type: number }
+        currentLiabilities: { type: number }
+        tradeReceivables: { type: number }
+        tradePayables: { type: number }
+        inventory: { type: number }
+        gstPayable: { type: number }
+      required: [asOf, totalAssets, totalLiabilities, totalEquity, isBalanced, fixedAssets, currentAssets, bankCash, equity, longTermLiabilities, currentLiabilities]
+
+    CashFlowStatement:
+      type: object
+      properties:
+        fromDate: { type: string }
+        toDate: { type: string }
+        netProfit: { type: number }
+        adjustments: { type: number }
+        operatingCashFlow: { type: number }
+        investingCashFlow: { type: number }
+        financingCashFlow: { type: number }
+        netCashChange: { type: number }
+        openingCash: { type: number }
+        closingCash: { type: number }
+      required: [fromDate, toDate, netProfit, adjustments, operatingCashFlow, investingCashFlow, financingCashFlow, netCashChange, openingCash, closingCash]
+
+    DayBookEntry:
+      type: object
+      properties:
+        id: { type: integer }
+        date: { type: string }
+        voucherNo: { type: string }
+        type: { type: string }
+        narration: { type: ["string", "null"] }
+        party: { type: ["string", "null"] }
+        debit: { type: number }
+        credit: { type: number }
+      required: [id, date, voucherNo, type, debit, credit]

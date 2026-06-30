@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { getAdmin } from "@/lib/auth";
 
 const NAV = [
   { label: "Dashboard",     icon: LayoutDashboard, path: "/" },
@@ -20,8 +21,9 @@ const NAV = [
   { label: "Settings",      icon: Settings,        path: "/settings" },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children, onLogout }: { children: React.ReactNode; onLogout: () => void }) {
   const [location] = useLocation();
+  const admin = getAdmin();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -75,17 +77,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </nav>
 
-        {/* Admin info */}
+        {/* Admin info + logout */}
         <div className="px-3 py-3 border-t border-sidebar-border">
-          <div className="flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-sidebar-accent transition-colors cursor-pointer">
+          <div
+            className="flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-sidebar-accent transition-colors cursor-pointer group"
+            onClick={onLogout}
+            title="Sign out"
+          >
             <div className="w-7 h-7 rounded-full bg-sidebar-primary flex items-center justify-center text-xs font-semibold text-white">
-              SA
+              {(admin?.name ?? "SA").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-sidebar-accent-foreground truncate">Super Admin</p>
-              <p className="text-[10px] text-sidebar-foreground/50 truncate">platform@mystics.app</p>
+              <p className="text-xs font-medium text-sidebar-accent-foreground truncate">{admin?.name ?? "Super Admin"}</p>
+              <p className="text-[10px] text-sidebar-foreground/50 truncate">{admin?.email ?? "admin@mystics.app"}</p>
             </div>
-            <LogOut className="w-3.5 h-3.5 text-sidebar-foreground/40 hover:text-sidebar-foreground" />
+            <LogOut className="w-3.5 h-3.5 text-sidebar-foreground/40 group-hover:text-destructive transition-colors" />
           </div>
         </div>
       </aside>

@@ -14,6 +14,32 @@ const router = Router();
 function ok(res: any, data: any) { res.json(data); }
 function err(res: any, e: any, status = 500) { res.status(status).json({ error: e?.message ?? String(e) }); }
 
+// ── Admin auth ────────────────────────────────────────────────────────────────
+const ADMIN_EMAIL    = process.env.ADMIN_EMAIL    ?? "admin@mystics.app";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "Admin@1234";
+// Simple static token — sufficient for an internal admin portal
+const ADMIN_TOKEN    = `mystics-admin-${Buffer.from(ADMIN_EMAIL).toString("base64")}`;
+
+router.post("/admin/auth/login", async (req, res) => {
+  const { email, password } = req.body ?? {};
+  if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+    res.status(401).json({ error: "Invalid email or password" });
+    return;
+  }
+  res.json({ token: ADMIN_TOKEN, admin: { email: ADMIN_EMAIL, name: "Super Admin", role: "superadmin" } });
+});
+
+router.post("/admin/auth/logout", (_req, res) => {
+  res.json({ success: true });
+});
+
+router.get("/admin/auth/me", (req, res) => {
+  const auth = req.headers.authorization ?? "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  if (token !== ADMIN_TOKEN) { res.status(401).json({ error: "Unauthorized" }); return; }
+  res.json({ email: ADMIN_EMAIL, name: "Super Admin", role: "superadmin" });
+});
+
 async function auditLog(adminEmail: string, adminRole: string, action: string, entityType: string, entityId?: number, entityRef?: string, detail?: Record<string,unknown>) {
   await db.insert(platformAuditLogsTable).values({
     adminEmail, adminRole, action, entityType,

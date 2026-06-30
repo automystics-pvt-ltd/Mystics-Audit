@@ -186,7 +186,7 @@ export default function Users() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-xs bg-muted/60 rounded px-1.5 py-0.5">{u.tenantName ?? `Org ${u.orgId}` ?? "—"}</span>
+                    <span className="text-xs bg-muted/60 rounded px-1.5 py-0.5">{u.tenantName ?? `Org ${u.orgId}`}</span>
                   </td>
                   <td className="px-4 py-3">
                     <Select value={u.role ?? "Staff"} onValueChange={v => updateMut.mutate({ id: u.id, body: { role: v } })}>

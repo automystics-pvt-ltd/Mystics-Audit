@@ -61,7 +61,7 @@ router.post("/bank/accounts", async (req, res) => {
         name: rest.accountName,
         type: "Asset",
         group: "Current Assets",
-        normalBalance: "Debit",
+        normalBalance: "debit",
         isBank: true,
         isCash: false,
         isParty: false,

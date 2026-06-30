@@ -3579,6 +3579,76 @@ export const useUpdateBill = <TError = ErrorType<unknown>,
       return useMutation(getUpdateBillMutationOptions(options));
     }
 
+export const getPostBillUrl = (id: number,) => {
+
+
+
+
+  return `/api/bills/${id}/post`
+}
+
+/**
+ * @summary Post a vendor bill (creates GL journal entries)
+ */
+export const postBill = async (id: number, options?: RequestInit): Promise<VendorBill> => {
+
+  return customFetch<VendorBill>(getPostBillUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getPostBillMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postBill>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postBill>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['postBill'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postBill>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postBill(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostBillMutationResult = NonNullable<Awaited<ReturnType<typeof postBill>>>
+
+    export type PostBillMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Post a vendor bill (creates GL journal entries)
+ */
+export const usePostBill = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postBill>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postBill>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPostBillMutationOptions(options));
+    }
+
 export const getPayBillUrl = (id: number,) => {
 
 

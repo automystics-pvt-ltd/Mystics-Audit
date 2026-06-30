@@ -791,6 +791,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/VendorBill"
 
+  /bills/{id}/post:
+    post:
+      operationId: postBill
+      tags: [bills]
+      summary: Post a vendor bill (creates GL journal entries)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Bill posted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VendorBill"
+
   /bills/{id}/pay:
     post:
       operationId: payBill

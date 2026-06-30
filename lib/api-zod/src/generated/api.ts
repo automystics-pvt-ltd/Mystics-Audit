@@ -1657,6 +1657,53 @@ export const UpdateBillResponse = zod.object({
 
 
 /**
+ * @summary Post a vendor bill (creates GL journal entries)
+ */
+export const PostBillParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostBillResponse = zod.object({
+  "id": zod.number(),
+  "billNo": zod.string(),
+  "vendorInvoiceNo": zod.string().nullish(),
+  "vendorId": zod.number(),
+  "vendorName": zod.string(),
+  "date": zod.string(),
+  "dueDate": zod.string(),
+  "poId": zod.number().nullish(),
+  "grnId": zod.number().nullish(),
+  "status": zod.string(),
+  "taxableAmount": zod.number(),
+  "cgst": zod.number(),
+  "sgst": zod.number(),
+  "igst": zod.number(),
+  "tdsAmount": zod.number(),
+  "totalAmount": zod.number(),
+  "paidAmount": zod.number(),
+  "balanceDue": zod.number(),
+  "isMsmeVendor": zod.boolean(),
+  "msmeBreachDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "lines": zod.array(zod.object({
+  "id": zod.number(),
+  "description": zod.string(),
+  "hsnSac": zod.string(),
+  "quantity": zod.number(),
+  "unit": zod.string(),
+  "rate": zod.number(),
+  "gstRate": zod.number(),
+  "taxableValue": zod.number(),
+  "cgst": zod.number(),
+  "sgst": zod.number(),
+  "igst": zod.number(),
+  "lineTotal": zod.number()
+}))
+})
+
+
+/**
  * @summary Record payment for a vendor bill
  */
 export const PayBillParams = zod.object({

@@ -1,45 +1,67 @@
 import { Router } from "express";
-import { db, receiptsTable, receiptAllocationsTable } from "@workspace/db";
+import { db, receiptsTable, receiptAllocationsTable, bankAccountsTable, invoicesTable } from "@workspace/db";
 import { eq, and, desc, gte, lte } from "drizzle-orm";
+import { createPostedJournal, round2, type JournalLine } from "../utils/accounting";
 
 const router = Router();
 
-let receiptSeq = 100;
-function nextReceiptNo() {
+let receiptSeq = 0;
+async function nextReceiptNo(): Promise<string> {
+  if (receiptSeq === 0) {
+    const [last] = await db.select({ no: receiptsTable.receiptNo }).from(receiptsTable)
+      .orderBy(desc(receiptsTable.createdAt)).limit(1);
+    if (last?.no) {
+      const parts = last.no.split("-");
+      receiptSeq = Math.max(100, parseInt(parts[parts.length - 1]) || 100);
+    } else {
+      receiptSeq = 100;
+    }
+  }
   receiptSeq++;
   return `RCT-${new Date().getFullYear()}-${String(receiptSeq).padStart(5, "0")}`;
 }
 
+const GL = {
+  AR:               "1100",   // Accounts Receivable (credit — reduces AR)
+  TDS_RECEIVABLE:   "1150",   // TDS Receivable (debit — we'll collect from Tax Dept)
+  DISCOUNT_ALLOWED: "7040",   // Settlement Discount (debit — expense)
+  CASH:             "1000",   // Cash in Hand (fallback if no bank account)
+};
+
 async function getReceiptWithAllocations(id: number) {
   const [receipt] = await db.select().from(receiptsTable).where(eq(receiptsTable.id, id));
   if (!receipt) return null;
-  const allocations = await db.select().from(receiptAllocationsTable).where(eq(receiptAllocationsTable.receiptId, id));
+  const allocations = await db.select().from(receiptAllocationsTable)
+    .where(eq(receiptAllocationsTable.receiptId, id));
   return {
     ...receipt,
-    grossAmount: Number(receipt.grossAmount),
-    tdsDeducted: Number(receipt.tdsDeducted),
+    grossAmount:        Number(receipt.grossAmount),
+    tdsDeducted:        Number(receipt.tdsDeducted),
     settlementDiscount: Number(receipt.settlementDiscount),
-    netAmount: Number(receipt.netAmount),
-    allocations: allocations.map(a => ({ ...a, allocatedAmount: Number(a.allocatedAmount) })),
+    netAmount:          Number(receipt.netAmount),
+    allocations: allocations.map(a => ({
+      ...a, allocatedAmount: Number(a.allocatedAmount),
+    })),
   };
 }
 
+/* ── GET /receipts ── */
 router.get("/receipts", async (req, res) => {
   try {
     const { customerId, from, to } = req.query as Record<string, string>;
     let query = db.select().from(receiptsTable).$dynamic();
     const conditions = [];
     if (customerId) conditions.push(eq(receiptsTable.customerId, Number(customerId)));
-    if (from) conditions.push(gte(receiptsTable.date, from));
-    if (to) conditions.push(lte(receiptsTable.date, to));
+    if (from)       conditions.push(gte(receiptsTable.date, from));
+    if (to)         conditions.push(lte(receiptsTable.date, to));
     if (conditions.length) query = query.where(and(...conditions));
-    const rows = await query.orderBy(desc(receiptsTable.createdAt)).limit(100);
+    const rows = await query.orderBy(desc(receiptsTable.createdAt)).limit(200);
     res.json(rows.map(r => ({
       ...r,
-      grossAmount: Number(r.grossAmount),
-      tdsDeducted: Number(r.tdsDeducted),
+      grossAmount:        Number(r.grossAmount),
+      tdsDeducted:        Number(r.tdsDeducted),
       settlementDiscount: Number(r.settlementDiscount),
-      netAmount: Number(r.netAmount),
+      netAmount:          Number(r.netAmount),
       allocations: [],
     })));
   } catch (err) {
@@ -48,25 +70,71 @@ router.get("/receipts", async (req, res) => {
   }
 });
 
+/* ══════════════════════════════════════════
+   POST /receipts
+   Creates the receipt AND the double-entry journal:
+       DR  Bank GL account        = netAmount
+       DR  TDS Receivable (1150)  = tdsDeducted       [if > 0]
+       DR  Discount Allowed (7040)= settlementDiscount [if > 0]
+       CR  Accounts Receivable    = grossAmount
+   Then updates invoice paidAmount for each allocation.
+══════════════════════════════════════════ */
 router.post("/receipts", async (req, res) => {
   try {
-    const { date, customerId, paymentMode, grossAmount, tdsDeducted = 0, settlementDiscount = 0, bankAccountId, referenceNo, chequeNo, chequeDate, narration, allocations } = req.body;
-    const netAmount = Number(grossAmount) - Number(tdsDeducted) - Number(settlementDiscount);
-    const customerData = await db.query.customersTable.findFirst({ where: eq((await import("@workspace/db")).customersTable.id, customerId) });
-    const bankData = await db.query.bankAccountsTable.findFirst({ where: eq((await import("@workspace/db")).bankAccountsTable.id, bankAccountId) });
+    const {
+      date, customerId, paymentMode,
+      grossAmount, tdsDeducted = 0, settlementDiscount = 0,
+      bankAccountId, referenceNo, chequeNo, chequeDate, narration, allocations,
+    } = req.body;
 
+    const gross    = round2(Number(grossAmount));
+    const tds      = round2(Number(tdsDeducted));
+    const discount = round2(Number(settlementDiscount));
+    const net      = round2(gross - tds - discount);
+
+    if (net < 0) {
+      res.status(400).json({ error: "netAmount cannot be negative" }); return;
+    }
+
+    // Fetch customer
+    const customerData = await db.query.customersTable.findFirst({
+      where: eq((await import("@workspace/db")).customersTable.id, customerId),
+    });
+
+    // Fetch bank GL account code
+    let bankGlCode = GL.CASH;
+    if (bankAccountId) {
+      const [bankAcc] = await db
+        .select({ accountId: bankAccountsTable.accountId })
+        .from(bankAccountsTable)
+        .where(eq(bankAccountsTable.id, bankAccountId));
+
+      if (bankAcc?.accountId) {
+        const [acct] = await db
+          .select({ code: (await import("@workspace/db")).accountsTable.code })
+          .from((await import("@workspace/db")).accountsTable)
+          .where(eq((await import("@workspace/db")).accountsTable.id, bankAcc.accountId));
+        if (acct?.code) bankGlCode = acct.code;
+      }
+    }
+
+    const bankData = await db.query.bankAccountsTable.findFirst({
+      where: eq(bankAccountsTable.id, bankAccountId),
+    });
+
+    // 1. Save receipt record
     const [receipt] = await db.insert(receiptsTable).values({
-      receiptNo: nextReceiptNo(),
+      receiptNo:          await nextReceiptNo(),
       date,
       customerId,
-      customerName: customerData?.name || "Customer",
+      customerName:       customerData?.name || "Customer",
       paymentMode,
-      grossAmount: String(grossAmount),
-      tdsDeducted: String(tdsDeducted),
-      settlementDiscount: String(settlementDiscount),
-      netAmount: String(netAmount),
+      grossAmount:        String(gross),
+      tdsDeducted:        String(tds),
+      settlementDiscount: String(discount),
+      netAmount:          String(net),
       bankAccountId,
-      bankAccountName: bankData?.accountName || "Bank",
+      bankAccountName:    bankData?.accountName || "Bank",
       referenceNo,
       chequeNo,
       chequeDate,
@@ -74,25 +142,63 @@ router.post("/receipts", async (req, res) => {
       status: "posted",
     }).returning();
 
+    // 2. Save allocations and update invoice paidAmount
     if (allocations?.length) {
       await db.insert(receiptAllocationsTable).values(
         allocations.map((a: any) => ({
-          receiptId: receipt.id,
-          invoiceId: a.invoiceId,
-          invoiceNo: a.invoiceNo || `INV-${a.invoiceId}`,
-          allocatedAmount: String(a.allocatedAmount),
+          receiptId:       receipt.id,
+          invoiceId:       a.invoiceId,
+          invoiceNo:       a.invoiceNo || `INV-${a.invoiceId}`,
+          allocatedAmount: String(round2(Number(a.allocatedAmount))),
         }))
       );
+
+      // Update each invoice's paidAmount
+      for (const alloc of allocations) {
+        const allocated = round2(Number(alloc.allocatedAmount));
+        if (!alloc.invoiceId || allocated <= 0) continue;
+        const [inv] = await db.select().from(invoicesTable)
+          .where(eq(invoicesTable.id, alloc.invoiceId));
+        if (!inv) continue;
+        const newPaid = round2(Number(inv.paidAmount) + allocated);
+        const newStatus = newPaid >= round2(Number(inv.totalAmount)) ? "paid" : "partial";
+        await db.update(invoicesTable)
+          .set({ paidAmount: String(newPaid), status: newStatus, updatedAt: new Date() })
+          .where(eq(invoicesTable.id, alloc.invoiceId));
+      }
     }
 
-    const result = await getReceiptWithAllocations(receipt.id);
-    res.status(201).json(result);
+    // 3. Create double-entry journal
+    //    DR Bank    = net cash received
+    //    DR TDS Rec = TDS deducted by customer (if any)
+    //    DR Disc    = settlement discount given (if any)
+    //    CR AR      = gross amount (full invoice value being settled)
+    const journalLines: JournalLine[] = [
+      { accountCode: bankGlCode, debit: net,   credit: 0,     narration: "Receipt " + receipt.receiptNo,    partyName: customerData?.name },
+      { accountCode: GL.AR,      debit: 0,     credit: gross, narration: "AR cleared " + receipt.receiptNo, partyName: customerData?.name },
+    ];
+    if (tds > 0) {
+      journalLines.push({ accountCode: GL.TDS_RECEIVABLE,   debit: tds,      credit: 0, narration: "TDS on " + receipt.receiptNo });
+    }
+    if (discount > 0) {
+      journalLines.push({ accountCode: GL.DISCOUNT_ALLOWED, debit: discount, credit: 0, narration: "Discount on " + receipt.receiptNo });
+    }
+
+    await createPostedJournal({
+      voucherPrefix: "RCT",
+      date,
+      narration:     `Receipt ${receipt.receiptNo} from ${customerData?.name || "Customer"}`,
+      lines:         journalLines,
+    });
+
+    res.status(201).json(await getReceiptWithAllocations(receipt.id));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to create receipt" });
   }
 });
 
+/* ── GET /receipts/:id ── */
 router.get("/receipts/:id", async (req, res) => {
   try {
     const result = await getReceiptWithAllocations(Number(req.params.id));

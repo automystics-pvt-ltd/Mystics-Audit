@@ -1,2 +1,3 @@
 - [Mystics Audit orval hooks](mystics-audit-hooks.md) — hook naming, param types, and TS pitfalls with Orval + TQ v5 in this project
 - [Mystics Audit API field mismatches](mystics-audit-api-fields.md) — frontend ↔ API field name differences that caused display bugs across multiple modules
+- [Mystics Audit accounting engine](mystics-audit-accounting.md) — double-entry journal wiring, GL account codes, and normalBalance case fix

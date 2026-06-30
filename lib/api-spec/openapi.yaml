@@ -66,6 +66,8 @@ paths:
       operationId: getDashboardSummary
       tags: [dashboard]
       summary: Get executive dashboard KPIs
+      parameters:
+        - { name: fy, in: query, schema: { type: string }, description: "Financial year e.g. 2024-25" }
       responses:
         "200":
           description: Dashboard summary
@@ -79,6 +81,8 @@ paths:
       operationId: getDashboardCashflow
       tags: [dashboard]
       summary: Get cash and bank balances
+      parameters:
+        - { name: fy, in: query, schema: { type: string } }
       responses:
         "200":
           description: Cash flow overview
@@ -92,6 +96,8 @@ paths:
       operationId: getGstStatus
       tags: [dashboard]
       summary: GST filing status and due dates
+      parameters:
+        - { name: fy, in: query, schema: { type: string } }
       responses:
         "200":
           description: GST filing status
@@ -105,6 +111,8 @@ paths:
       operationId: getAgingSummary
       tags: [dashboard]
       summary: Receivables and payables aging summary
+      parameters:
+        - { name: fy, in: query, schema: { type: string } }
       responses:
         "200":
           description: Aging summary
@@ -118,6 +126,8 @@ paths:
       operationId: getRecentActivity
       tags: [dashboard]
       summary: Recent transactions across all modules
+      parameters:
+        - { name: fy, in: query, schema: { type: string } }
       responses:
         "200":
           description: Recent activity list
@@ -1436,15 +1446,24 @@ components:
       type: object
       properties:
         revenueMtd: { type: number }
+        revenueYtd: { type: number }
         revenueTarget: { type: number }
         collectionEfficiency: { type: number }
         grossMarginPct: { type: number }
         dso: { type: number }
         overdueReceivables: { type: number }
+        overdueInvoicesCount: { type: integer }
+        totalInvoicesCount: { type: integer }
         totalCashBank: { type: number }
         gstNetPayable: { type: number }
         budgetUtilizationPct: { type: number }
         inventoryTurnover: { type: number }
+        pendingBillsAmount: { type: number }
+        pendingBillsCount: { type: integer }
+        pendingExpensesAmount: { type: number }
+        pendingExpensesCount: { type: integer }
+        totalCustomers: { type: integer }
+        totalVendors: { type: integer }
         revenueChart: { type: array, items: { $ref: "#/components/schemas/MonthlyValue" } }
         expenseChart: { type: array, items: { $ref: "#/components/schemas/MonthlyValue" } }
       required: [revenueMtd, collectionEfficiency, grossMarginPct, totalCashBank]
@@ -1532,6 +1551,7 @@ components:
         amount: { type: ["number", "null"] }
         party: { type: ["string", "null"] }
         timestamp: { type: string }
+        refNo: { type: ["string", "null"] }
         status: { type: string }
       required: [id, type, description, timestamp, status]
 

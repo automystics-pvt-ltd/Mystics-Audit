@@ -16,15 +16,24 @@ export interface MonthlyValue {
 
 export interface DashboardSummary {
   revenueMtd: number;
+  revenueYtd?: number;
   revenueTarget?: number;
   collectionEfficiency: number;
   grossMarginPct: number;
   dso?: number;
   overdueReceivables?: number;
+  overdueInvoicesCount?: number;
+  totalInvoicesCount?: number;
   totalCashBank: number;
   gstNetPayable?: number;
   budgetUtilizationPct?: number;
   inventoryTurnover?: number;
+  pendingBillsAmount?: number;
+  pendingBillsCount?: number;
+  pendingExpensesAmount?: number;
+  pendingExpensesCount?: number;
+  totalCustomers?: number;
+  totalVendors?: number;
   revenueChart?: MonthlyValue[];
   expenseChart?: MonthlyValue[];
 }
@@ -92,6 +101,8 @@ export interface ActivityItem {
   /** @nullable */
   party?: string | null;
   timestamp: string;
+  /** @nullable */
+  refNo?: string | null;
   status: string;
 }
 
@@ -1214,6 +1225,29 @@ export interface DayBookEntry {
   debit: number;
   credit: number;
 }
+
+export type GetDashboardSummaryParams = {
+/**
+ * Financial year e.g. 2024-25
+ */
+fy?: string;
+};
+
+export type GetDashboardCashflowParams = {
+fy?: string;
+};
+
+export type GetGstStatusParams = {
+fy?: string;
+};
+
+export type GetAgingSummaryParams = {
+fy?: string;
+};
+
+export type GetRecentActivityParams = {
+fy?: string;
+};
 
 export type ListAccountsParams = {
 type?: string;

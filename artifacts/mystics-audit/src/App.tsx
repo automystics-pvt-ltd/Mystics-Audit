@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
+import { FYProvider } from "@/contexts/fy-context";
 import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 
@@ -179,12 +180,14 @@ const BASE_URL = (import.meta.env.BASE_URL || "/").replace(/\/$/, "") || "/";
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={BASE_URL}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+      <FYProvider>
+        <TooltipProvider>
+          <WouterRouter base={BASE_URL}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </FYProvider>
     </QueryClientProvider>
   );
 }

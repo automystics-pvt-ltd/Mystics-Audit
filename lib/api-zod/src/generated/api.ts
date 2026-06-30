@@ -19,17 +19,30 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary Get executive dashboard KPIs
  */
+export const GetDashboardSummaryQueryParams = zod.object({
+  "fy": zod.coerce.string().optional().describe('Financial year e.g. 2024-25')
+})
+
 export const GetDashboardSummaryResponse = zod.object({
   "revenueMtd": zod.number(),
+  "revenueYtd": zod.number().optional(),
   "revenueTarget": zod.number().optional(),
   "collectionEfficiency": zod.number(),
   "grossMarginPct": zod.number(),
   "dso": zod.number().optional(),
   "overdueReceivables": zod.number().optional(),
+  "overdueInvoicesCount": zod.number().optional(),
+  "totalInvoicesCount": zod.number().optional(),
   "totalCashBank": zod.number(),
   "gstNetPayable": zod.number().optional(),
   "budgetUtilizationPct": zod.number().optional(),
   "inventoryTurnover": zod.number().optional(),
+  "pendingBillsAmount": zod.number().optional(),
+  "pendingBillsCount": zod.number().optional(),
+  "pendingExpensesAmount": zod.number().optional(),
+  "pendingExpensesCount": zod.number().optional(),
+  "totalCustomers": zod.number().optional(),
+  "totalVendors": zod.number().optional(),
   "revenueChart": zod.array(zod.object({
   "month": zod.string(),
   "value": zod.number()
@@ -44,6 +57,10 @@ export const GetDashboardSummaryResponse = zod.object({
 /**
  * @summary Get cash and bank balances
  */
+export const GetDashboardCashflowQueryParams = zod.object({
+  "fy": zod.coerce.string().optional()
+})
+
 export const GetDashboardCashflowResponse = zod.object({
   "totalBalance": zod.number(),
   "accounts": zod.array(zod.object({
@@ -60,6 +77,10 @@ export const GetDashboardCashflowResponse = zod.object({
 /**
  * @summary GST filing status and due dates
  */
+export const GetGstStatusQueryParams = zod.object({
+  "fy": zod.coerce.string().optional()
+})
+
 export const GetGstStatusResponse = zod.object({
   "currentPeriod": zod.string(),
   "gstr1DueDate": zod.string(),
@@ -84,6 +105,10 @@ export const GetGstStatusResponse = zod.object({
 /**
  * @summary Receivables and payables aging summary
  */
+export const GetAgingSummaryQueryParams = zod.object({
+  "fy": zod.coerce.string().optional()
+})
+
 export const GetAgingSummaryResponse = zod.object({
   "receivables": zod.object({
   "current": zod.number(),
@@ -109,6 +134,10 @@ export const GetAgingSummaryResponse = zod.object({
 /**
  * @summary Recent transactions across all modules
  */
+export const GetRecentActivityQueryParams = zod.object({
+  "fy": zod.coerce.string().optional()
+})
+
 export const GetRecentActivityResponseItem = zod.object({
   "id": zod.number(),
   "type": zod.string(),
@@ -116,6 +145,7 @@ export const GetRecentActivityResponseItem = zod.object({
   "amount": zod.number().nullish(),
   "party": zod.string().nullish(),
   "timestamp": zod.string(),
+  "refNo": zod.string().nullish(),
   "status": zod.string()
 })
 export const GetRecentActivityResponse = zod.array(GetRecentActivityResponseItem)

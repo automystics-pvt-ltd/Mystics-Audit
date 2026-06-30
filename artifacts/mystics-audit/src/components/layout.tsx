@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useFY, FY_OPTIONS } from "@/contexts/fy-context";
 
 /* ── Nav definition ─────────────────────────────────── */
 type NavChild = { name: string; path: string; icon?: React.FC<{ className?: string }> };
@@ -209,6 +210,52 @@ function NavItem({ item, currentPath }: { item: NavEntry; currentPath: string })
   );
 }
 
+/* ── Sidebar FY label ────────────────────────────────── */
+function SidebarFYLabel() {
+  const { fy } = useFY();
+  return (
+    <p className="text-[10px] text-gray-300 text-center mt-2 font-medium">
+      Mystics Audit · {fy.label}
+    </p>
+  );
+}
+
+/* ── FY Selector ─────────────────────────────────────── */
+function FYSelector() {
+  const { fy, setFY, options } = useFY();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative hidden sm:block">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1.5 bg-violet-50 border border-violet-200 rounded-xl px-3 py-1.5 hover:bg-violet-100 transition-colors"
+      >
+        <span className="text-xs font-bold text-violet-600">{fy.label}</span>
+        <ChevronDown className="w-3 h-3 text-violet-500" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-9 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-[130px]">
+            {options.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => { setFY(opt); setOpen(false); }}
+                className={cn(
+                  "w-full text-left px-4 py-2 text-xs font-semibold hover:bg-violet-50 hover:text-violet-700 transition-colors",
+                  opt.value === fy.value ? "text-violet-700 bg-violet-50" : "text-gray-700",
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ── Layout ─────────────────────────────────────────── */
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -266,9 +313,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <ChevronDown className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
           </div>
-          <p className="text-[10px] text-gray-300 text-center mt-2 font-medium">
-            Mystics Audit · FY 2024-25
-          </p>
+          <SidebarFYLabel />
         </div>
       </aside>
 
@@ -298,10 +343,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           <div className="flex-1" />
 
-          {/* FY badge */}
-          <div className="hidden sm:flex items-center gap-1.5 bg-violet-50 border border-violet-200 rounded-xl px-3 py-1.5">
-            <span className="text-xs font-bold text-violet-600">FY 2024-25</span>
-          </div>
+          {/* FY dropdown */}
+          <FYSelector />
 
           {/* Notifications */}
           <button className="relative p-2 rounded-xl hover:bg-violet-50 transition-colors">

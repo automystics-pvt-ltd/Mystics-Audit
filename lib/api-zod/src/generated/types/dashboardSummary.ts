@@ -9,15 +9,24 @@ import type { MonthlyValue } from './monthlyValue';
 
 export interface DashboardSummary {
   revenueMtd: number;
+  revenueYtd?: number;
   revenueTarget?: number;
   collectionEfficiency: number;
   grossMarginPct: number;
   dso?: number;
   overdueReceivables?: number;
+  overdueInvoicesCount?: number;
+  totalInvoicesCount?: number;
   totalCashBank: number;
   gstNetPayable?: number;
   budgetUtilizationPct?: number;
   inventoryTurnover?: number;
+  pendingBillsAmount?: number;
+  pendingBillsCount?: number;
+  pendingExpensesAmount?: number;
+  pendingExpensesCount?: number;
+  totalCustomers?: number;
+  totalVendors?: number;
   revenueChart?: MonthlyValue[];
   expenseChart?: MonthlyValue[];
 }

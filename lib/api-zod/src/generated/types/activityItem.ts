@@ -15,5 +15,7 @@ export interface ActivityItem {
   /** @nullable */
   party?: string | null;
   timestamp: string;
+  /** @nullable */
+  refNo?: string | null;
   status: string;
 }

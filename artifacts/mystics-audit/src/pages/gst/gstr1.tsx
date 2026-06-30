@@ -129,7 +129,7 @@ export default function Gstr1() {
 
       {/* ── B2B table ── */}
       {b2b.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto">
           <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
             <Users className="w-4 h-4 text-violet-500" />
             <p className="text-sm font-bold text-gray-700">B2B Supplies (Business Customers with GSTIN)</p>
@@ -175,7 +175,7 @@ export default function Gstr1() {
 
       {/* ── B2C table ── */}
       {b2c.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto">
           <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
             <Users className="w-4 h-4 text-green-500" />
             <p className="text-sm font-bold text-gray-700">B2C Supplies (Without GSTIN)</p>

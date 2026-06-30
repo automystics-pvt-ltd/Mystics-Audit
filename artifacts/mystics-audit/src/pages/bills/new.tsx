@@ -205,7 +205,7 @@ export default function NewBill() {
           </Card>
 
           {/* Line items */}
-          <Card className="rounded-2xl border-gray-200 overflow-hidden">
+          <Card className="rounded-2xl border-gray-200 overflow-x-auto">
             <CardHeader className="pb-3 border-b border-gray-100 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-bold text-gray-700">Line Items</CardTitle>
               <Button size="sm" variant="outline" onClick={() => setLines(p => [...p, emptyLine()])} className="rounded-xl h-8">

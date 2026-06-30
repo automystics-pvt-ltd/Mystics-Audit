@@ -44,12 +44,12 @@ export default function CustomerCollections() {
 
   return (
     <div className="p-6 space-y-5 bg-gray-50/40 min-h-full">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Customer Collection Report</h1>
           <p className="text-sm text-gray-500 mt-0.5">AR collections, outstanding dues, and collection efficiency by customer</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={()=>refetch()}><RefreshCw className="w-4 h-4 mr-1.5" />Refresh</Button>
           {data && <Button variant="outline" size="sm" onClick={()=>exportCSV(data.rows)}><Download className="w-4 h-4 mr-1.5" />Export CSV</Button>}
           <Button variant="outline" size="sm" onClick={()=>window.print()}><Printer className="w-4 h-4 mr-1.5" />Print</Button>

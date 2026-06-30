@@ -88,7 +88,7 @@ export default function Gstr3b() {
 
       {/* Computation tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto">
           <div className="px-4 py-3 border-b border-gray-100 bg-violet-50/60 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-violet-600" />
             <p className="text-sm font-bold text-gray-700">3.1 — Outward Tax Liability</p>
@@ -128,7 +128,7 @@ export default function Gstr3b() {
           </table>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto">
           <div className="px-4 py-3 border-b border-gray-100 bg-green-50/60 flex items-center gap-2">
             <TrendingDown className="w-4 h-4 text-green-600" />
             <p className="text-sm font-bold text-gray-700">4 — Input Tax Credit (ITC)</p>

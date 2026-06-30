@@ -974,7 +974,7 @@ export default function Documents() {
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border overflow-hidden">
+              <div className="bg-white rounded-2xl border overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b bg-muted/30">

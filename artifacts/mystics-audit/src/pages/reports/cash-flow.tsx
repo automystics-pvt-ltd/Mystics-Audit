@@ -73,23 +73,23 @@ export default function CashFlow() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Cash Flow Statement</h1>
           <p className="text-muted-foreground text-sm">Sources and uses of cash for the period</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Label className="text-sm">From</Label>
-            <DateInput className="w-36" value={from} onChange={e => setFrom(e.target.value)} />
+            <DateInput className="w-32" value={from} onChange={e => setFrom(e.target.value)} />
             <Label className="text-sm">To</Label>
-            <DateInput className="w-36" value={to} onChange={e => setTo(e.target.value)} />
+            <DateInput className="w-32" value={to} onChange={e => setTo(e.target.value)} />
           </div>
           <Button variant="outline" size="sm" onClick={() => printReportPage("Cash Flow Statement")}>Print</Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: "Operating Activities", value: totalOperating },
           { label: "Investing Activities", value: totalInvesting },

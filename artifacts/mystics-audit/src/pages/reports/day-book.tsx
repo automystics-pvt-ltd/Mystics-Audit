@@ -21,21 +21,21 @@ export default function DayBook() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Day Book</h1>
           <p className="text-muted-foreground text-sm">All transactions for {formatDate(date)}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2">
             <Label className="text-sm">Date</Label>
-            <DateInput className="w-36" value={date} onChange={e => setDate(e.target.value)} />
+            <DateInput className="w-32" value={date} onChange={e => setDate(e.target.value)} />
           </div>
           <Button variant="outline" size="sm" onClick={() => printReportPage("Day Book")}>Print</Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Total Transactions", value: String(entries.length) },
           { label: "Total Debit", value: formatCurrency(totalDebit) },

@@ -47,22 +47,22 @@ export default function BalanceSheet() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Balance Sheet</h1>
           <p className="text-muted-foreground text-sm">Statement of financial position</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2">
             <Label className="text-sm">As of</Label>
-            <DateInput className="w-36" value={date} onChange={e => setDate(e.target.value)} />
+            <DateInput className="w-32" value={date} onChange={e => setDate(e.target.value)} />
           </div>
           <Badge variant={isBalanced ? "default" : "destructive"}>{isBalanced ? "Balanced" : "Unbalanced"}</Badge>
           <Button variant="outline" size="sm" onClick={() => printReportPage("Balance Sheet")}>Print</Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "Total Assets", value: formatCurrency(totalAssets), color: "text-primary" },
           { label: "Total Liabilities", value: formatCurrency(totalLiabilities), color: "text-destructive" },
@@ -75,7 +75,7 @@ export default function BalanceSheet() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader><CardTitle>Assets</CardTitle></CardHeader>
           <CardContent>

@@ -36,23 +36,23 @@ export default function ProfitLoss() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Profit & Loss Statement</h1>
           <p className="text-muted-foreground text-sm">Income and expenditure for the period</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Label className="text-sm">From</Label>
-            <DateInput className="w-36" value={from} onChange={e => setFrom(e.target.value)} />
+            <DateInput className="w-32" value={from} onChange={e => setFrom(e.target.value)} />
             <Label className="text-sm">To</Label>
-            <DateInput className="w-36" value={to} onChange={e => setTo(e.target.value)} />
+            <DateInput className="w-32" value={to} onChange={e => setTo(e.target.value)} />
           </div>
           <Button variant="outline" size="sm" onClick={() => printReportPage("Profit & Loss Statement")}>Print</Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground font-medium">Total Revenue</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-mono font-bold text-green-600">{formatCurrency(totalRevenue)}</p></CardContent>
@@ -72,7 +72,7 @@ export default function ProfitLoss() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader><CardTitle className="text-green-700">Revenue</CardTitle></CardHeader>
           <Table>

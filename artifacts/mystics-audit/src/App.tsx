@@ -72,6 +72,10 @@ import CashFlow from "@/pages/reports/cash-flow";
 import DayBook from "@/pages/reports/day-book";
 
 import InvoicesList from "@/pages/invoices/index";
+import NewInvoice from "@/pages/invoices/new";
+import InvoiceDetail from "@/pages/invoices/detail";
+
+import AccountLedger from "@/pages/accounts/ledger";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -93,8 +97,11 @@ function Router() {
         
         <Route path="/accounts" component={AccountsList} />
         <Route path="/accounts/trial-balance" component={TrialBalance} />
+        <Route path="/accounts/:id" component={AccountLedger} />
 
         <Route path="/invoices" component={InvoicesList} />
+        <Route path="/invoices/new" component={NewInvoice} />
+        <Route path="/invoices/:id" component={InvoiceDetail} />
 
         <Route path="/journals" component={JournalsList} />
         <Route path="/journals/new" component={NewJournal} />

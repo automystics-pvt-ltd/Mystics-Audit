@@ -65,7 +65,7 @@ router.get("/accounts/trial-balance", async (req, res) => {
 router.get("/accounts/:id", async (req, res) => {
   try {
     const [account] = await db.select().from(accountsTable).where(eq(accountsTable.id, Number(req.params.id)));
-    if (!account) res.status(404).json({ error: "Not found" }); return;
+    if (!account) { res.status(404).json({ error: "Not found" }); return; }
 
     const entries = await db
       .select({
@@ -114,7 +114,7 @@ router.patch("/accounts/:id", async (req, res) => {
       .set({ ...req.body, updatedAt: new Date() })
       .where(eq(accountsTable.id, Number(req.params.id)))
       .returning();
-    if (!row) res.status(404).json({ error: "Not found" }); return;
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json({ ...row, openingBalance: Number(row.openingBalance), currentBalance: Number(row.openingBalance) });
   } catch (err) {
     req.log.error(err);

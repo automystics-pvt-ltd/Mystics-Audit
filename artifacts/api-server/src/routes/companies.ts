@@ -27,7 +27,7 @@ router.post("/companies", async (req, res) => {
 router.get("/companies/:id", async (req, res) => {
   try {
     const [row] = await db.select().from(companiesTable).where(eq(companiesTable.id, Number(req.params.id)));
-    if (!row) res.status(404).json({ error: "Not found" }); return;
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json(row);
   } catch (err) {
     req.log.error(err);
@@ -42,7 +42,7 @@ router.patch("/companies/:id", async (req, res) => {
       .set({ ...req.body, updatedAt: new Date() })
       .where(eq(companiesTable.id, Number(req.params.id)))
       .returning();
-    if (!row) res.status(404).json({ error: "Not found" }); return;
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json(row);
   } catch (err) {
     req.log.error(err);

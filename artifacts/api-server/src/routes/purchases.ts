@@ -98,7 +98,7 @@ router.post("/purchases/orders", async (req, res) => {
 router.get("/purchases/orders/:id", async (req, res) => {
   try {
     const result = await getPoWithLines(Number(req.params.id));
-    if (!result) res.status(404).json({ error: "Not found" }); return;
+    if (!result) { res.status(404).json({ error: "Not found" }); return; }
     res.json(result);
   } catch (err) {
     req.log.error(err);
@@ -113,7 +113,7 @@ router.post("/purchases/orders/:id/approve", async (req, res) => {
       .set({ status: "approved", approvedBy: "Current User", approvedAt: new Date(), updatedAt: new Date() })
       .where(eq(purchaseOrdersTable.id, Number(req.params.id)))
       .returning();
-    if (!po) res.status(404).json({ error: "Not found" }); return;
+    if (!po) { res.status(404).json({ error: "Not found" }); return; }
     const result = await getPoWithLines(po.id);
     res.json(result);
   } catch (err) {

@@ -68,7 +68,7 @@ router.get("/vendors/ap-aging", async (req, res) => {
 router.get("/vendors/:id", async (req, res) => {
   try {
     const [row] = await db.select().from(vendorsTable).where(eq(vendorsTable.id, Number(req.params.id)));
-    if (!row) res.status(404).json({ error: "Not found" }); return;
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json({ ...row, openingBalance: Number(row.openingBalance), currentBalance: Number(row.openingBalance) });
   } catch (err) {
     req.log.error(err);
@@ -83,7 +83,7 @@ router.patch("/vendors/:id", async (req, res) => {
       .set({ ...req.body, updatedAt: new Date() })
       .where(eq(vendorsTable.id, Number(req.params.id)))
       .returning();
-    if (!row) res.status(404).json({ error: "Not found" }); return;
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json({ ...row, openingBalance: Number(row.openingBalance), currentBalance: Number(row.openingBalance) });
   } catch (err) {
     req.log.error(err);

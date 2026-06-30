@@ -33,7 +33,7 @@ router.post("/users", async (req, res) => {
 router.get("/users/:id", async (req, res) => {
   try {
     const [row] = await db.select().from(usersTable).where(eq(usersTable.id, Number(req.params.id)));
-    if (!row) res.status(404).json({ error: "Not found" }); return;
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json({ ...row, lastLogin: row.lastLogin?.toISOString() ?? null });
   } catch (err) {
     req.log.error(err);
@@ -53,7 +53,7 @@ router.patch("/users/:id", async (req, res) => {
       .set(update)
       .where(eq(usersTable.id, Number(req.params.id)))
       .returning();
-    if (!row) res.status(404).json({ error: "Not found" }); return;
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json({ ...row, lastLogin: row.lastLogin?.toISOString() ?? null });
   } catch (err) {
     req.log.error(err);

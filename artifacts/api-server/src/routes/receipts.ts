@@ -96,7 +96,7 @@ router.post("/receipts", async (req, res) => {
 router.get("/receipts/:id", async (req, res) => {
   try {
     const result = await getReceiptWithAllocations(Number(req.params.id));
-    if (!result) res.status(404).json({ error: "Not found" }); return;
+    if (!result) { res.status(404).json({ error: "Not found" }); return; }
     res.json(result);
   } catch (err) {
     req.log.error(err);

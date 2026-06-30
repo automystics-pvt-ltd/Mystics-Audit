@@ -129,7 +129,7 @@ router.get("/expenses/analytics", async (req, res) => {
 router.get("/expenses/:id", async (req, res) => {
   try {
     const result = await getClaimWithLines(Number(req.params.id));
-    if (!result) res.status(404).json({ error: "Not found" }); return;
+    if (!result) { res.status(404).json({ error: "Not found" }); return; }
     res.json(result);
   } catch (err) {
     req.log.error(err);
@@ -150,7 +150,7 @@ router.post("/expenses/:id/approve", async (req, res) => {
       })
       .where(eq(expenseClaimsTable.id, Number(req.params.id)))
       .returning();
-    if (!claim) res.status(404).json({ error: "Not found" }); return;
+    if (!claim) { res.status(404).json({ error: "Not found" }); return; }
     const result = await getClaimWithLines(claim.id);
     res.json(result);
   } catch (err) {

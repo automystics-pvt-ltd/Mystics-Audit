@@ -160,7 +160,7 @@ router.get("/invoices/summary", async (req, res) => {
 router.get("/invoices/:id", async (req, res) => {
   try {
     const result = await getInvoiceWithLines(Number(req.params.id));
-    if (!result) res.status(404).json({ error: "Not found" }); return;
+    if (!result) { res.status(404).json({ error: "Not found" }); return; }
     res.json(result);
   } catch (err) {
     req.log.error(err);
@@ -203,7 +203,7 @@ router.post("/invoices/:id/post", async (req, res) => {
       .set({ status: "posted", irn, updatedAt: new Date() })
       .where(eq(invoicesTable.id, Number(req.params.id)))
       .returning();
-    if (!inv) res.status(404).json({ error: "Not found" }); return;
+    if (!inv) { res.status(404).json({ error: "Not found" }); return; }
     const result = await getInvoiceWithLines(inv.id);
     res.json(result);
   } catch (err) {

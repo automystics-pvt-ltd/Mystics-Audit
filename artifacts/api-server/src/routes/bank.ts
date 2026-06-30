@@ -50,7 +50,7 @@ router.post("/bank/accounts/:id/reconcile", async (req, res) => {
       .set({ status: "reconciled", matchedJournalId: journalId, matchConfidence: "100" })
       .where(eq(bankTransactionsTable.id, bankTransactionId))
       .returning();
-    if (!row) res.status(404).json({ error: "Not found" }); return;
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json({ ...row, debit: Number(row.debit), credit: Number(row.credit), balance: Number(row.balance), matchConfidence: 100 });
   } catch (err) {
     req.log.error(err);

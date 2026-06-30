@@ -80,7 +80,7 @@ router.get("/inventory/valuation", async (req, res) => {
 router.get("/inventory/items/:id", async (req, res) => {
   try {
     const [row] = await db.select().from(inventoryItemsTable).where(eq(inventoryItemsTable.id, Number(req.params.id)));
-    if (!row) res.status(404).json({ error: "Not found" }); return;
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json(mapItem(row));
   } catch (err) {
     req.log.error(err);
@@ -95,7 +95,7 @@ router.patch("/inventory/items/:id", async (req, res) => {
       .set({ ...req.body, updatedAt: new Date() })
       .where(eq(inventoryItemsTable.id, Number(req.params.id)))
       .returning();
-    if (!row) res.status(404).json({ error: "Not found" }); return;
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
     res.json(mapItem(row));
   } catch (err) {
     req.log.error(err);

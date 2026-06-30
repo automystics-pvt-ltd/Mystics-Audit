@@ -130,7 +130,7 @@ router.post("/bills", async (req, res) => {
 router.get("/bills/:id", async (req, res) => {
   try {
     const result = await getBillWithLines(Number(req.params.id));
-    if (!result) res.status(404).json({ error: "Not found" }); return;
+    if (!result) { res.status(404).json({ error: "Not found" }); return; }
     res.json(result);
   } catch (err) {
     req.log.error(err);
@@ -145,7 +145,7 @@ router.patch("/bills/:id", async (req, res) => {
       .set({ ...req.body, updatedAt: new Date() })
       .where(eq(vendorBillsTable.id, Number(req.params.id)))
       .returning();
-    if (!bill) res.status(404).json({ error: "Not found" }); return;
+    if (!bill) { res.status(404).json({ error: "Not found" }); return; }
     const result = await getBillWithLines(bill.id);
     res.json(result);
   } catch (err) {
@@ -158,7 +158,7 @@ router.post("/bills/:id/pay", async (req, res) => {
   try {
     const { amount } = req.body;
     const [bill] = await db.select().from(vendorBillsTable).where(eq(vendorBillsTable.id, Number(req.params.id)));
-    if (!bill) res.status(404).json({ error: "Not found" }); return;
+    if (!bill) { res.status(404).json({ error: "Not found" }); return; }
     const newPaid = Number(bill.paidAmount) + Number(amount);
     const newStatus = newPaid >= Number(bill.totalAmount) ? "paid" : "partial";
     const [updated] = await db

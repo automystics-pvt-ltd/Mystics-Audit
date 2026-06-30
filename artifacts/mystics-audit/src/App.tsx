@@ -76,6 +76,7 @@ import NewInvoice from "@/pages/invoices/new";
 import InvoiceDetail from "@/pages/invoices/detail";
 
 import AccountLedger from "@/pages/accounts/ledger";
+import TemplateBuilder from "@/pages/template-builder/index";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -159,6 +160,8 @@ function Router() {
         <Route path="/users/:id" component={UserDetail} />
 
         <Route path="/audit-logs" component={AuditLogsList} />
+
+        <Route path="/template-builder" component={TemplateBuilder} />
 
         <Route path="/reports/profit-loss" component={ProfitLoss} />
         <Route path="/reports/balance-sheet" component={BalanceSheet} />

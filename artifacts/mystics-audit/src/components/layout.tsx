@@ -18,7 +18,8 @@ import {
   ShieldAlert,
   ChevronDown,
   ChevronRight,
-  Menu
+  Menu,
+  LayoutTemplate
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -80,6 +81,7 @@ const navItems = [
     children: [
       { name: "Users", path: "/users" },
       { name: "Audit Logs", path: "/audit-logs" },
+      { name: "Template Builder", path: "/template-builder" },
     ]
   }
 ];

@@ -38,6 +38,7 @@ interface UploadItem {
 interface Summary {
   totals: { total: number; totalSize: number; filed: number; unfiled: number; linked: number; pdfCount: number; imageCount: number; excelCount: number };
   byCategory: Array<{ docCategory: string; count: number }>;
+  byPeriod:   Array<{ period: string | null; count: number }>;
 }
 
 /* ─────────────── constants ─────────────── */
@@ -418,7 +419,7 @@ function UploadModal({ open, onClose, onUploaded }: {
 /* ═══════════════════════════════════════
    DOCUMENT VIEWER MODAL
 ═══════════════════════════════════════ */
-function DocViewer({ doc, onClose, onDelete }: { doc: Doc | null; onClose: () => void; onDelete: (id: number) => void }) {
+function DocViewer({ doc, onClose, onDelete, onToggleFiling }: { doc: Doc | null; onClose: () => void; onDelete: (id: number) => void; onToggleFiling: (doc: Doc) => void }) {
   if (!doc) return null;
   const cat  = catMeta(doc.docCategory);
   const tags = parseTags(doc.tags);
@@ -426,6 +427,7 @@ function DocViewer({ doc, onClose, onDelete }: { doc: Doc | null; onClose: () =>
   const fileApiUrl = doc.fileUrl ? `/api/documents/file/${doc.id}` : null;
   const canPreview = fileApiUrl && (doc.fileType === "pdf" || doc.fileType === "image");
   const [previewError, setPreviewError] = useState(false);
+  const isFiled = doc.filingStatus === "filed";
 
   const previewFallback = (
     <div className="flex-1 flex flex-col items-center justify-center gap-4">
@@ -461,6 +463,14 @@ function DocViewer({ doc, onClose, onDelete }: { doc: Doc | null; onClose: () =>
           <div className="flex items-center gap-2 shrink-0">
             <FilingBadge status={doc.filingStatus}/>
             <Badge className={cn("text-xs border", cat.color)}>{cat.label}</Badge>
+            <Button
+              variant="outline" size="sm"
+              className={cn("gap-1.5", isFiled
+                ? "text-amber-600 border-amber-300 hover:bg-amber-50"
+                : "text-green-700 border-green-300 hover:bg-green-50")}
+              onClick={()=>onToggleFiling(doc)}>
+              {isFiled ? <><Clock className="w-3.5 h-3.5"/>Mark Unfiled</> : <><CheckCircle2 className="w-3.5 h-3.5"/>Mark Filed</>}
+            </Button>
             {fileApiUrl && !previewError && (
               <a href={fileApiUrl} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm" className="gap-1.5"><ExternalLink className="w-3.5 h-3.5"/>Open</Button>
@@ -615,10 +625,11 @@ function DetailRow({ icon, label, children }: { icon: React.ReactNode; label: st
 /* ═══════════════════════════════════════
    DOCUMENT CARD (grid)
 ═══════════════════════════════════════ */
-function DocCard({ doc, onView, onDelete }: { doc: Doc; onView: (d: Doc) => void; onDelete: (id: number) => void }) {
+function DocCard({ doc, onView, onDelete, onToggleFiling }: { doc: Doc; onView: (d: Doc) => void; onDelete: (id: number) => void; onToggleFiling: (doc: Doc) => void }) {
   const cat  = catMeta(doc.docCategory);
   const tags = parseTags(doc.tags);
   const cfg  = fc(doc.fileType);
+  const isFiled = doc.filingStatus === "filed";
 
   return (
     <div
@@ -632,6 +643,11 @@ function DocCard({ doc, onView, onDelete }: { doc: Doc; onView: (d: Doc) => void
         </div>
         {/* Hover actions */}
         <div className="absolute right-2 top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button className={cn("w-7 h-7 rounded-lg bg-white shadow border flex items-center justify-center transition-colors",
+            isFiled ? "text-amber-500 hover:bg-amber-50" : "text-green-500 hover:bg-green-50")}
+            onClick={e=>{e.stopPropagation();onToggleFiling(doc);}} title={isFiled?"Mark Unfiled":"Mark Filed"}>
+            {isFiled ? <Clock className="w-3.5 h-3.5"/> : <CheckCircle2 className="w-3.5 h-3.5"/>}
+          </button>
           <button className="w-7 h-7 rounded-lg bg-white shadow border flex items-center justify-center text-blue-500 hover:bg-blue-50"
             onClick={e=>{e.stopPropagation();onView(doc);}} title="View"><Eye className="w-3.5 h-3.5"/></button>
           <button className="w-7 h-7 rounded-lg bg-white shadow border flex items-center justify-center text-destructive hover:bg-red-50"
@@ -677,9 +693,10 @@ function DocCard({ doc, onView, onDelete }: { doc: Doc; onView: (d: Doc) => void
 /* ═══════════════════════════════════════
    DOCUMENT LIST ROW
 ═══════════════════════════════════════ */
-function DocRow({ doc, onView, onDelete }: { doc: Doc; onView: (d: Doc) => void; onDelete: (id: number) => void }) {
+function DocRow({ doc, onView, onDelete, onToggleFiling }: { doc: Doc; onView: (d: Doc) => void; onDelete: (id: number) => void; onToggleFiling: (doc: Doc) => void }) {
   const cat  = catMeta(doc.docCategory);
   const cfg  = fc(doc.fileType);
+  const isFiled = doc.filingStatus === "filed";
   return (
     <tr className="group hover:bg-muted/30 transition-colors cursor-pointer border-b last:border-0" onClick={() => onView(doc)}>
       <td className="py-3 pl-4 pr-2">
@@ -701,7 +718,17 @@ function DocRow({ doc, onView, onDelete }: { doc: Doc; onView: (d: Doc) => void;
       <td className="py-3 pr-3 hidden xl:table-cell">
         {doc.linkedEntityRef && <span className="text-xs text-primary bg-primary/5 px-2 py-0.5 rounded-full"><Link2 className="w-3 h-3 inline mr-0.5"/>{doc.linkedEntityRef}</span>}
       </td>
-      <td className="py-3 pr-3"><FilingBadge status={doc.filingStatus}/></td>
+      <td className="py-3 pr-3" onClick={e=>e.stopPropagation()}>
+        <button
+          className={cn("flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg border transition-colors",
+            isFiled
+              ? "bg-green-50 text-green-700 border-green-200 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200"
+              : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-green-50 hover:text-green-700 hover:border-green-200")}
+          title={isFiled ? "Click to mark as Unfiled" : "Click to mark as Filed"}
+          onClick={()=>onToggleFiling(doc)}>
+          {isFiled ? <><CheckCircle2 className="w-3 h-3"/>Filed</> : <><Clock className="w-3 h-3"/>Unfiled</>}
+        </button>
+      </td>
       <td className="py-3 pr-4 hidden md:table-cell text-xs text-muted-foreground whitespace-nowrap">{fmtDate(doc.createdAt)}</td>
       <td className="py-3 pr-3" onClick={e=>e.stopPropagation()}>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -748,6 +775,7 @@ export default function Documents() {
   const [sort, setSort]         = useState("newest");
   const [fCategory, setFCategory] = useState("all");
   const [fFY, setFFY]           = useState("");
+  const [fPeriod, setFPeriod]   = useState("");
   const [fFiling, setFFiling]   = useState("");
   const [fDept, setFDept]       = useState("");
 
@@ -758,6 +786,7 @@ export default function Documents() {
   if (search)             params.set("search", search);
   if (fCategory!=="all")  params.set("docCategory", fCategory);
   if (fFY)                params.set("financialYear", fFY);
+  if (fPeriod)            params.set("period", fPeriod);
   if (fFiling)            params.set("filingStatus", fFiling);
   if (fDept)              params.set("department", fDept);
 
@@ -787,6 +816,26 @@ export default function Documents() {
     onSuccess: () => { qc.invalidateQueries({queryKey:["documents"]}); qc.invalidateQueries({queryKey:["documents-summary"]}); },
   });
 
+  const filingMut = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: string }) =>
+      fetch(`/api/documents/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filingStatus: status }),
+      }).then(r => r.json()),
+    onSuccess: (updated: Doc) => {
+      qc.invalidateQueries({ queryKey: ["documents"] });
+      qc.invalidateQueries({ queryKey: ["documents-summary"] });
+      if (viewDoc?.id === updated.id) setViewDoc(updated);
+      toast({ title: updated.filingStatus === "filed" ? "Marked as Filed ✓" : "Marked as Unfiled" });
+    },
+  });
+
+  function handleToggleFiling(doc: Doc) {
+    const next = doc.filingStatus === "filed" ? "unfiled" : "filed";
+    filingMut.mutate({ id: doc.id, status: next });
+  }
+
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   function handleDelete(id: number) {
@@ -808,9 +857,10 @@ export default function Documents() {
   }
 
   const totals  = summary?.totals ?? { total:0, totalSize:0, filed:0, unfiled:0, linked:0, pdfCount:0, imageCount:0, excelCount:0 };
-  const hasFilter = fCategory!=="all" || !!fFY || !!fFiling || !!fDept || !!search;
+  const periodOptions = (summary?.byPeriod ?? []).filter(p => p.period).sort((a,b)=>(b.period!).localeCompare(a.period!));
+  const hasFilter = fCategory!=="all" || !!fFY || !!fPeriod || !!fFiling || !!fDept || !!search;
 
-  function clearFilters() { setFCategory("all"); setFFY(""); setFFiling(""); setFDept(""); setSearchInput(""); setSearch(""); }
+  function clearFilters() { setFCategory("all"); setFFY(""); setFPeriod(""); setFFiling(""); setFDept(""); setSearchInput(""); setSearch(""); }
 
   return (
     <div className="h-full flex flex-col bg-muted/20 overflow-hidden">
@@ -946,6 +996,26 @@ export default function Documents() {
             </div>
           </div>
 
+          {/* Month filter */}
+          {periodOptions.length > 0 && (
+            <div className="p-4 border-b">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Month</p>
+              <div className="space-y-0.5">
+                {periodOptions.map(({ period, count }) => {
+                  const label = period && MONTHS[period] ? MONTHS[period] : period ?? "";
+                  return (
+                    <button key={period} onClick={() => setFPeriod(p => p === period ? "" : period!)}
+                      className={cn("w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors",
+                        fPeriod === period ? "bg-sky-100 text-sky-700 font-semibold" : "text-gray-600 hover:bg-muted/50")}>
+                      <span>{label}</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Department filter */}
           <div className="p-4 border-b">
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Department</p>
@@ -969,6 +1039,7 @@ export default function Documents() {
               <span className="text-xs text-muted-foreground">Showing {docs.length} result{docs.length!==1?"s":""}:</span>
               {fCategory!=="all" && <FilterChip label={`Category: ${catMeta(fCategory).label}`} onRemove={()=>setFCategory("all")}/>}
               {fFY && <FilterChip label={`FY ${fFY}`} onRemove={()=>setFFY("")}/>}
+              {fPeriod && <FilterChip label={`Month: ${MONTHS[fPeriod] ?? fPeriod}`} onRemove={()=>setFPeriod("")}/>}
               {fFiling && <FilterChip label={`Status: ${fFiling}`} onRemove={()=>setFFiling("")}/>}
               {fDept && <FilterChip label={`Dept: ${fDept}`} onRemove={()=>setFDept("")}/>}
               {search && <FilterChip label={`"${search}"`} onRemove={()=>{setSearchInput("");setSearch("");}}/>}
@@ -986,7 +1057,7 @@ export default function Documents() {
             ) : view === "grid" ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {docs.map(doc => (
-                  <DocCard key={doc.id} doc={doc} onView={setViewDoc} onDelete={handleDelete}/>
+                  <DocCard key={doc.id} doc={doc} onView={setViewDoc} onDelete={handleDelete} onToggleFiling={handleToggleFiling}/>
                 ))}
               </div>
             ) : (
@@ -1005,7 +1076,7 @@ export default function Documents() {
                     </tr>
                   </thead>
                   <tbody>
-                    {docs.map(doc => <DocRow key={doc.id} doc={doc} onView={setViewDoc} onDelete={handleDelete}/>)}
+                    {docs.map(doc => <DocRow key={doc.id} doc={doc} onView={setViewDoc} onDelete={handleDelete} onToggleFiling={handleToggleFiling}/>)}
                   </tbody>
                 </table>
               </div>
@@ -1016,7 +1087,7 @@ export default function Documents() {
 
       {/* Modals */}
       <UploadModal open={uploadOpen} onClose={()=>setUploadOpen(false)} onUploaded={handleUploaded}/>
-      {viewDoc && <DocViewer doc={viewDoc} onClose={()=>setViewDoc(null)} onDelete={handleDelete}/>}
+      {viewDoc && <DocViewer doc={viewDoc} onClose={()=>setViewDoc(null)} onDelete={handleDelete} onToggleFiling={handleToggleFiling}/>}
 
       <ConfirmDialog
         open={confirmDeleteId != null}

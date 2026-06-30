@@ -57,9 +57,17 @@ router.get("/documents/summary", async (req, res) => {
       count: sql<number>`count(*)`,
     }).from(documentsTable).groupBy(documentsTable.financialYear).orderBy(desc(documentsTable.financialYear));
 
+    const byPeriod = await db.select({
+      period: documentsTable.period,
+      count: sql<number>`count(*)`,
+    }).from(documentsTable)
+      .where(sql`period is not null and period != ''`)
+      .groupBy(documentsTable.period)
+      .orderBy(desc(documentsTable.period));
+
     const recentDocs = await db.select().from(documentsTable).orderBy(desc(documentsTable.createdAt)).limit(5);
 
-    res.json({ totals, byCategory, byFY, recentDocs });
+    res.json({ totals, byCategory, byFY, byPeriod, recentDocs });
   } catch (e: any) { req.log?.error(e); res.status(500).json({ error: e.message }); }
 });
 

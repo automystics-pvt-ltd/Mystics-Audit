@@ -462,7 +462,7 @@ export default function Dashboard() {
                 const ItemIcon = activityIcon(item.type ?? "");
                 return (
                   <div
-                    key={item.id}
+                    key={`${item.type}-${item.id}`}
                     className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors group"
                   >
                     <div

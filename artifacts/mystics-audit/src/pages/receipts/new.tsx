@@ -64,7 +64,7 @@ export default function NewReceipt() {
   const mutation = useCreateReceipt();
 
   const outstandingInvoices = (invoicesData ?? []).filter(
-    (inv: any) => (inv.status === "POSTED" || inv.status === "PARTIAL") && inv.balanceDue > 0,
+    (inv: any) => (inv.status === "posted" || inv.status === "partial") && inv.balanceDue > 0,
   );
 
   const gross  = parseFloat(grossAmount) || 0;

@@ -13,11 +13,11 @@ export default function BudgetVsActual() {
   const d = data as any;
   const lines: any[] = d?.lines ?? [];
 
-  const totalBudget = lines.reduce((s, l) => s + l.annualBudget, 0);
-  const totalActual = lines.reduce((s, l) => s + l.actualSpend, 0);
+  const totalBudget = lines.reduce((s, l) => s + (l.annualBudget ?? 0), 0);
+  const totalActual = lines.reduce((s, l) => s + (l.ytdActual ?? l.actualSpend ?? 0), 0);
   const variance = totalBudget - totalActual;
 
-  const chartData = lines.slice(0, 10).map((l: any) => ({ name: l.accountName.length > 16 ? l.accountName.slice(0, 16) + "…" : l.accountName, Budget: l.annualBudget, Actual: l.actualSpend }));
+  const chartData = lines.slice(0, 10).map((l: any) => ({ name: l.accountName.length > 16 ? l.accountName.slice(0, 16) + "…" : l.accountName, Budget: l.annualBudget, Actual: l.ytdActual ?? l.actualSpend ?? 0 }));
 
   return (
     <div className="space-y-6">
@@ -71,13 +71,14 @@ export default function BudgetVsActual() {
           </TableHeader>
           <TableBody>
             {lines.map((l: any) => {
-              const var_ = l.annualBudget - l.actualSpend;
-              const pct = l.annualBudget > 0 ? (l.actualSpend / l.annualBudget * 100) : 0;
+              const actual = l.ytdActual ?? l.actualSpend ?? 0;
+              const var_ = l.annualBudget - actual;
+              const pct = l.annualBudget > 0 ? (actual / l.annualBudget * 100) : 0;
               return (
-                <TableRow key={l.id}>
+                <TableRow key={l.accountCode ?? l.id}>
                   <TableCell className="font-medium">{l.accountName}</TableCell>
                   <TableCell className="text-right font-mono">{formatCurrency(l.annualBudget)}</TableCell>
-                  <TableCell className="text-right font-mono">{formatCurrency(l.actualSpend)}</TableCell>
+                  <TableCell className="text-right font-mono">{formatCurrency(l.ytdActual ?? l.actualSpend ?? 0)}</TableCell>
                   <TableCell className={`text-right font-mono ${var_ < 0 ? "text-destructive" : "text-green-600"}`}>{var_ < 0 ? `(${formatCurrency(Math.abs(var_))})` : formatCurrency(var_)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">

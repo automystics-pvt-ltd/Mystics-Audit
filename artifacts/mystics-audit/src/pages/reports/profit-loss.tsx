@@ -15,11 +15,22 @@ export default function ProfitLoss() {
   const { data } = useGetProfitLoss({ from, to });
   const d = data as any;
 
-  const revenue: any[] = Array.isArray(d?.revenue) ? d.revenue : [];
-  const expenses: any[] = Array.isArray(d?.expenses) ? d.expenses : [];
-  const totalRevenue = d?.totalRevenue ?? 0;
-  const totalExpenses = d?.totalExpenses ?? 0;
-  const netProfit = totalRevenue - totalExpenses;
+  const totalRevenue  = d?.totalRevenue ?? 0;
+  const netProfit     = d?.netProfit ?? 0;
+  const totalExpenses = totalRevenue - netProfit;
+
+  // Build line items from API response fields
+  const revenue: any[] = d ? [
+    ...(d.revenueFromOperations ? [{ name: "Revenue from Operations", amount: d.revenueFromOperations }] : []),
+    ...(d.otherIncome ? [{ name: "Other Income", amount: d.otherIncome }] : []),
+  ] : [];
+  const expenses: any[] = d ? [
+    ...(d.cogs > 0 ? [{ name: "Cost of Goods Sold", amount: d.cogs }] : []),
+    ...(d.operatingExpenses > 0 ? [{ name: "Operating Expenses", amount: d.operatingExpenses }] : []),
+    ...(d.depreciation > 0 ? [{ name: "Depreciation", amount: d.depreciation }] : []),
+    ...(d.financeCharges > 0 ? [{ name: "Finance Charges", amount: d.financeCharges }] : []),
+    ...(d.taxProvision > 0 ? [{ name: "Tax Provision", amount: d.taxProvision }] : []),
+  ] : [];
 
   return (
     <div className="space-y-6">

@@ -12,7 +12,8 @@ export default function InventoryDetail() {
   const { data: item } = useGetItem(Number(id));
   const i = item as any;
   if (!i) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
-  const isLow = i.currentStock <= i.minimumStock;
+  const minStock = i.minimumStock ?? i.reorderLevel ?? 0;
+  const isLow = i.currentStock <= minStock;
 
   return (
     <div className="space-y-6">
@@ -21,7 +22,7 @@ export default function InventoryDetail() {
           <Link href="/inventory"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" />Back</Button></Link>
           <div>
             <h1 className="text-2xl font-semibold">{i.name}</h1>
-            <p className="text-muted-foreground text-sm font-mono">{i.sku} · {i.hsnCode}</p>
+            <p className="text-muted-foreground text-sm font-mono">{i.itemCode ?? i.sku} · {i.hsnSac ?? i.hsnCode ?? "—"}</p>
           </div>
         </div>
         {isLow && <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" />Low Stock</Badge>}
@@ -30,7 +31,7 @@ export default function InventoryDetail() {
       <div className="grid grid-cols-4 gap-4">
         {[
           { label: "Current Stock", value: `${i.currentStock} ${i.unit}`, warn: isLow },
-          { label: "Avg Cost", value: formatCurrency(i.averageCost), warn: false },
+          { label: "Avg Cost", value: formatCurrency(i.averageCost ?? i.purchaseRate ?? 0), warn: false },
           { label: "Stock Value", value: formatCurrency(i.stockValue), warn: false },
           { label: "GST Rate", value: `${i.gstRate}%`, warn: false },
         ].map(({ label, value, warn }) => (
@@ -48,7 +49,7 @@ export default function InventoryDetail() {
             {[
               { label: "Category", value: i.category || "—" },
               { label: "Unit", value: i.unit },
-              { label: "Min Stock", value: String(i.minimumStock) },
+              { label: "Min Stock", value: String(i.minimumStock ?? i.reorderLevel ?? 0) },
               { label: "Valuation Method", value: i.valuationMethod },
             ].map(({ label, value }) => (
               <div key={label} className="flex justify-between">
@@ -62,8 +63,8 @@ export default function InventoryDetail() {
           <CardHeader><CardTitle>Opening Balance</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm">
             {[
-              { label: "Opening Stock", value: `${i.openingStock} ${i.unit}` },
-              { label: "Opening Cost/unit", value: formatCurrency(i.openingCost) },
+              { label: "Opening Stock", value: `${i.openingStock ?? i.currentStock ?? 0} ${i.unit}` },
+              { label: "Opening Cost/unit", value: formatCurrency(i.openingCost ?? i.purchaseRate ?? 0) },
             ].map(({ label, value }) => (
               <div key={label} className="flex justify-between">
                 <span className="text-muted-foreground">{label}</span>

@@ -25,6 +25,21 @@ router.post("/bank/accounts", async (req, res) => {
   }
 });
 
+router.patch("/bank/accounts/:id", async (req, res) => {
+  try {
+    const { balance, ...rest } = req.body;
+    const updates: any = { ...rest, updatedAt: new Date() };
+    if (balance !== undefined) updates.balance = String(balance);
+    const [row] = await db.update(bankAccountsTable).set(updates)
+      .where(eq(bankAccountsTable.id, Number(req.params.id))).returning();
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
+    res.json({ ...row, balance: Number(row.balance) });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update bank account" });
+  }
+});
+
 router.get("/bank/accounts/:id/transactions", async (req, res) => {
   try {
     const rows = await db.select().from(bankTransactionsTable)
@@ -39,6 +54,27 @@ router.get("/bank/accounts/:id/transactions", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to fetch transactions" });
+  }
+});
+
+router.post("/bank/accounts/:id/transactions", async (req, res) => {
+  try {
+    const bankAccountId = Number(req.params.id);
+    const { date, description, debit, credit, balance, referenceNo, status } = req.body;
+    const [row] = await db.insert(bankTransactionsTable).values({
+      bankAccountId,
+      date,
+      description,
+      debit: String(debit || 0),
+      credit: String(credit || 0),
+      balance: String(balance || 0),
+      referenceNo,
+      status: status || "unreconciled",
+    }).returning();
+    res.status(201).json({ ...row, debit: Number(row.debit), credit: Number(row.credit), balance: Number(row.balance), matchConfidence: null });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to create transaction" });
   }
 });
 

@@ -39,20 +39,22 @@ router.post("/budgets", async (req, res) => {
 
     if (lines?.length) {
       const accountData = await db.select().from(accountsTable);
-      await db.insert(budgetLinesTable).values(
-        lines.map((l: any) => {
-          const account = accountData.find(a => a.id === l.accountId);
-          return {
-            budgetId: budget.id,
-            accountId: l.accountId,
-            accountName: account?.name || "Account",
-            accountCode: account?.code || "000",
-            department: l.department,
-            annualAmount: String(l.annualAmount),
-            actualAmount: "0",
-          };
-        })
-      );
+      const validLines = lines.map((l: any) => {
+        const account = l.accountId
+          ? accountData.find(a => a.id === Number(l.accountId))
+          : accountData.find(a => a.code === l.accountCode);
+        if (!account) return null;
+        return {
+          budgetId: budget.id,
+          accountId: account.id,
+          accountName: account.name,
+          accountCode: account.code,
+          department: l.department,
+          annualAmount: String(l.annualAmount || l.budgetedAmount || 0),
+          actualAmount: "0",
+        };
+      }).filter(Boolean);
+      if (validLines.length) await db.insert(budgetLinesTable).values(validLines);
     }
 
     const result = await db.select().from(budgetsTable).where(eq(budgetsTable.id, budget.id));

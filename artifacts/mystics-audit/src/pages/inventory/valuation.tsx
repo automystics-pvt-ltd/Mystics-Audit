@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/format";
 export default function InventoryValuation() {
   const { data } = useGetInventoryValuation({});
   const d = data as any;
-  const items: any[] = d?.items ?? [];
+  const items: any[] = d?.lines ?? d?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -18,8 +18,8 @@ export default function InventoryValuation() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: "Total Stock Value", value: formatCurrency(d?.totalValue ?? 0) },
-          { label: "Total Items", value: String(items.length) },
-          { label: "Low Stock Items", value: String(d?.lowStockCount ?? 0) },
+          { label: "Total Items", value: String(d?.totalItems ?? items.length) },
+          { label: "Low Stock Items", value: String(d?.lowStockItems ?? d?.lowStockCount ?? 0) },
         ].map(({ label, value }) => (
           <Card key={label}>
             <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground font-medium">{label}</CardTitle></CardHeader>
@@ -43,12 +43,12 @@ export default function InventoryValuation() {
           </TableHeader>
           <TableBody>
             {items.map((item: any) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-mono text-sm">{item.sku}</TableCell>
-                <TableCell className="font-medium">{item.name}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{item.valuationMethod}</TableCell>
-                <TableCell className="text-right font-mono">{item.currentStock} {item.unit}</TableCell>
-                <TableCell className="text-right font-mono text-sm">{formatCurrency(item.averageCost)}</TableCell>
+              <TableRow key={item.itemId ?? item.id}>
+                <TableCell className="font-mono text-sm">{item.itemCode ?? item.sku}</TableCell>
+                <TableCell className="font-medium">{item.itemName ?? item.name}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{item.valuationMethod ?? "—"}</TableCell>
+                <TableCell className="text-right font-mono">{item.currentQty ?? item.currentStock ?? 0} {item.unit}</TableCell>
+                <TableCell className="text-right font-mono text-sm">{formatCurrency(item.avgCost ?? item.averageCost ?? 0)}</TableCell>
                 <TableCell className="text-right font-mono font-semibold">{formatCurrency(item.stockValue)}</TableCell>
                 <TableCell className="text-right text-sm text-muted-foreground">
                   {d?.totalValue > 0 ? ((item.stockValue / d.totalValue) * 100).toFixed(1) + "%" : "—"}

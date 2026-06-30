@@ -12,12 +12,12 @@ import {
 import { cn } from "@/lib/utils";
 
 const STATUS_CFG: Record<string, { color: string; icon: React.FC<{ className?: string }> }> = {
-  DRAFT:     { color: "bg-amber-100 text-amber-700 border-amber-200",    icon: Clock },
-  POSTED:    { color: "bg-blue-100 text-blue-700 border-blue-200",       icon: CheckCircle2 },
-  PARTIAL:   { color: "bg-violet-100 text-violet-700 border-violet-200", icon: Receipt },
-  PAID:      { color: "bg-green-100 text-green-700 border-green-200",    icon: CheckCircle2 },
-  CANCELLED: { color: "bg-red-100 text-red-700 border-red-200",          icon: AlertCircle },
-  OVERDUE:   { color: "bg-red-100 text-red-700 border-red-200",          icon: AlertCircle },
+  draft:     { color: "bg-amber-100 text-amber-700 border-amber-200",    icon: Clock },
+  posted:    { color: "bg-blue-100 text-blue-700 border-blue-200",       icon: CheckCircle2 },
+  partial:   { color: "bg-violet-100 text-violet-700 border-violet-200", icon: Receipt },
+  paid:      { color: "bg-green-100 text-green-700 border-green-200",    icon: CheckCircle2 },
+  cancelled: { color: "bg-red-100 text-red-700 border-red-200",          icon: AlertCircle },
+  overdue:   { color: "bg-red-100 text-red-700 border-red-200",          icon: AlertCircle },
 };
 
 export default function InvoicesList() {
@@ -38,10 +38,10 @@ export default function InvoicesList() {
 
   const totalAmt = filtered.reduce((s: number, i: any) => s + (i.totalAmount || 0), 0);
   const stats = {
-    draft:   filtered.filter((i: any) => i.status === "DRAFT").length,
-    posted:  filtered.filter((i: any) => i.status === "POSTED").length,
+    draft:   filtered.filter((i: any) => i.status === "draft").length,
+    posted:  filtered.filter((i: any) => i.status === "posted").length,
     overdue: filtered.filter((i: any) =>
-      i.status !== "PAID" && i.status !== "CANCELLED" && i.balanceDue > 0 && new Date(i.dueDate) < new Date()
+      i.status !== "paid" && i.status !== "cancelled" && i.balanceDue > 0 && new Date(i.dueDate) < new Date()
     ).length,
   };
 
@@ -105,10 +105,10 @@ export default function InvoicesList() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="DRAFT">Draft</SelectItem>
-            <SelectItem value="POSTED">Posted</SelectItem>
-            <SelectItem value="PAID">Paid</SelectItem>
-            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="posted">Posted</SelectItem>
+            <SelectItem value="paid">Paid</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
         <Select value={typeFilter} onValueChange={setType}>
@@ -117,10 +117,10 @@ export default function InvoicesList() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="TAX_INVOICE">Tax Invoice</SelectItem>
-            <SelectItem value="PROFORMA">Proforma</SelectItem>
-            <SelectItem value="CREDIT_NOTE">Credit Note</SelectItem>
-            <SelectItem value="DEBIT_NOTE">Debit Note</SelectItem>
+            <SelectItem value="Tax Invoice">Tax Invoice</SelectItem>
+            <SelectItem value="Proforma">Proforma</SelectItem>
+            <SelectItem value="Credit Note">Credit Note</SelectItem>
+            <SelectItem value="Debit Note">Debit Note</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -161,9 +161,9 @@ export default function InvoicesList() {
                   </tr>
                 )
                 : filtered.map((inv: any) => {
-                    const isOverdue = inv.status !== "PAID" && inv.status !== "CANCELLED" && inv.balanceDue > 0 && new Date(inv.dueDate) < new Date();
-                    const cfgKey    = isOverdue ? "OVERDUE" : (inv.status as string);
-                    const cfg       = STATUS_CFG[cfgKey] ?? STATUS_CFG.DRAFT;
+                    const isOverdue = inv.status !== "paid" && inv.status !== "cancelled" && inv.balanceDue > 0 && new Date(inv.dueDate) < new Date();
+                    const cfgKey    = isOverdue ? "overdue" : (inv.status as string);
+                    const cfg       = STATUS_CFG[cfgKey] ?? STATUS_CFG.draft;
                     const Icon      = cfg.icon;
                     return (
                       <tr key={inv.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">

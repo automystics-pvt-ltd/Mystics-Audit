@@ -22,13 +22,21 @@ export default function Gstr1() {
   const period = `${year}-${month}`;
 
   const { data, isLoading, refetch, isFetching } = useGetGstr1Data({ period });
-  const d       = data as any;
-  const summary = d?.summary ?? {};
-  const b2b: any[] = d?.b2b ?? [];
-  const b2c: any[] = d?.b2c ?? [];
-  const status  = d?.status;
+  const d = data as any;
+  const summary = {
+    taxableValue: d?.totalTaxableValue ?? 0,
+    cgst:         d?.totalCgst ?? 0,
+    sgst:         d?.totalSgst ?? 0,
+    igst:         d?.totalIgst ?? 0,
+  };
+  const b2b: any[] = d?.b2bInvoices ?? [];
+  const b2c: any[] = d?.b2cInvoices ?? [];
+  const totalInvoices = d?.totalInvoices ?? 0;
+  const b2bCount = d?.b2bCount ?? b2b.length;
+  const b2cCount = d?.b2cCount ?? b2c.length;
+  const status  = d?.isFilingReady ? (d?.isFiled ? "filed" : "pending") : "pending";
 
-  const totalGst = (summary.cgst ?? 0) + (summary.sgst ?? 0) + (summary.igst ?? 0);
+  const totalGst = summary.cgst + summary.sgst + summary.igst;
 
   return (
     <div className="space-y-5">
@@ -102,12 +110,12 @@ export default function Gstr1() {
         <div className="flex items-center gap-3">
           <div className="text-right">
             <p className="text-xs text-muted-foreground">B2B Invoices</p>
-            <p className="font-bold text-gray-800">{b2b.length}</p>
+            <p className="font-bold text-gray-800">{b2bCount || totalInvoices}</p>
           </div>
           <div className="h-10 w-px bg-gray-200" />
           <div className="text-right">
             <p className="text-xs text-muted-foreground">B2C Invoices</p>
-            <p className="font-bold text-gray-800">{b2c.length}</p>
+            <p className="font-bold text-gray-800">{b2cCount}</p>
           </div>
           <div className="h-10 w-px bg-gray-200" />
           <div className="text-right">
@@ -200,7 +208,7 @@ export default function Gstr1() {
         </div>
       )}
 
-      {b2b.length === 0 && b2c.length === 0 && !isLoading && (
+      {totalInvoices === 0 && !isLoading && (
         <div className="bg-white rounded-2xl border border-gray-200 py-16 text-center text-muted-foreground">
           <Receipt className="w-10 h-10 mx-auto mb-3 text-gray-200" />
           <p className="font-medium">No outward supplies found for {MONTHS[parseInt(month) - 1]} {year}</p>

@@ -15,13 +15,27 @@ export default function CashFlow() {
   const { data } = useGetCashFlow({ from, to });
   const d = data as any;
 
-  const operating: any[] = Array.isArray(d?.operating) ? d.operating : [];
-  const investing: any[] = Array.isArray(d?.investing) ? d.investing : [];
-  const financing: any[] = Array.isArray(d?.financing) ? d.financing : [];
-  const totalOperating = d?.totalOperating ?? 0;
-  const totalInvesting = d?.totalInvesting ?? 0;
-  const totalFinancing = d?.totalFinancing ?? 0;
-  const netCashFlow = totalOperating + totalInvesting + totalFinancing;
+  const totalOperating = d?.operatingCashFlow ?? d?.totalOperating ?? 0;
+  const totalInvesting = d?.investingCashFlow ?? d?.totalInvesting ?? 0;
+  const totalFinancing = d?.financingCashFlow ?? d?.totalFinancing ?? 0;
+  const netCashFlow    = d?.netCashChange ?? (totalOperating + totalInvesting + totalFinancing);
+
+  // Build line items from API response
+  const operating: any[] = d ? [
+    ...(d.netProfit ? [{ name: "Net Profit", amount: d.netProfit }] : []),
+    ...(d.adjustments ? [{ name: "Add: Non-cash Adjustments (Depreciation etc.)", amount: d.adjustments }] : []),
+    ...(d.workingCapitalChange != null ? [{ name: "Working Capital Changes", amount: d.workingCapitalChange }] : []),
+  ] : [];
+  const investing: any[] = d ? [
+    ...(d.capitalExpenditure ? [{ name: "Capital Expenditure", amount: d.capitalExpenditure }] : []),
+    ...(d.assetSales ? [{ name: "Proceeds from Asset Sales", amount: d.assetSales }] : []),
+    ...(totalInvesting !== 0 && !d.capitalExpenditure ? [{ name: "Net Investing Activities", amount: totalInvesting }] : []),
+  ] : [];
+  const financing: any[] = d ? [
+    ...(d.loanDrawdown ? [{ name: "Loan Proceeds", amount: d.loanDrawdown }] : []),
+    ...(d.loanRepayment ? [{ name: "Loan Repayments", amount: d.loanRepayment }] : []),
+    ...(totalFinancing !== 0 && !d.loanDrawdown && !d.loanRepayment ? [{ name: "Net Financing Activities", amount: totalFinancing }] : []),
+  ] : [];
 
   function Section({ title, items, total }: { title: string; items: any[]; total: number }) {
     const icon = total > 0 ? <TrendingUp className="w-4 h-4 text-green-600" /> : total < 0 ? <TrendingDown className="w-4 h-4 text-destructive" /> : <Minus className="w-4 h-4 text-muted-foreground" />;

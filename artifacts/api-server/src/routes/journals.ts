@@ -80,17 +80,23 @@ router.post("/journals", async (req, res) => {
     }).returning();
 
     if (lines?.length) {
-      await db.insert(journalLinesTable).values(
-        lines.map((l: any) => ({
+      const accountData = await db.select().from(accountsTable);
+      const mappedLines = lines.map((l: any) => {
+        const accountId = l.accountId
+          ? Number(l.accountId)
+          : accountData.find(a => a.code === l.accountCode)?.id;
+        if (!accountId) return null;
+        return {
           journalId: entry.id,
-          accountId: l.accountId,
+          accountId,
           debit: String(l.debit || 0),
           credit: String(l.credit || 0),
           narration: l.narration,
           partyName: l.partyName,
           costCenter: l.costCenter,
-        }))
-      );
+        };
+      }).filter(Boolean);
+      if (mappedLines.length) await db.insert(journalLinesTable).values(mappedLines);
     }
 
     const result = await getJournalWithLines(entry.id);

@@ -35,7 +35,10 @@ export default function BudgetsList() {
           </TableHeader>
           <TableBody>
             {budgets.map((b: any) => {
-              const pct = b.totalBudget > 0 ? (b.totalSpent / b.totalBudget * 100) : 0;
+              const spent = Number(b.totalSpent) || 0;
+              const budget = Number(b.totalBudget) || 0;
+              const remaining = budget - spent;
+              const pct = budget > 0 ? (spent / budget * 100) : 0;
               return (
                 <TableRow key={b.id} className="hover:bg-muted/50">
                   <TableCell>
@@ -43,15 +46,15 @@ export default function BudgetsList() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{b.fiscalYear}</TableCell>
                   <TableCell>{b.department || "—"}</TableCell>
-                  <TableCell className="text-right font-mono">{formatCurrency(b.totalBudget)}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{formatCurrency(b.totalSpent)}</TableCell>
-                  <TableCell className={`text-right font-mono ${b.totalSpent > b.totalBudget ? "text-destructive font-semibold" : ""}`}>{formatCurrency(b.totalBudget - b.totalSpent)}</TableCell>
+                  <TableCell className="text-right font-mono">{formatCurrency(budget)}</TableCell>
+                  <TableCell className="text-right font-mono text-sm">{formatCurrency(spent)}</TableCell>
+                  <TableCell className={`text-right font-mono ${spent > budget ? "text-destructive font-semibold" : ""}`}>{formatCurrency(remaining)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div className={`h-full rounded-full ${pct > 100 ? "bg-destructive" : pct > 80 ? "bg-amber-500" : "bg-primary"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                       </div>
-                      <span className="text-xs text-muted-foreground w-10">{pct.toFixed(0)}%</span>
+                      <span className="text-xs text-muted-foreground w-10">{isFinite(pct) ? pct.toFixed(0) : 0}%</span>
                     </div>
                   </TableCell>
                 </TableRow>

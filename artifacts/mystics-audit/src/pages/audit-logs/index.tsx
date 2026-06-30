@@ -69,7 +69,7 @@ export default function AuditLogsList() {
                 <TableCell><Badge variant={ACTION_COLORS[l.actionType] ?? "outline"}>{l.actionType}</Badge></TableCell>
                 <TableCell className="text-sm">{l.entityType}</TableCell>
                 <TableCell className="text-sm text-muted-foreground font-mono">{l.entityId ? `#${l.entityId}` : "—"}</TableCell>
-                <TableCell className="text-sm text-muted-foreground max-w-48 truncate">{l.changes || "—"}</TableCell>
+                <TableCell className="text-sm text-muted-foreground max-w-48 truncate" title={l.description || l.changes || ""}>{l.description || l.changes || "—"}</TableCell>
                 <TableCell className="text-xs font-mono text-muted-foreground">{l.ipAddress || "—"}</TableCell>
               </TableRow>
             ))}

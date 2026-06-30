@@ -20,12 +20,12 @@ import { InvoicePrint, printInvoice } from "@/components/invoice-print";
 import { cn } from "@/lib/utils";
 
 const STATUS_CONFIGS = {
-  DRAFT:     { color: "bg-amber-100 text-amber-700 border-amber-200",   icon: Clock,         label: "Draft" },
-  POSTED:    { color: "bg-blue-100 text-blue-700 border-blue-200",      icon: CheckCircle2,  label: "Posted" },
-  PAID:      { color: "bg-green-100 text-green-700 border-green-200",   icon: CheckCircle2,  label: "Paid" },
-  PARTIAL:   { color: "bg-violet-100 text-violet-700 border-violet-200", icon: Receipt,      label: "Partial" },
-  CANCELLED: { color: "bg-red-100 text-red-700 border-red-200",         icon: AlertCircle,   label: "Cancelled" },
-  OVERDUE:   { color: "bg-red-100 text-red-700 border-red-200",         icon: AlertCircle,   label: "Overdue" },
+  draft:     { color: "bg-amber-100 text-amber-700 border-amber-200",   icon: Clock,         label: "Draft" },
+  posted:    { color: "bg-blue-100 text-blue-700 border-blue-200",      icon: CheckCircle2,  label: "Posted" },
+  paid:      { color: "bg-green-100 text-green-700 border-green-200",   icon: CheckCircle2,  label: "Paid" },
+  partial:   { color: "bg-violet-100 text-violet-700 border-violet-200", icon: Receipt,      label: "Partial" },
+  cancelled: { color: "bg-red-100 text-red-700 border-red-200",         icon: AlertCircle,   label: "Cancelled" },
+  overdue:   { color: "bg-red-100 text-red-700 border-red-200",         icon: AlertCircle,   label: "Overdue" },
 };
 
 export default function InvoiceDetail() {
@@ -77,8 +77,8 @@ export default function InvoiceDetail() {
 
   if (!invoice) return <div className="text-muted-foreground p-8 text-center">Invoice not found.</div>;
 
-  const statusKey = (invoice.status || "DRAFT") as keyof typeof STATUS_CONFIGS;
-  const statusCfg = STATUS_CONFIGS[statusKey] ?? STATUS_CONFIGS.DRAFT;
+  const statusKey = (invoice.status || "draft") as keyof typeof STATUS_CONFIGS;
+  const statusCfg = STATUS_CONFIGS[statusKey] ?? STATUS_CONFIGS.draft;
   const StatusIcon = statusCfg.icon;
   const isInterState = invoice.igst > 0;
   const paidPct = invoice.totalAmount > 0 ? Math.round((invoice.paidAmount / invoice.totalAmount) * 100) : 0;
@@ -106,14 +106,14 @@ export default function InvoiceDetail() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {invoice.status === "DRAFT" && (
+            {invoice.status === "draft" && (
               <Button size="sm" onClick={handlePost} disabled={updateMutation.isPending}
                 className="bg-violet-600 hover:bg-violet-700 text-white rounded-xl">
                 <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
                 {updateMutation.isPending ? "Posting…" : "Post Invoice"}
               </Button>
             )}
-            {invoice.status === "POSTED" && invoice.balanceDue > 0 && (
+            {invoice.status === "posted" && invoice.balanceDue > 0 && (
               <Link href="/receipts/new">
                 <Button size="sm" variant="outline" className="rounded-xl border-green-300 text-green-700 hover:bg-green-50">
                   <CreditCard className="h-3.5 w-3.5 mr-1.5" /> Record Payment
@@ -132,7 +132,7 @@ export default function InvoiceDetail() {
             <Button size="sm" variant="outline" onClick={() => setShowCustomizer(true)} className="rounded-xl">
               <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5" /> Customize
             </Button>
-            {invoice.status === "DRAFT" && (
+            {invoice.status === "draft" && (
               <Button size="sm" variant="ghost" onClick={handleDelete} disabled={deleteMutation.isPending}
                 className="rounded-xl text-red-600 hover:bg-red-50">
                 <Trash2 className="h-3.5 w-3.5" />
@@ -142,7 +142,7 @@ export default function InvoiceDetail() {
         </div>
 
         {/* ── Payment progress bar ── */}
-        {invoice.status !== "DRAFT" && (
+        {invoice.status !== "draft" && (
           <div className="bg-white rounded-2xl border border-gray-200 p-4">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-semibold text-gray-700">Payment Progress</span>

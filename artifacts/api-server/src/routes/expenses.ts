@@ -50,16 +50,17 @@ router.get("/expenses", async (req, res) => {
 
 router.post("/expenses", async (req, res) => {
   try {
-    const { notes, lines } = req.body;
+    const { employeeName, submittedDate, status, currentApprover, notes, lines } = req.body;
     const totalAmount = (lines || []).reduce((s: number, l: any) => s + Number(l.amount || 0), 0);
     const policyViolations = (lines || []).filter((l: any) => l.policyViolation).length;
 
     const [claim] = await db.insert(expenseClaimsTable).values({
       claimNo: nextClaimNo(),
-      employeeName: "Current User",
-      submittedDate: new Date().toISOString().split("T")[0],
+      employeeName: employeeName || "Current User",
+      submittedDate: submittedDate || new Date().toISOString().split("T")[0],
       totalAmount: String(totalAmount),
-      status: "submitted",
+      status: status || "submitted",
+      currentApprover: currentApprover || null,
       policyViolations,
       notes,
     }).returning();

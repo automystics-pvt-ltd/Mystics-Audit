@@ -45,6 +45,7 @@ const NAV: NavEntry[] = [
   { name: "Expenses",  path: "/expenses",  icon: ReceiptIndianRupee, module: "expenses"  },
   { name: "Inventory", path: "/inventory", icon: PackageSearch,      module: "inventory" },
   { name: "GST", icon: Calculator, module: "gst", children: [
+    { name: "GST Documents",  path: "/gst/documents" },
     { name: "ITC Ledger",     path: "/gst/itc-ledger" },
     { name: "GSTR-1",         path: "/gst/gstr1" },
     { name: "GSTR-3B",        path: "/gst/gstr3b" },

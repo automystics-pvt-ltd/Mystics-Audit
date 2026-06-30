@@ -19,6 +19,7 @@ import usersRouter from "./users";
 import reportsRouter from "./reports";
 import platformAdminRouter from "./platform-admin";
 import subscriptionsRouter from "./subscriptions";
+import gstDocumentsRouter from "./gst-documents";
 
 const router: IRouter = Router();
 
@@ -42,5 +43,6 @@ router.use(usersRouter);
 router.use(reportsRouter);
 router.use(platformAdminRouter);
 router.use(subscriptionsRouter);
+router.use(gstDocumentsRouter);
 
 export default router;

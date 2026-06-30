@@ -89,6 +89,7 @@ import PlatformSubscriptions from "@/pages/platform-admin/subscriptions";
 import PlatformAnalytics from "@/pages/platform-admin/analytics";
 import BillingPayments from "@/pages/platform-admin/billing-payments";
 import BillingPage from "@/pages/billing";
+import GstDocuments from "@/pages/gst-documents/index";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -179,6 +180,7 @@ function Router() {
             <Route path="/gst/gstr1" component={Gstr1} />
             <Route path="/gst/gstr3b" component={Gstr3b} />
             <Route path="/gst/reconciliation" component={GstReconciliation} />
+            <Route path="/gst/documents" component={GstDocuments} />
 
             <Route path="/budgets" component={BudgetsList} />
             <Route path="/budgets/new" component={NewBudget} />

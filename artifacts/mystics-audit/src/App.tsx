@@ -90,6 +90,8 @@ import PlatformAnalytics from "@/pages/platform-admin/analytics";
 import BillingPayments from "@/pages/platform-admin/billing-payments";
 import BillingPage from "@/pages/billing";
 import GstDocuments from "@/pages/gst-documents/index";
+import Documents from "@/pages/documents/index";
+import FinanceOverview from "@/pages/finance/overview";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -193,6 +195,9 @@ function Router() {
             <Route path="/audit-logs" component={AuditLogsList} />
             <Route path="/billing" component={BillingPage} />
             <Route path="/template-builder" component={TemplateBuilder} />
+
+            <Route path="/documents" component={Documents} />
+            <Route path="/finance/overview" component={FinanceOverview} />
 
             <Route path="/reports/profit-loss" component={ProfitLoss} />
             <Route path="/reports/balance-sheet" component={BalanceSheet} />

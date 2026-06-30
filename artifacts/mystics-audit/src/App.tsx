@@ -4,8 +4,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import { FYProvider } from "@/contexts/fy-context";
+import { AuthProvider } from "@/contexts/auth-context";
 import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
+import LoginPage from "@/pages/login";
 
 import AccountsList from "@/pages/accounts/index";
 import TrialBalance from "@/pages/accounts/trial-balance";
@@ -79,6 +81,11 @@ import InvoiceDetail from "@/pages/invoices/detail";
 import AccountLedger from "@/pages/accounts/ledger";
 import TemplateBuilder from "@/pages/template-builder/index";
 
+import PlatformAdminDashboard from "@/pages/platform-admin/index";
+import PlatformOrganizations from "@/pages/platform-admin/organizations";
+import OrgDetail from "@/pages/platform-admin/org-detail";
+import PlatformUsers from "@/pages/platform-admin/platform-users";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -90,88 +97,103 @@ const queryClient = new QueryClient({
 
 function Router() {
   return (
-    <Layout>
-      <Switch>
-        <Route path="/">
-          <Redirect to="/dashboard" />
-        </Route>
-        <Route path="/dashboard" component={Dashboard} />
-        
-        <Route path="/accounts" component={AccountsList} />
-        <Route path="/accounts/trial-balance" component={TrialBalance} />
-        <Route path="/accounts/:id" component={AccountLedger} />
+    <Switch>
+      {/* Auth — no layout */}
+      <Route path="/login" component={LoginPage} />
 
-        <Route path="/invoices" component={InvoicesList} />
-        <Route path="/invoices/new" component={NewInvoice} />
-        <Route path="/invoices/:id" component={InvoiceDetail} />
+      {/* Platform admin — own layout (dark) */}
+      <Route path="/platform-admin/organizations/:id" component={OrgDetail} />
+      <Route path="/platform-admin/organizations" component={PlatformOrganizations} />
+      <Route path="/platform-admin/users" component={PlatformUsers} />
+      <Route path="/platform-admin">
+        {(params) => params ? <PlatformAdminDashboard /> : <PlatformAdminDashboard />}
+      </Route>
 
-        <Route path="/journals" component={JournalsList} />
-        <Route path="/journals/new" component={NewJournal} />
-        <Route path="/journals/:id" component={JournalDetail} />
+      {/* Main app — standard layout */}
+      <Route>
+        <Layout>
+          <Switch>
+            <Route path="/">
+              <Redirect to="/dashboard" />
+            </Route>
+            <Route path="/dashboard" component={Dashboard} />
 
-        <Route path="/customers" component={CustomersList} />
-        <Route path="/customers/new" component={NewCustomer} />
-        <Route path="/customers/ar-aging" component={ArAging} />
-        <Route path="/customers/:id" component={CustomerDetail} />
+            <Route path="/accounts" component={AccountsList} />
+            <Route path="/accounts/trial-balance" component={TrialBalance} />
+            <Route path="/accounts/:id" component={AccountLedger} />
 
-        <Route path="/receipts" component={ReceiptsList} />
-        <Route path="/receipts/new" component={NewReceipt} />
-        <Route path="/receipts/:id" component={ReceiptDetail} />
+            <Route path="/invoices" component={InvoicesList} />
+            <Route path="/invoices/new" component={NewInvoice} />
+            <Route path="/invoices/:id" component={InvoiceDetail} />
 
-        <Route path="/vendors" component={VendorsList} />
-        <Route path="/vendors/new" component={NewVendor} />
-        <Route path="/vendors/ap-aging" component={ApAging} />
-        <Route path="/vendors/:id" component={VendorDetail} />
+            <Route path="/journals" component={JournalsList} />
+            <Route path="/journals/new" component={NewJournal} />
+            <Route path="/journals/:id" component={JournalDetail} />
 
-        <Route path="/bills" component={BillsList} />
-        <Route path="/bills/new" component={NewBill} />
-        <Route path="/bills/:id" component={BillDetail} />
+            <Route path="/customers" component={CustomersList} />
+            <Route path="/customers/new" component={NewCustomer} />
+            <Route path="/customers/ar-aging" component={ArAging} />
+            <Route path="/customers/:id" component={CustomerDetail} />
 
-        <Route path="/bank" component={BankList} />
-        <Route path="/bank/:id/transactions" component={BankTransactions} />
+            <Route path="/receipts" component={ReceiptsList} />
+            <Route path="/receipts/new" component={NewReceipt} />
+            <Route path="/receipts/:id" component={ReceiptDetail} />
 
-        <Route path="/expenses" component={ExpensesList} />
-        <Route path="/expenses/new" component={NewExpense} />
-        <Route path="/expenses/analytics" component={ExpenseAnalytics} />
-        <Route path="/expenses/:id" component={ExpenseDetail} />
+            <Route path="/vendors" component={VendorsList} />
+            <Route path="/vendors/new" component={NewVendor} />
+            <Route path="/vendors/ap-aging" component={ApAging} />
+            <Route path="/vendors/:id" component={VendorDetail} />
 
-        <Route path="/purchases/orders" component={PoList} />
-        <Route path="/purchases/orders/new" component={NewPo} />
-        <Route path="/purchases/orders/:id" component={PoDetail} />
+            <Route path="/bills" component={BillsList} />
+            <Route path="/bills/new" component={NewBill} />
+            <Route path="/bills/:id" component={BillDetail} />
 
-        <Route path="/purchases/grn" component={GrnList} />
-        <Route path="/purchases/grn/new" component={NewGrn} />
+            <Route path="/bank" component={BankList} />
+            <Route path="/bank/:id/transactions" component={BankTransactions} />
 
-        <Route path="/inventory" component={InventoryList} />
-        <Route path="/inventory/new" component={NewInventory} />
-        <Route path="/inventory/valuation" component={InventoryValuation} />
-        <Route path="/inventory/:id" component={InventoryDetail} />
+            <Route path="/expenses" component={ExpensesList} />
+            <Route path="/expenses/new" component={NewExpense} />
+            <Route path="/expenses/analytics" component={ExpenseAnalytics} />
+            <Route path="/expenses/:id" component={ExpenseDetail} />
 
-        <Route path="/gst/itc-ledger" component={ItcLedger} />
-        <Route path="/gst/gstr1" component={Gstr1} />
-        <Route path="/gst/gstr3b" component={Gstr3b} />
-        <Route path="/gst/reconciliation" component={GstReconciliation} />
+            <Route path="/purchases/orders" component={PoList} />
+            <Route path="/purchases/orders/new" component={NewPo} />
+            <Route path="/purchases/orders/:id" component={PoDetail} />
 
-        <Route path="/budgets" component={BudgetsList} />
-        <Route path="/budgets/new" component={NewBudget} />
-        <Route path="/budgets/:id/vs-actual" component={BudgetVsActual} />
+            <Route path="/purchases/grn" component={GrnList} />
+            <Route path="/purchases/grn/new" component={NewGrn} />
 
-        <Route path="/users" component={UsersList} />
-        <Route path="/users/new" component={NewUser} />
-        <Route path="/users/:id" component={UserDetail} />
+            <Route path="/inventory" component={InventoryList} />
+            <Route path="/inventory/new" component={NewInventory} />
+            <Route path="/inventory/valuation" component={InventoryValuation} />
+            <Route path="/inventory/:id" component={InventoryDetail} />
 
-        <Route path="/audit-logs" component={AuditLogsList} />
+            <Route path="/gst/itc-ledger" component={ItcLedger} />
+            <Route path="/gst/gstr1" component={Gstr1} />
+            <Route path="/gst/gstr3b" component={Gstr3b} />
+            <Route path="/gst/reconciliation" component={GstReconciliation} />
 
-        <Route path="/template-builder" component={TemplateBuilder} />
+            <Route path="/budgets" component={BudgetsList} />
+            <Route path="/budgets/new" component={NewBudget} />
+            <Route path="/budgets/:id/vs-actual" component={BudgetVsActual} />
 
-        <Route path="/reports/profit-loss" component={ProfitLoss} />
-        <Route path="/reports/balance-sheet" component={BalanceSheet} />
-        <Route path="/reports/cash-flow" component={CashFlow} />
-        <Route path="/reports/day-book" component={DayBook} />
+            <Route path="/users" component={UsersList} />
+            <Route path="/users/new" component={NewUser} />
+            <Route path="/users/:id" component={UserDetail} />
 
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+            <Route path="/audit-logs" component={AuditLogsList} />
+            <Route path="/template-builder" component={TemplateBuilder} />
+
+            <Route path="/reports/profit-loss" component={ProfitLoss} />
+            <Route path="/reports/balance-sheet" component={BalanceSheet} />
+            <Route path="/reports/cash-flow" component={CashFlow} />
+            <Route path="/reports/day-book" component={DayBook} />
+
+            <Route component={NotFound} />
+          </Switch>
+        </Layout>
+      </Route>
+    </Switch>
   );
 }
 
@@ -180,14 +202,16 @@ const BASE_URL = (import.meta.env.BASE_URL || "/").replace(/\/$/, "") || "/";
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <FYProvider>
-        <TooltipProvider>
-          <WouterRouter base={BASE_URL}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
-      </FYProvider>
+      <AuthProvider>
+        <FYProvider>
+          <TooltipProvider>
+            <WouterRouter base={BASE_URL}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </FYProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

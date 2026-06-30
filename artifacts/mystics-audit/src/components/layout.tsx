@@ -16,24 +16,25 @@ import {
   Bell,
   Search,
   HelpCircle,
-  Users,
-  ShieldAlert,
-  LayoutTemplate,
+  Shield,
+  LogOut,
+  ExternalLink,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useFY, FY_OPTIONS } from "@/contexts/fy-context";
+import { useFY } from "@/contexts/fy-context";
+import { useAuth, MODULE_ACCESS } from "@/contexts/auth-context";
 
 /* ── Nav definition ─────────────────────────────────── */
 type NavChild = { name: string; path: string; icon?: React.FC<{ className?: string }> };
-type NavLeaf  = { name: string; path: string; icon: React.FC<{ className?: string }> };
-type NavGroup = { name: string; icon: React.FC<{ className?: string }>; children: NavChild[] };
+type NavLeaf  = { name: string; path: string; icon: React.FC<{ className?: string }>; module?: string };
+type NavGroup = { name: string; icon: React.FC<{ className?: string }>; module?: string; children: NavChild[] };
 type NavEntry = NavLeaf | NavGroup;
 
 const NAV: NavEntry[] = [
-  { name: "Dashboard",  path: "/dashboard",  icon: LayoutDashboard },
+  { name: "Dashboard",  path: "/dashboard",  icon: LayoutDashboard, module: "dashboard" },
   {
-    name: "Accounting", icon: BookOpen,
+    name: "Accounting", icon: BookOpen, module: "accounting",
     children: [
       { name: "Chart of Accounts", path: "/accounts" },
       { name: "Journal Entries",   path: "/journals" },
@@ -41,7 +42,7 @@ const NAV: NavEntry[] = [
     ],
   },
   {
-    name: "Sales", icon: FileText,
+    name: "Sales", icon: FileText, module: "sales",
     children: [
       { name: "Invoices",   path: "/invoices" },
       { name: "Customers",  path: "/customers" },
@@ -50,7 +51,7 @@ const NAV: NavEntry[] = [
     ],
   },
   {
-    name: "Purchases", icon: ShoppingCart,
+    name: "Purchases", icon: ShoppingCart, module: "purchases",
     children: [
       { name: "Vendors",         path: "/vendors" },
       { name: "Bills",           path: "/bills" },
@@ -59,11 +60,11 @@ const NAV: NavEntry[] = [
       { name: "AP Aging",        path: "/vendors/ap-aging" },
     ],
   },
-  { name: "Banking",   path: "/bank",      icon: Landmark },
-  { name: "Expenses",  path: "/expenses",  icon: ReceiptIndianRupee },
-  { name: "Inventory", path: "/inventory", icon: PackageSearch },
+  { name: "Banking",   path: "/bank",      icon: Landmark,           module: "banking" },
+  { name: "Expenses",  path: "/expenses",  icon: ReceiptIndianRupee, module: "expenses" },
+  { name: "Inventory", path: "/inventory", icon: PackageSearch,      module: "inventory" },
   {
-    name: "GST", icon: Calculator,
+    name: "GST", icon: Calculator, module: "gst",
     children: [
       { name: "ITC Ledger",      path: "/gst/itc-ledger" },
       { name: "GSTR-1",          path: "/gst/gstr1" },
@@ -71,9 +72,9 @@ const NAV: NavEntry[] = [
       { name: "Reconciliation",  path: "/gst/reconciliation" },
     ],
   },
-  { name: "Budgets", path: "/budgets", icon: PiggyBank },
+  { name: "Budgets", path: "/budgets", icon: PiggyBank, module: "budgets" },
   {
-    name: "Reports", icon: PieChart,
+    name: "Reports", icon: PieChart, module: "reports",
     children: [
       { name: "Profit & Loss",  path: "/reports/profit-loss" },
       { name: "Balance Sheet",  path: "/reports/balance-sheet" },
@@ -82,7 +83,7 @@ const NAV: NavEntry[] = [
     ],
   },
   {
-    name: "Settings", icon: Settings,
+    name: "Settings", icon: Settings, module: "users",
     children: [
       { name: "Users",            path: "/users" },
       { name: "Audit Logs",       path: "/audit-logs" },
@@ -256,11 +257,76 @@ function FYSelector() {
   );
 }
 
+/* ── User menu (bottom of sidebar) ─────────────────── */
+function UserMenu() {
+  const { user, logout } = useAuth();
+  const [, navigate] = useLocation() as any;
+  const [open, setOpen] = useState(false);
+
+  const handleLogout = () => { logout(); navigate("/login"); };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 p-2.5 rounded-xl cursor-pointer hover:bg-violet-50 transition-colors"
+      >
+        <div
+          className="h-9 w-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+          style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)" }}
+        >
+          {user?.avatar ?? "JD"}
+        </div>
+        <div className="flex-1 min-w-0 text-left">
+          <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{user?.name ?? "John Doe"}</p>
+          <p className="text-[11px] text-gray-400 truncate">{user?.role ?? "Super Admin"}</p>
+        </div>
+        <ChevronDown className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute bottom-full left-0 right-0 mb-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 overflow-hidden">
+            <div className="px-3 py-2 border-b border-gray-100">
+              <p className="text-xs font-semibold text-gray-700">{user?.orgName}</p>
+              <p className="text-[11px] text-gray-400">{user?.email}</p>
+            </div>
+            {user?.isPlatformAdmin && (
+              <Link href="/platform-admin">
+                <div onClick={() => setOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 cursor-pointer font-medium">
+                  <Shield className="w-3.5 h-3.5" />
+                  Platform Admin
+                  <ExternalLink className="w-3 h-3 ml-auto" />
+                </div>
+              </Link>
+            )}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sign Out
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ── Layout ─────────────────────────────────────────── */
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pageTitle = usePageTitle(location);
+  const { user, canAccess } = useAuth();
+
+  const visibleNav = NAV.filter(item => {
+    const mod = (item as any).module;
+    if (!mod) return true;
+    return canAccess(mod);
+  });
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -289,30 +355,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
+        {/* Role badge */}
+        {user && (
+          <div className="px-4 py-2 border-b border-gray-50 bg-violet-50/50">
+            <div className="flex items-center gap-1.5">
+              <Shield className="w-3 h-3 text-violet-500" />
+              <span className="text-[11px] font-semibold text-violet-600">{user.role}</span>
+              <span className="text-[10px] text-gray-400 ml-auto">{user.orgName.split(" ")[0]}</span>
+            </div>
+          </div>
+        )}
+
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-3 px-1 sidebar-scroll">
-          {NAV.map((item) => (
+          {visibleNav.map((item) => (
             <NavItem key={item.name} item={item} currentPath={location} />
           ))}
         </nav>
 
         {/* Bottom user card */}
         <div className="flex-shrink-0 p-3 border-t border-gray-100">
-          <div
-            className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer hover:bg-violet-50 transition-colors"
-          >
-            <div
-              className="h-9 w-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-              style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)" }}
-            >
-              JD
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-800 truncate leading-tight">John Doe</p>
-              <p className="text-[11px] text-gray-400 truncate">Super Admin</p>
-            </div>
-            <ChevronDown className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-          </div>
+          <UserMenu />
           <SidebarFYLabel />
         </div>
       </aside>
@@ -330,12 +393,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Menu className="h-5 w-5" />
           </button>
 
-          {/* Page title */}
           <div className="flex items-center gap-2">
             <h1 className="text-base font-bold text-gray-800 hidden sm:block">{pageTitle}</h1>
           </div>
 
-          {/* Search */}
           <div className="flex-1 max-w-sm hidden md:flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 mx-4 hover:border-violet-300 transition-colors group">
             <Search className="h-4 w-4 text-gray-400 group-hover:text-violet-500 transition-colors flex-shrink-0" />
             <span className="text-sm text-gray-400 select-none">Search anything here...</span>
@@ -363,7 +424,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             className="h-9 w-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 cursor-pointer"
             style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)" }}
           >
-            JD
+            {user?.avatar ?? "JD"}
           </div>
         </header>
 

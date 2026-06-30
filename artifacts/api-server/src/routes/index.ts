@@ -17,6 +17,7 @@ import gstRouter from "./gst";
 import budgetsRouter from "./budgets";
 import usersRouter from "./users";
 import reportsRouter from "./reports";
+import platformAdminRouter from "./platform-admin";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use(gstRouter);
 router.use(budgetsRouter);
 router.use(usersRouter);
 router.use(reportsRouter);
+router.use(platformAdminRouter);
 
 export default router;

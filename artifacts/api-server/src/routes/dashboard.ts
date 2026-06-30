@@ -62,7 +62,7 @@ router.get("/dashboard/summary", async (req, res) => {
         pendingCount:  sql<number>`coalesce(count(case when status = 'draft' then 1 end), 0)`,
       })
       .from(vendorBillsTable)
-      .where(and(gte(vendorBillsTable.billDate, fyFrom), lte(vendorBillsTable.billDate, fyTo)));
+      .where(and(gte(vendorBillsTable.date, fyFrom), lte(vendorBillsTable.date, fyTo)));
 
     // Pending expenses
     const [expStats] = await db
@@ -195,7 +195,7 @@ router.get("/dashboard/recent-activity", async (req, res) => {
       .where(and(gte(invoicesTable.date, fyFrom), lte(invoicesTable.date, fyTo)))
       .orderBy(desc(invoicesTable.createdAt)).limit(6);
     const bills = await db.select().from(vendorBillsTable)
-      .where(and(gte(vendorBillsTable.billDate, fyFrom), lte(vendorBillsTable.billDate, fyTo)))
+      .where(and(gte(vendorBillsTable.date, fyFrom), lte(vendorBillsTable.date, fyTo)))
       .orderBy(desc(vendorBillsTable.createdAt)).limit(3);
     const expenses = await db.select().from(expenseClaimsTable)
       .orderBy(desc(expenseClaimsTable.createdAt)).limit(3);

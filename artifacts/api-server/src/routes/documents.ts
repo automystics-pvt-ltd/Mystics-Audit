@@ -96,6 +96,12 @@ router.get("/documents/file/:id", async (req, res) => {
     if (!doc) { res.status(404).json({ error: "Not found" }); return; }
     if (!doc.fileUrl) { res.status(404).json({ error: "No file stored" }); return; }
 
+    // If fileUrl is an absolute HTTP(S) URL, redirect to it directly
+    if (doc.fileUrl.startsWith("http://") || doc.fileUrl.startsWith("https://")) {
+      res.redirect(302, doc.fileUrl);
+      return;
+    }
+
     // fileUrl is stored as the disk filename (e.g. "1234_invoice.pdf")
     const filePath = path.join(UPLOADS_DIR, doc.fileUrl);
     if (!fs.existsSync(filePath)) { res.status(404).json({ error: "File not found on disk" }); return; }

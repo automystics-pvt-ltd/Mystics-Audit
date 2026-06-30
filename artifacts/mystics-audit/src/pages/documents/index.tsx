@@ -425,6 +425,28 @@ function DocViewer({ doc, onClose, onDelete }: { doc: Doc | null; onClose: () =>
   const cfg  = fc(doc.fileType);
   const fileApiUrl = doc.fileUrl ? `/api/documents/file/${doc.id}` : null;
   const canPreview = fileApiUrl && (doc.fileType === "pdf" || doc.fileType === "image");
+  const [previewError, setPreviewError] = useState(false);
+
+  const previewFallback = (
+    <div className="flex-1 flex flex-col items-center justify-center gap-4">
+      <div className={cn("w-24 h-24 rounded-3xl flex flex-col items-center justify-center border-2", cfg.bg, cfg.border)}>
+        <span className={cn("text-xl font-black", cfg.text)}>{cfg.label}</span>
+      </div>
+      <div className="text-center">
+        <p className="text-sm font-semibold text-gray-700">{doc.originalName ?? doc.name}</p>
+        <p className="text-xs text-muted-foreground mt-1">{fmtSize(doc.sizeBytes)}</p>
+        {previewError
+          ? <p className="text-xs text-red-600 mt-2 bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">Preview unavailable — the file could not be loaded</p>
+          : <p className="text-xs text-amber-600 mt-2 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">No file stored — metadata only record</p>
+        }
+      </div>
+      {fileApiUrl && !previewError && (
+        <a href={fileApiUrl} target="_blank" rel="noopener noreferrer">
+          <Button variant="outline" className="gap-2"><ZoomIn className="w-4 h-4"/>Open in Browser</Button>
+        </a>
+      )}
+    </div>
+  );
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -439,12 +461,12 @@ function DocViewer({ doc, onClose, onDelete }: { doc: Doc | null; onClose: () =>
           <div className="flex items-center gap-2 shrink-0">
             <FilingBadge status={doc.filingStatus}/>
             <Badge className={cn("text-xs border", cat.color)}>{cat.label}</Badge>
-            {fileApiUrl && (
+            {fileApiUrl && !previewError && (
               <a href={fileApiUrl} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm" className="gap-1.5"><ExternalLink className="w-3.5 h-3.5"/>Open</Button>
               </a>
             )}
-            {fileApiUrl && (
+            {fileApiUrl && !previewError && (
               <a href={fileApiUrl} download={doc.originalName}>
                 <Button variant="outline" size="sm" className="gap-1.5"><Download className="w-3.5 h-3.5"/>Download</Button>
               </a>
@@ -460,31 +482,25 @@ function DocViewer({ doc, onClose, onDelete }: { doc: Doc | null; onClose: () =>
         <div className="flex-1 flex min-h-0">
           {/* Left: file preview */}
           <div className="flex-1 bg-gray-100 flex flex-col min-w-0">
-            {canPreview ? (
+            {canPreview && !previewError ? (
               doc.fileType === "image" ? (
                 <div className="flex-1 flex items-center justify-center p-6">
-                  <img src={fileApiUrl!} alt={doc.name} className="max-w-full max-h-full object-contain rounded-xl shadow-lg"/>
+                  <img
+                    src={fileApiUrl!}
+                    alt={doc.name}
+                    className="max-w-full max-h-full object-contain rounded-xl shadow-lg"
+                    onError={() => setPreviewError(true)}
+                  />
                 </div>
               ) : (
-                <iframe src={`${fileApiUrl}#toolbar=1&navpanes=0`} className="flex-1 w-full border-0 rounded-none" title={doc.name}/>
+                <iframe
+                  src={`${fileApiUrl}#toolbar=1&navpanes=0`}
+                  className="flex-1 w-full border-0 rounded-none"
+                  title={doc.name}
+                  onError={() => setPreviewError(true)}
+                />
               )
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4">
-                <div className={cn("w-24 h-24 rounded-3xl flex flex-col items-center justify-center border-2", cfg.bg, cfg.border)}>
-                  <span className={cn("text-xl font-black", cfg.text)}>{cfg.label}</span>
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-gray-700">{doc.originalName ?? doc.name}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{fmtSize(doc.sizeBytes)}</p>
-                  {!doc.fileUrl && <p className="text-xs text-amber-600 mt-2 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">No file stored — metadata only record</p>}
-                </div>
-                {fileApiUrl && (
-                  <a href={fileApiUrl} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" className="gap-2"><ZoomIn className="w-4 h-4"/>Open in Browser</Button>
-                  </a>
-                )}
-              </div>
-            )}
+            ) : previewFallback}
           </div>
 
           {/* Right: full detail panel */}

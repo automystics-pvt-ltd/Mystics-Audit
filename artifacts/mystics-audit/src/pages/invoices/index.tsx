@@ -1,79 +1,219 @@
-import { useListInvoices } from "@workspace/api-client-react";
+import { useState } from "react";
 import { Link } from "wouter";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { useListInvoices } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatCurrency, formatDate } from "@/lib/format";
+import {
+  Plus, Search, FileText, Clock, CheckCircle2, AlertCircle,
+  Receipt, Download, RefreshCw,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const STATUS_CFG: Record<string, { color: string; icon: React.FC<{ className?: string }> }> = {
+  DRAFT:     { color: "bg-amber-100 text-amber-700 border-amber-200",    icon: Clock },
+  POSTED:    { color: "bg-blue-100 text-blue-700 border-blue-200",       icon: CheckCircle2 },
+  PARTIAL:   { color: "bg-violet-100 text-violet-700 border-violet-200", icon: Receipt },
+  PAID:      { color: "bg-green-100 text-green-700 border-green-200",    icon: CheckCircle2 },
+  CANCELLED: { color: "bg-red-100 text-red-700 border-red-200",          icon: AlertCircle },
+  OVERDUE:   { color: "bg-red-100 text-red-700 border-red-200",          icon: AlertCircle },
+};
 
 export default function InvoicesList() {
-  const { data: invoices, isLoading } = useListInvoices({});
+  const [search, setSearch]       = useState("");
+  const [statusFilter, setStatus] = useState("all");
+  const [typeFilter, setType]     = useState("all");
+
+  const { data: invoices, isLoading, refetch, isFetching } = useListInvoices({
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    type:   typeFilter   !== "all" ? typeFilter   : undefined,
+  } as any);
+
+  const filtered = (invoices ?? []).filter((inv: any) =>
+    !search ||
+    inv.invoiceNo?.toLowerCase().includes(search.toLowerCase()) ||
+    inv.customerName?.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const totalAmt = filtered.reduce((s: number, i: any) => s + (i.totalAmount || 0), 0);
+  const stats = {
+    draft:   filtered.filter((i: any) => i.status === "DRAFT").length,
+    posted:  filtered.filter((i: any) => i.status === "POSTED").length,
+    overdue: filtered.filter((i: any) =>
+      i.status !== "PAID" && i.status !== "CANCELLED" && i.balanceDue > 0 && new Date(i.dueDate) < new Date()
+    ).length,
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Invoices</h1>
-          <p className="text-muted-foreground">Manage your sales invoices.</p>
+    <div className="space-y-5">
+      {/* ── Header ── */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex-1">
+          <h1 className="text-xl font-bold text-gray-900">Invoices</h1>
+          <p className="text-sm text-muted-foreground">All sales invoices, credit &amp; debit notes</p>
         </div>
-        <Link href="/invoices/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
-          Create Invoice
+        <Button size="sm" variant="outline" onClick={() => refetch()} className="rounded-xl">
+          <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} />
+        </Button>
+        <Button size="sm" variant="outline" className="rounded-xl gap-1.5">
+          <Download className="h-3.5 w-3.5" /> Export
+        </Button>
+        <Link href="/invoices/new">
+          <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white gap-1.5">
+            <Plus className="h-3.5 w-3.5" /> New Invoice
+          </Button>
         </Link>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice No</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
-                  </TableRow>
+      {/* ── KPI strip ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Total Invoiced",  value: formatCurrency(totalAmt), color: "from-violet-600 to-violet-700", Icon: FileText },
+          { label: "Draft",           value: String(stats.draft),       color: "from-amber-500 to-amber-600",   Icon: Clock },
+          { label: "Posted / Active", value: String(stats.posted),      color: "from-blue-600 to-blue-700",     Icon: CheckCircle2 },
+          { label: "Overdue",         value: String(stats.overdue),     color: "from-red-500 to-red-600",       Icon: AlertCircle },
+        ].map(({ label, value, color, Icon }) => (
+          <div key={label} className={cn("rounded-2xl p-4 text-white bg-gradient-to-br", color)}>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium text-white/70">{label}</p>
+                <p className="text-xl font-extrabold mt-1">{value}</p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                <Icon className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Filters ── */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <div className="relative flex-1 min-w-48">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            className="pl-9 rounded-xl border-gray-200"
+            placeholder="Search invoice no. or customer…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatus}>
+          <SelectTrigger className="w-36 rounded-xl border-gray-200">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="DRAFT">Draft</SelectItem>
+            <SelectItem value="POSTED">Posted</SelectItem>
+            <SelectItem value="PAID">Paid</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={typeFilter} onValueChange={setType}>
+          <SelectTrigger className="w-40 rounded-xl border-gray-200">
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="TAX_INVOICE">Tax Invoice</SelectItem>
+            <SelectItem value="PROFORMA">Proforma</SelectItem>
+            <SelectItem value="CREDIT_NOTE">Credit Note</SelectItem>
+            <SelectItem value="DEBIT_NOTE">Debit Note</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* ── Table ── */}
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 border-b border-gray-100">
+            <tr>
+              <th className="px-4 py-3 text-left   text-xs font-bold text-gray-500 uppercase tracking-wide">Invoice No</th>
+              <th className="px-4 py-3 text-left   text-xs font-bold text-gray-500 uppercase tracking-wide">Type</th>
+              <th className="px-4 py-3 text-left   text-xs font-bold text-gray-500 uppercase tracking-wide">Customer</th>
+              <th className="px-4 py-3 text-right  text-xs font-bold text-gray-500 uppercase tracking-wide">Date</th>
+              <th className="px-4 py-3 text-right  text-xs font-bold text-gray-500 uppercase tracking-wide">Due Date</th>
+              <th className="px-4 py-3 text-right  text-xs font-bold text-gray-500 uppercase tracking-wide">Status</th>
+              <th className="px-4 py-3 text-right  text-xs font-bold text-gray-500 uppercase tracking-wide">Taxable</th>
+              <th className="px-4 py-3 text-right  text-xs font-bold text-gray-500 uppercase tracking-wide">Total</th>
+              <th className="px-4 py-3 text-right  text-xs font-bold text-gray-500 uppercase tracking-wide">Balance Due</th>
+              <th className="px-4 py-3 w-16"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="border-b border-gray-50">
+                    {Array.from({ length: 9 }).map((_, j) => (
+                      <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>
+                    ))}
+                  </tr>
                 ))
-              ) : invoices?.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    No invoices found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                invoices?.map((invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell className="font-medium">
-                      <Link href={`/invoices/${invoice.id}`} className="hover:underline text-primary">
-                        {invoice.invoiceNo}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{formatDate(invoice.date)}</TableCell>
-                    <TableCell>{invoice.customerName}</TableCell>
-                    <TableCell>
-                      <Badge variant={invoice.status === 'POSTED' ? 'default' : 'secondary'}>
-                        {invoice.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{formatCurrency(invoice.totalAmount)}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              : filtered.length === 0
+                ? (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-12 text-center text-muted-foreground">
+                      <FileText className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      No invoices found
+                    </td>
+                  </tr>
+                )
+                : filtered.map((inv: any) => {
+                    const isOverdue = inv.status !== "PAID" && inv.status !== "CANCELLED" && inv.balanceDue > 0 && new Date(inv.dueDate) < new Date();
+                    const cfgKey    = isOverdue ? "OVERDUE" : (inv.status as string);
+                    const cfg       = STATUS_CFG[cfgKey] ?? STATUS_CFG.DRAFT;
+                    const Icon      = cfg.icon;
+                    return (
+                      <tr key={inv.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                        <td className="px-4 py-3">
+                          <Link href={`/invoices/${inv.id}`}>
+                            <span className="font-mono font-semibold text-violet-600 hover:underline cursor-pointer">{inv.invoiceNo}</span>
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 font-medium">
+                            {inv.type?.replace(/_/g, " ")}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 font-medium text-gray-800">{inv.customerName}</td>
+                        <td className="px-4 py-3 text-right text-gray-500">{formatDate(inv.date)}</td>
+                        <td className="px-4 py-3 text-right">
+                          <span className={cn(isOverdue && "text-red-600 font-semibold", "text-gray-500")}>
+                            {formatDate(inv.dueDate)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className={cn("inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border", cfg.color)}>
+                            <Icon className="w-3 h-3" />
+                            {isOverdue ? "Overdue" : inv.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-600">{formatCurrency(inv.taxableAmount)}</td>
+                        <td className="px-4 py-3 text-right font-bold text-gray-900">{formatCurrency(inv.totalAmount)}</td>
+                        <td className="px-4 py-3 text-right">
+                          <span className={cn("font-bold", inv.balanceDue > 0 ? "text-red-600" : "text-green-600")}>
+                            {inv.balanceDue > 0 ? formatCurrency(inv.balanceDue) : "✓ Paid"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link href={`/invoices/${inv.id}`}>
+                            <Button variant="ghost" size="sm" className="h-7 rounded-lg text-xs text-violet-600 hover:bg-violet-50">View</Button>
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+          </tbody>
+        </table>
+        {!isLoading && filtered.length > 0 && (
+          <div className="px-4 py-3 border-t border-gray-100 flex justify-between text-xs text-muted-foreground">
+            <span>{filtered.length} invoice{filtered.length !== 1 ? "s" : ""}</span>
+            <span>Total: <span className="font-bold text-gray-800">{formatCurrency(totalAmt)}</span></span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

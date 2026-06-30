@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { useListCompanies, useUpdateCompany } from "@workspace/api-client-react";
+import { useListCompanies, useUpdateCompany, getListCompaniesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -235,7 +235,7 @@ export default function CompanySettings() {
           { id: company.id, data: form } as any,
           {
             onSuccess: () => {
-              qc.invalidateQueries({ queryKey: ["companies"] });
+              qc.invalidateQueries({ queryKey: getListCompaniesQueryKey() });
               setLogoChanged(false);
               toast({
                 title: "✓ Company settings saved",

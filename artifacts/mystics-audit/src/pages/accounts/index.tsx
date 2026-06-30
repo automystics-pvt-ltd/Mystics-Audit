@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import {
   useListAccounts, useCreateAccount, useUpdateAccount,
-  useListBankAccounts,
+  useListBankAccounts, getListAccountsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -72,7 +72,7 @@ function NewAccountDialog({ open, onClose }: { open: boolean; onClose: () => voi
   const createMut = useCreateAccount({
     mutation: {
       onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ["accounts"] });
+        qc.invalidateQueries({ queryKey: getListAccountsQueryKey() });
         toast({ title: "Account created", description: `${form.code} — ${form.name}` });
         setForm({ ...EMPTY_NEW });
         onClose();
@@ -187,7 +187,7 @@ function EditAccountDialog({ account, onClose }: { account: Account | null; onCl
   const updateMut = useUpdateAccount({
     mutation: {
       onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ["accounts"] });
+        qc.invalidateQueries({ queryKey: getListAccountsQueryKey() });
         toast({ title: "Account updated" });
         onClose();
       },

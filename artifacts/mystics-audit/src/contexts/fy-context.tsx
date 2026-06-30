@@ -16,7 +16,7 @@ export const FY_OPTIONS: FYOption[] = [
 ];
 
 /** Returns the FYOption that contains today's date */
-function detectCurrentFY(): FYOption {
+export function detectCurrentFY(): FYOption {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1; // 1-12

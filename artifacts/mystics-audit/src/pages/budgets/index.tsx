@@ -35,10 +35,10 @@ export default function BudgetsList() {
           </TableHeader>
           <TableBody>
             {budgets.map((b: any) => {
-              const spent = Number(b.totalSpent) || 0;
+              const spent = Number(b.totalActual) || 0;
               const budget = Number(b.totalBudget) || 0;
               const remaining = budget - spent;
-              const pct = budget > 0 ? (spent / budget * 100) : 0;
+              const pct = Number(b.utilizationPct) || (budget > 0 ? (spent / budget * 100) : 0);
               return (
                 <TableRow key={b.id} className="hover:bg-muted/50">
                   <TableCell>

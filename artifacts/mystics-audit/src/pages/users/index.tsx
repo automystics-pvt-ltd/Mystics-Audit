@@ -48,7 +48,7 @@ export default function UsersList() {
       const res = await fetch(`/api/users/${id}/${lock ? "lock" : "unlock"}`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ reason:"Admin action" }) });
       if (!res.ok) throw new Error(await res.text());
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["listUsers"] }); refetch(); },
+    onSuccess: () => { refetch(); },
   });
 
   const resetMut = useMutation({

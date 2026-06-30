@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Printer, RefreshCw, ChevronDown, ChevronRight } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
 import { cn } from "@/lib/utils";
-import { FY_OPTIONS } from "@/contexts/fy-context";
+import { FY_OPTIONS, detectCurrentFY } from "@/contexts/fy-context";
 
 function inr(n: number) { return new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", maximumFractionDigits:2 }).format(n); }
 function inrL(n: number) { return `₹${(n/100_000).toFixed(2)}L`; }
@@ -24,7 +24,7 @@ function exportCSV(budgets: any[]) {
 }
 
 export default function BudgetVariance() {
-  const [fy, setFy] = useState("2025-26");
+  const [fy, setFy] = useState(() => detectCurrentFY().value);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   const { data, isLoading, refetch } = useQuery<any>({

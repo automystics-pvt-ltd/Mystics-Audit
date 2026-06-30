@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import {
-  useGetInvoice, useUpdateInvoice, useDeleteInvoice, useListReceipts,
+  useGetInvoice, usePostInvoice, useUpdateInvoice, useDeleteInvoice, useListReceipts,
 } from "@workspace/api-client-react";
 import { useCompany } from "@/contexts/company-context";
 import { Button } from "@/components/ui/button";
@@ -37,8 +37,9 @@ export default function InvoiceDetail() {
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [showPrint, setShowPrint] = useState(false);
 
-  const { data: invoice, isLoading } = useGetInvoice(Number(id));
+  const { data: invoice, isLoading, refetch } = useGetInvoice(Number(id));
   const { data: receipts } = useListReceipts({});
+  const postMutation = usePostInvoice();
   const updateMutation = useUpdateInvoice();
   const { company } = useCompany();
   const deleteMutation = useDeleteInvoice();
@@ -52,8 +53,8 @@ export default function InvoiceDetail() {
   const handleDelete = () => setConfirm("delete");
 
   const doPost = () => {
-    updateMutation.mutate({ id: Number(id), data: {} } as any, {
-      onSuccess: () => { setConfirm(null); toast({ title: "✓ Invoice posted", description: "Journal entries created" }); },
+    postMutation.mutate({ id: Number(id) } as any, {
+      onSuccess: () => { setConfirm(null); refetch(); toast({ title: "✓ Invoice posted", description: "Journal entries created" }); },
       onError: () => toast({ title: "Failed to post invoice", variant: "destructive" }),
     });
   };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListBankAccounts, useCreateBankAccount } from "@workspace/api-client-react";
+import { useListBankAccounts, useCreateBankAccount, getListBankAccountsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,8 +31,8 @@ function AddBankAccountDialog({ open, onClose }: { open: boolean; onClose: () =>
   const createMut = useCreateBankAccount({
     mutation: {
       onSuccess: (data: any) => {
-        qc.invalidateQueries({ queryKey: ["bank-accounts"] });
-        qc.invalidateQueries({ queryKey: ["accounts"] });
+        qc.invalidateQueries({ queryKey: getListBankAccountsQueryKey() });
+        qc.invalidateQueries({ queryKey: ["/api/accounts"] });
         toast({
           title: "Bank account added",
           description: data.glAccountCode

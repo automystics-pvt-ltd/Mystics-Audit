@@ -68,6 +68,7 @@ const NAV: NavEntry[] = [
     { name: "Budget Variance",        path: "/reports/budget-variance" },
   ]},
   { name: "Settings", icon: Settings, module: "users", children: [
+    { name: "Company Profile",  path: "/settings" },
     { name: "Users",            path: "/users" },
     { name: "Billing",          path: "/billing" },
     { name: "Audit Logs",       path: "/audit-logs" },

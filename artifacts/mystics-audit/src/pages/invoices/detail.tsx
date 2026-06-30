@@ -3,6 +3,7 @@ import { useParams, useLocation, Link } from "wouter";
 import {
   useGetInvoice, useUpdateInvoice, useDeleteInvoice, useListReceipts,
 } from "@workspace/api-client-react";
+import { useCompany } from "@/contexts/company-context";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ export default function InvoiceDetail() {
   const { data: invoice, isLoading } = useGetInvoice(Number(id));
   const { data: receipts } = useListReceipts({});
   const updateMutation = useUpdateInvoice();
+  const { company } = useCompany();
   const deleteMutation = useDeleteInvoice();
 
   const { settings, update: updateSettings, reset: resetSettings } = useDocSettings("invoice");
@@ -357,6 +359,15 @@ export default function InvoiceDetail() {
               lines: invoice.lines ?? [],
             }}
             settings={settings}
+            company={company ? {
+              name:    company.legalName,
+              gstin:   company.gstin ?? "",
+              address: [company.address, company.city, company.state, company.pincode].filter(Boolean).join(", "),
+              phone:   company.phone ?? "",
+              email:   company.email ?? "",
+              website: company.website ?? undefined,
+              logoUrl: company.logoUrl ?? null,
+            } : undefined}
           />
         </div>
       )}

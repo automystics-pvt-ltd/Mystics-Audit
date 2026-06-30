@@ -48,6 +48,7 @@ export interface PrintCompanyData {
   phone: string;
   email: string;
   website?: string;
+  logoUrl?: string | null;
 }
 
 const COMPANY: PrintCompanyData = {
@@ -57,6 +58,7 @@ const COMPANY: PrintCompanyData = {
   phone: "+91 44 4567 8900",
   email: "accounts@automystics.com",
   website: "www.automystics.com",
+  logoUrl: null,
 };
 
 function toWords(num: number): string {
@@ -156,8 +158,18 @@ export function InvoicePrint({ invoice, settings, company = COMPANY }: Props) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", background: settings.headerColor, padding: "20px", borderRadius: "10px 10px 0 0", marginBottom: 0 }}>
           <div style={{ color: "white" }}>
             {settings.showLogo && (
-              <div style={{ width: 56, height: 56, background: "rgba(255,255,255,0.15)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8, fontSize: 24, fontWeight: 900, color: "white" }}>
-                M
+              <div style={{ width: 56, height: 56, background: "rgba(255,255,255,0.15)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8, overflow: "hidden" }}>
+                {company.logoUrl ? (
+                  <img
+                    src={company.logoUrl}
+                    alt="Logo"
+                    style={{ width: "100%", height: "100%", objectFit: "contain", padding: 4 }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 24, fontWeight: 900, color: "white" }}>
+                    {company.name?.charAt(0)?.toUpperCase() ?? "M"}
+                  </span>
+                )}
               </div>
             )}
             <div style={{ fontSize: 16, fontWeight: 700 }}>{company.name}</div>

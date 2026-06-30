@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import { FYProvider } from "@/contexts/fy-context";
 import { AuthProvider } from "@/contexts/auth-context";
+import { CompanyProvider } from "@/contexts/company-context";
 import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 import LoginPage from "@/pages/login";
@@ -90,6 +91,7 @@ import PlatformSubscriptions from "@/pages/platform-admin/subscriptions";
 import PlatformAnalytics from "@/pages/platform-admin/analytics";
 import BillingPayments from "@/pages/platform-admin/billing-payments";
 import BillingPage from "@/pages/billing";
+import CompanySettings from "@/pages/settings/index";
 import GstDocuments from "@/pages/gst-documents/index";
 import Documents from "@/pages/documents/index";
 import FinanceOverview from "@/pages/finance/overview";
@@ -203,6 +205,7 @@ function Router() {
 
             <Route path="/audit-logs" component={AuditLogsList} />
             <Route path="/billing" component={BillingPage} />
+            <Route path="/settings" component={CompanySettings} />
             <Route path="/template-builder" component={TemplateBuilder} />
 
             <Route path="/documents" component={Documents} />
@@ -235,12 +238,14 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <FYProvider>
-          <TooltipProvider>
-            <WouterRouter base={BASE_URL}>
-              <Router />
-            </WouterRouter>
-            <Toaster />
-          </TooltipProvider>
+          <CompanyProvider>
+            <TooltipProvider>
+              <WouterRouter base={BASE_URL}>
+                <Router />
+              </WouterRouter>
+              <Toaster />
+            </TooltipProvider>
+          </CompanyProvider>
         </FYProvider>
       </AuthProvider>
     </QueryClientProvider>

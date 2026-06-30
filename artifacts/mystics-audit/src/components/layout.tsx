@@ -59,6 +59,7 @@ const NAV: NavEntry[] = [
   ]},
   { name: "Settings", icon: Settings, module: "users", children: [
     { name: "Users",            path: "/users" },
+    { name: "Billing",          path: "/billing" },
     { name: "Audit Logs",       path: "/audit-logs" },
     { name: "Template Builder", path: "/template-builder" },
   ]},

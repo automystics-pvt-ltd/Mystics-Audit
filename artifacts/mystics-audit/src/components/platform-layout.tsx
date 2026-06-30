@@ -1,10 +1,15 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
-import { Building2, LayoutDashboard, Users, BarChart3, LogOut, ChevronRight } from "lucide-react";
+import {
+  Building2, LayoutDashboard, Users, BarChart3, LogOut,
+  ChevronRight, CreditCard, Receipt,
+} from "lucide-react";
 
 const NAV = [
   { href: "/platform-admin",               icon: LayoutDashboard, label: "Overview" },
   { href: "/platform-admin/organizations", icon: Building2,       label: "Organizations" },
+  { href: "/platform-admin/subscriptions", icon: CreditCard,      label: "Subscriptions" },
+  { href: "/platform-admin/billing",       icon: Receipt,         label: "Billing & Payments" },
   { href: "/platform-admin/users",         icon: Users,           label: "All Users" },
   { href: "/platform-admin/analytics",     icon: BarChart3,       label: "Analytics" },
 ];

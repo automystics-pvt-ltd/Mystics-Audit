@@ -85,6 +85,10 @@ import PlatformAdminDashboard from "@/pages/platform-admin/index";
 import PlatformOrganizations from "@/pages/platform-admin/organizations";
 import OrgDetail from "@/pages/platform-admin/org-detail";
 import PlatformUsers from "@/pages/platform-admin/platform-users";
+import PlatformSubscriptions from "@/pages/platform-admin/subscriptions";
+import PlatformAnalytics from "@/pages/platform-admin/analytics";
+import BillingPayments from "@/pages/platform-admin/billing-payments";
+import BillingPage from "@/pages/billing";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -104,7 +108,10 @@ function Router() {
       {/* Platform admin — own layout (dark) */}
       <Route path="/platform-admin/organizations/:id" component={OrgDetail} />
       <Route path="/platform-admin/organizations" component={PlatformOrganizations} />
+      <Route path="/platform-admin/subscriptions" component={PlatformSubscriptions} />
+      <Route path="/platform-admin/billing" component={BillingPayments} />
       <Route path="/platform-admin/users" component={PlatformUsers} />
+      <Route path="/platform-admin/analytics" component={PlatformAnalytics} />
       <Route path="/platform-admin">
         {(params) => params ? <PlatformAdminDashboard /> : <PlatformAdminDashboard />}
       </Route>
@@ -182,6 +189,7 @@ function Router() {
             <Route path="/users/:id" component={UserDetail} />
 
             <Route path="/audit-logs" component={AuditLogsList} />
+            <Route path="/billing" component={BillingPage} />
             <Route path="/template-builder" component={TemplateBuilder} />
 
             <Route path="/reports/profit-loss" component={ProfitLoss} />

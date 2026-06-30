@@ -18,6 +18,7 @@ import budgetsRouter from "./budgets";
 import usersRouter from "./users";
 import reportsRouter from "./reports";
 import platformAdminRouter from "./platform-admin";
+import subscriptionsRouter from "./subscriptions";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use(budgetsRouter);
 router.use(usersRouter);
 router.use(reportsRouter);
 router.use(platformAdminRouter);
+router.use(subscriptionsRouter);
 
 export default router;

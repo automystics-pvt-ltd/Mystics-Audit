@@ -16,12 +16,19 @@ function createTransport() {
   });
 }
 
+export interface EmailAttachment {
+  filename: string;
+  content: string;
+  contentType: string;
+}
+
 export interface SendEmailOptions {
   to: string;
   toName?: string;
   subject: string;
   html: string;
   text?: string;
+  attachments?: EmailAttachment[];
 }
 
 export async function sendEmail(opts: SendEmailOptions): Promise<{ ok: boolean; error?: string }> {
@@ -43,6 +50,11 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ ok: boolean; 
       subject: opts.subject,
       text: opts.text ?? opts.html.replace(/<[^>]+>/g, ""),
       html: opts.html,
+      attachments: opts.attachments?.map(a => ({
+        filename: a.filename,
+        content: Buffer.from(a.content, "utf-8"),
+        contentType: a.contentType,
+      })),
     });
     return { ok: true };
   } catch (err: any) {

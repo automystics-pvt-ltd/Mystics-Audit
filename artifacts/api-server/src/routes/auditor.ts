@@ -111,6 +111,49 @@ router.post("/auditor/shares", async (req, res) => {
     let emailError: string | undefined;
 
     if (shareType === "email" && recipientEmail) {
+      /* ── build CSV attachment from invoice + bill data ── */
+      const txConds: any[] = [];
+      if (filterFY) {
+        const yr = parseInt(String(filterFY).split("-")[0]);
+        txConds.push(gte(invoicesTable.date, `${yr}-04-01`));
+        txConds.push(lte(invoicesTable.date, `${yr + 1}-03-31`));
+      }
+      if (filterCustomer) txConds.push(ilike(invoicesTable.customerName, `%${filterCustomer}%`));
+
+      const emailInvoices = await db.select({
+        ref: invoicesTable.invoiceNo, type: sql<string>`'Sales Invoice'`,
+        party: invoicesTable.customerName, date: invoicesTable.date,
+        amount: invoicesTable.totalAmount, status: invoicesTable.status,
+      }).from(invoicesTable).where(txConds.length ? and(...txConds) : undefined).orderBy(desc(invoicesTable.date)).limit(50);
+
+      const billConds: any[] = [];
+      if (filterFY) {
+        const yr = parseInt(String(filterFY).split("-")[0]);
+        billConds.push(gte(vendorBillsTable.date, `${yr}-04-01`));
+        billConds.push(lte(vendorBillsTable.date, `${yr + 1}-03-31`));
+      }
+      if (filterVendor) billConds.push(ilike(vendorBillsTable.vendorName, `%${filterVendor}%`));
+
+      const emailBills = await db.select({
+        ref: vendorBillsTable.billNo, type: sql<string>`'Vendor Bill'`,
+        party: vendorBillsTable.vendorName, date: vendorBillsTable.date,
+        amount: vendorBillsTable.totalAmount, status: vendorBillsTable.status,
+      }).from(vendorBillsTable).where(billConds.length ? and(...billConds) : undefined).orderBy(desc(vendorBillsTable.date)).limit(50);
+
+      const allRows = [
+        ...emailInvoices.map(r => ({ ...r, amount: Number(r.amount) })),
+        ...emailBills.map(r => ({ ...r, amount: Number(r.amount) })),
+      ];
+
+      const csvHeader = "Reference,Type,Party,Date,Amount (INR),Status\n";
+      const csvRows = allRows.map(r =>
+        [r.ref, r.type, `"${(r.party ?? "").replace(/"/g, '""')}"`, r.date, r.amount.toFixed(2), r.status].join(",")
+      ).join("\n");
+      const csvContent = csvHeader + csvRows;
+
+      const fy = filterFY ? `_FY${filterFY}` : "";
+      const attachmentName = `Audit_Package${fy}_${new Date().toISOString().slice(0, 10)}.csv`;
+
       const html = buildAuditorEmailHtml({
         recipientName,
         message,
@@ -124,6 +167,11 @@ router.post("/auditor/shares", async (req, res) => {
         toName: recipientName,
         subject: subject || "Audit Document Package",
         html,
+        attachments: allRows.length > 0 ? [{
+          filename: attachmentName,
+          content: csvContent,
+          contentType: "text/csv",
+        }] : undefined,
       });
 
       if (!result.ok) {

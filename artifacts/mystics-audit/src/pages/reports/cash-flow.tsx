@@ -15,9 +15,9 @@ export default function CashFlow() {
   const { data } = useGetCashFlow({ from, to });
   const d = data as any;
 
-  const operating: any[] = d?.operating ?? [];
-  const investing: any[] = d?.investing ?? [];
-  const financing: any[] = d?.financing ?? [];
+  const operating: any[] = Array.isArray(d?.operating) ? d.operating : [];
+  const investing: any[] = Array.isArray(d?.investing) ? d.investing : [];
+  const financing: any[] = Array.isArray(d?.financing) ? d.financing : [];
   const totalOperating = d?.totalOperating ?? 0;
   const totalInvesting = d?.totalInvesting ?? 0;
   const totalFinancing = d?.totalFinancing ?? 0;

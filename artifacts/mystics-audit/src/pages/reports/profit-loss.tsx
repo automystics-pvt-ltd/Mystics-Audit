@@ -15,8 +15,8 @@ export default function ProfitLoss() {
   const { data } = useGetProfitLoss({ from, to });
   const d = data as any;
 
-  const revenue: any[] = d?.revenue ?? [];
-  const expenses: any[] = d?.expenses ?? [];
+  const revenue: any[] = Array.isArray(d?.revenue) ? d.revenue : [];
+  const expenses: any[] = Array.isArray(d?.expenses) ? d.expenses : [];
   const totalRevenue = d?.totalRevenue ?? 0;
   const totalExpenses = d?.totalExpenses ?? 0;
   const netProfit = totalRevenue - totalExpenses;

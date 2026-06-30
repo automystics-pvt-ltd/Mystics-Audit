@@ -13,9 +13,9 @@ export default function BalanceSheet() {
   const { data } = useGetBalanceSheet({ date });
   const d = data as any;
 
-  const assets: any[] = d?.assets ?? [];
-  const liabilities: any[] = d?.liabilities ?? [];
-  const equity: any[] = d?.equity ?? [];
+  const assets: any[] = Array.isArray(d?.assets) ? d.assets : [];
+  const liabilities: any[] = Array.isArray(d?.liabilities) ? d.liabilities : [];
+  const equity: any[] = Array.isArray(d?.equity) ? d.equity : [];
   const totalAssets = d?.totalAssets ?? 0;
   const totalLiabilities = d?.totalLiabilities ?? 0;
   const totalEquity = d?.totalEquity ?? 0;

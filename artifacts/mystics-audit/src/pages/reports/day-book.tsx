@@ -13,7 +13,7 @@ export default function DayBook() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const { data } = useGetDayBook({ date });
   const d = data as any;
-  const entries: any[] = d?.entries ?? [];
+  const entries: any[] = Array.isArray(d?.entries) ? d.entries : [];
   const totalDebit = d?.totalDebit ?? 0;
   const totalCredit = d?.totalCredit ?? 0;
 

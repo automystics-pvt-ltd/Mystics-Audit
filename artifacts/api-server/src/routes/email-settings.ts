@@ -8,7 +8,7 @@ const router = Router();
 
 const DEFAULT_SLUG = "default";
 
-/* ensure a row always exists */
+/* ensure a row always exists — configAllowed defaults true so tenant can configure immediately */
 async function getOrCreateSettings(slug = DEFAULT_SLUG) {
   const existing = await db
     .select()
@@ -18,7 +18,7 @@ async function getOrCreateSettings(slug = DEFAULT_SLUG) {
   if (existing.length) return existing[0];
   const [created] = await db
     .insert(emailSettingsTable)
-    .values({ orgSlug: slug })
+    .values({ orgSlug: slug, configAllowed: true })
     .returning();
   return created;
 }

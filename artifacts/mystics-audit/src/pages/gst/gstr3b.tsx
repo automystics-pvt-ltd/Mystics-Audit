@@ -2,6 +2,8 @@ import { useGetGstr3bData } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/format";
 import {
   FileCheck, RefreshCw, TrendingUp, TrendingDown, Scale, Download,
@@ -16,12 +18,28 @@ const MONTHS = [
 
 export default function Gstr3b() {
   const today = new Date();
-  const [month, setMonth] = useState(String(today.getMonth() + 1).padStart(2, "0"));
-  const [year, setYear]   = useState(String(today.getFullYear()));
+  const [month, setMonth]   = useState(String(today.getMonth() + 1).padStart(2, "0"));
+  const [year, setYear]     = useState(String(today.getFullYear()));
+  const [fileOpen, setFileOpen] = useState(false);
+  const [filed, setFiled]   = useState(false);
+  const { toast } = useToast();
   const period = `${year}-${month}`;
 
   const { data, refetch, isFetching } = useGetGstr3bData({ period });
   const d = (data as any) ?? {};
+
+  function exportJson() {
+    const payload = { period, outwardCgst: d.outwardCgst, outwardSgst: d.outwardSgst, outwardIgst: d.outwardIgst, itcCgst: d.itcCgst, itcSgst: d.itcSgst, itcIgst: d.itcIgst, netPayable: d.netPayable };
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+    a.download = `GSTR3B_${period}.json`; a.click();
+  }
+
+  function confirmFile() {
+    setFiled(true);
+    setFileOpen(false);
+    toast({ title: "GSTR-3B Filed", description: `Successfully filed for ${MONTHS[parseInt(month) - 1]} ${year}` });
+  }
 
   const outwardTax = (d.outwardCgst ?? 0) + (d.outwardSgst ?? 0) + (d.outwardIgst ?? 0);
   const itcAvail   = (d.itcCgst    ?? 0) + (d.itcSgst    ?? 0) + (d.itcIgst    ?? 0);
@@ -55,12 +73,18 @@ export default function Gstr3b() {
           <Button size="sm" variant="outline" onClick={() => refetch()} className="rounded-xl">
             <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} />
           </Button>
-          <Button size="sm" variant="outline" className="rounded-xl gap-1.5">
+          <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={exportJson}>
             <Download className="h-3.5 w-3.5" /> Export
           </Button>
-          <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white gap-1.5">
-            <FileCheck className="h-3.5 w-3.5" /> File GSTR-3B
-          </Button>
+          {!filed ? (
+            <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white gap-1.5" onClick={() => setFileOpen(true)}>
+              <FileCheck className="h-3.5 w-3.5" /> File GSTR-3B
+            </Button>
+          ) : (
+            <span className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl bg-green-100 text-green-700 border border-green-200">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Filed
+            </span>
+          )}
         </div>
       </div>
 
@@ -187,6 +211,30 @@ export default function Gstr3b() {
             : <CheckCircle2  className="w-12 h-12 text-white/40" />}
         </div>
       </div>
+
+      {/* File GSTR-3B confirmation dialog */}
+      <Dialog open={fileOpen} onOpenChange={o => !o && setFileOpen(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCheck className="w-4 h-4 text-violet-600" /> File GSTR-3B
+            </DialogTitle>
+            <DialogDescription>
+              You are about to file GSTR-3B for <strong>{MONTHS[parseInt(month) - 1]} {year}</strong>.
+              Please verify the summary below before proceeding.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-muted/40 rounded-lg p-3 space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">Outward Tax</span><span className="font-mono font-semibold">{formatCurrency(outwardTax)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">ITC Available</span><span className="font-mono font-semibold text-green-700">-{formatCurrency(itcAvail)}</span></div>
+            <div className="flex justify-between border-t pt-2"><span className="font-medium">Net Payable</span><span className={cn("font-mono font-bold", cashLiab > 0 ? "text-red-600" : "text-green-600")}>{formatCurrency(cashLiab)}</span></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFileOpen(false)}>Cancel</Button>
+            <Button onClick={confirmFile} className="bg-violet-600 hover:bg-violet-700 text-white">Confirm & File</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

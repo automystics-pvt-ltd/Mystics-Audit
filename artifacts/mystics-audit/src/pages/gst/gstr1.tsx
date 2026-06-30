@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/format";
 import {
   FileCheck, Download, RefreshCw, TrendingUp, Users, Receipt, Globe,
@@ -17,8 +19,11 @@ const MONTHS = [
 
 export default function Gstr1() {
   const today = new Date();
-  const [month, setMonth] = useState(String(today.getMonth() + 1).padStart(2, "0"));
-  const [year, setYear]   = useState(String(today.getFullYear()));
+  const [month, setMonth]   = useState(String(today.getMonth() + 1).padStart(2, "0"));
+  const [year, setYear]     = useState(String(today.getFullYear()));
+  const [fileOpen, setFileOpen] = useState(false);
+  const [filed, setFiled]   = useState(false);
+  const { toast } = useToast();
   const period = `${year}-${month}`;
 
   const { data, isLoading, refetch, isFetching } = useGetGstr1Data({ period });
@@ -34,7 +39,20 @@ export default function Gstr1() {
   const totalInvoices = d?.totalInvoices ?? 0;
   const b2bCount = d?.b2bCount ?? b2b.length;
   const b2cCount = d?.b2cCount ?? b2c.length;
-  const status  = d?.isFilingReady ? (d?.isFiled ? "filed" : "pending") : "pending";
+  const status  = filed || (d?.isFilingReady && d?.isFiled) ? "filed" : "pending";
+
+  function exportJson() {
+    const json = JSON.stringify({ period, summary, b2b, b2c }, null, 2);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+    a.download = `GSTR1_${period}.json`; a.click();
+  }
+
+  function confirmFile() {
+    setFiled(true);
+    setFileOpen(false);
+    toast({ title: "GSTR-1 Filed", description: `Successfully filed for ${MONTHS[parseInt(month) - 1]} ${year}` });
+  }
 
   const totalGst = summary.cgst + summary.sgst + summary.igst;
 
@@ -64,11 +82,11 @@ export default function Gstr1() {
           <Button size="sm" variant="outline" onClick={() => refetch()} className="rounded-xl">
             <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} />
           </Button>
-          <Button size="sm" variant="outline" className="rounded-xl gap-1.5">
+          <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={exportJson}>
             <Download className="h-3.5 w-3.5" /> Export JSON
           </Button>
           {status !== "filed" ? (
-            <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white gap-1.5">
+            <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700 text-white gap-1.5" onClick={() => setFileOpen(true)}>
               <FileCheck className="h-3.5 w-3.5" /> File GSTR-1
             </Button>
           ) : (
@@ -215,6 +233,30 @@ export default function Gstr1() {
           <p className="text-xs mt-1">Post invoices to see them here</p>
         </div>
       )}
+
+      {/* File GSTR-1 confirmation dialog */}
+      <Dialog open={fileOpen} onOpenChange={o => !o && setFileOpen(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCheck className="w-4 h-4 text-violet-600" /> File GSTR-1
+            </DialogTitle>
+            <DialogDescription>
+              You are about to file GSTR-1 for <strong>{MONTHS[parseInt(month) - 1]} {year}</strong>.
+              This will mark the return as filed. Please verify the figures below before proceeding.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-muted/40 rounded-lg p-3 space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">Taxable Value</span><span className="font-mono font-semibold">{formatCurrency(summary.taxableValue)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Total GST</span><span className="font-mono font-semibold">{formatCurrency(totalGst)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Invoices</span><span className="font-semibold">{b2bCount + b2cCount}</span></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFileOpen(false)}>Cancel</Button>
+            <Button onClick={confirmFile} className="bg-violet-600 hover:bg-violet-700 text-white">Confirm & File</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

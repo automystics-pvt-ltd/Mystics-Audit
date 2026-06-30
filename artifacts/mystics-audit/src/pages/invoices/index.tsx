@@ -56,7 +56,13 @@ export default function InvoicesList() {
         <Button size="sm" variant="outline" onClick={() => refetch()} className="rounded-xl">
           <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} />
         </Button>
-        <Button size="sm" variant="outline" className="rounded-xl gap-1.5">
+        <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={() => {
+          const rows = filtered as any[];
+          if (!rows.length) return;
+          const cols = ["invoiceNo","date","dueDate","customerName","status","taxableAmount","gstAmount","totalAmount","balanceDue"];
+          const csv = [cols.join(","), ...rows.map(r => cols.map(c => JSON.stringify(r[c] ?? "")).join(","))].join("\n");
+          const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "invoices.csv"; a.click();
+        }}>
           <Download className="h-3.5 w-3.5" /> Export
         </Button>
         <Link href="/invoices/new">

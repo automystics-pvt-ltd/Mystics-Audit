@@ -46,7 +46,12 @@ export default function InventoryList() {
             <BarChart3 className="h-3.5 w-3.5" /> Valuation Report
           </Button>
         </Link>
-        <Button size="sm" variant="outline" className="rounded-xl gap-1.5">
+        <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={() => {
+          if (!items.length) return;
+          const cols = ["itemCode","name","category","unit","currentStock","minimumStock","purchaseRate","saleRate","gstRate","stockValue","valuationMethod"];
+          const csv = [cols.join(","), ...items.map((r: any) => cols.map(c => JSON.stringify(r[c] ?? "")).join(","))].join("\n");
+          const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "inventory.csv"; a.click();
+        }}>
           <Download className="h-3.5 w-3.5" /> Export
         </Button>
         <Link href="/inventory/new">

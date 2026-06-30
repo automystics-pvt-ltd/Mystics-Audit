@@ -46,6 +46,7 @@ const NAV: NavEntry[] = [
   { name: "Inventory", path: "/inventory",       icon: PackageSearch,      module: "inventory" },
   { name: "Documents", path: "/documents",       icon: BookOpen,           module: "accounting" },
   { name: "Financial Tracking", path: "/finance/overview", icon: PieChart, module: "reports" },
+  { name: "Auditor", path: "/auditor",           icon: Shield,             module: "reports" },
   { name: "GST", icon: Calculator, module: "gst", children: [
     { name: "GST Documents",  path: "/gst/documents" },
     { name: "ITC Ledger",     path: "/gst/itc-ledger" },
@@ -55,10 +56,16 @@ const NAV: NavEntry[] = [
   ]},
   { name: "Budgets", path: "/budgets", icon: PiggyBank, module: "budgets" },
   { name: "Reports", icon: PieChart, module: "reports", children: [
-    { name: "Profit & Loss",  path: "/reports/profit-loss" },
-    { name: "Balance Sheet",  path: "/reports/balance-sheet" },
-    { name: "Cash Flow",      path: "/reports/cash-flow" },
-    { name: "Day Book",       path: "/reports/day-book" },
+    { name: "Profit & Loss",          path: "/reports/profit-loss" },
+    { name: "Balance Sheet",          path: "/reports/balance-sheet" },
+    { name: "Cash Flow",              path: "/reports/cash-flow" },
+    { name: "Day Book",               path: "/reports/day-book" },
+    { name: "GST Sales Register",     path: "/reports/gst-sales-register" },
+    { name: "GST Purchase Register",  path: "/reports/gst-purchase-register" },
+    { name: "Expense Report",         path: "/reports/expense-report" },
+    { name: "Vendor Payments",        path: "/reports/vendor-payments" },
+    { name: "Customer Collections",   path: "/reports/customer-collections" },
+    { name: "Budget Variance",        path: "/reports/budget-variance" },
   ]},
   { name: "Settings", icon: Settings, module: "users", children: [
     { name: "Users",            path: "/users" },

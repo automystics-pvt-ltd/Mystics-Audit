@@ -45,6 +45,28 @@ export const documentsTable = pgTable("documents", {
   updatedAt:        timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
+export const auditorSharesTable = pgTable("auditor_shares", {
+  id:             serial("id").primaryKey(),
+  shareType:      text("share_type").notNull().default("email"),  // email | download
+  format:         text("format").notNull().default("pdf"),        // pdf | zip | email
+  subject:        text("subject"),
+  message:        text("message"),
+  recipientEmail: text("recipient_email"),
+  recipientName:  text("recipient_name"),
+  filterFY:       text("filter_fy"),
+  filterPeriod:   text("filter_period"),
+  filterProject:  text("filter_project"),
+  filterCustomer: text("filter_customer"),
+  filterVendor:   text("filter_vendor"),
+  docIds:         text("doc_ids").notNull().default("[]"),        // JSON array of doc IDs
+  docCount:       integer("doc_count").notNull().default(0),
+  status:         text("status").notNull().default("sent"),       // sent | delivered | failed
+  sharedBy:       text("shared_by").notNull().default("Current User"),
+  notes:          text("notes"),
+  createdAt:      timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const insertDocumentSchema = createInsertSchema(documentsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type Document = typeof documentsTable.$inferSelect;
+export type AuditorShare = typeof auditorSharesTable.$inferSelect;

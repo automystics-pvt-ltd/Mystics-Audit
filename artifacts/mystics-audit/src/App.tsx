@@ -92,6 +92,13 @@ import BillingPage from "@/pages/billing";
 import GstDocuments from "@/pages/gst-documents/index";
 import Documents from "@/pages/documents/index";
 import FinanceOverview from "@/pages/finance/overview";
+import AuditorCollaboration from "@/pages/auditor/index";
+import GstSalesRegister from "@/pages/reports/gst-sales-register";
+import GstPurchaseRegister from "@/pages/reports/gst-purchase-register";
+import ExpenseReport from "@/pages/reports/expense-report";
+import VendorPayments from "@/pages/reports/vendor-payments";
+import CustomerCollections from "@/pages/reports/customer-collections";
+import BudgetVarianceReport from "@/pages/reports/budget-variance";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -198,6 +205,13 @@ function Router() {
 
             <Route path="/documents" component={Documents} />
             <Route path="/finance/overview" component={FinanceOverview} />
+            <Route path="/auditor" component={AuditorCollaboration} />
+            <Route path="/reports/gst-sales-register" component={GstSalesRegister} />
+            <Route path="/reports/gst-purchase-register" component={GstPurchaseRegister} />
+            <Route path="/reports/expense-report" component={ExpenseReport} />
+            <Route path="/reports/vendor-payments" component={VendorPayments} />
+            <Route path="/reports/customer-collections" component={CustomerCollections} />
+            <Route path="/reports/budget-variance" component={BudgetVarianceReport} />
 
             <Route path="/reports/profit-loss" component={ProfitLoss} />
             <Route path="/reports/balance-sheet" component={BalanceSheet} />

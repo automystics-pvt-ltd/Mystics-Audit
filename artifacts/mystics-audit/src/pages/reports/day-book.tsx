@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Link } from "wouter";
+import { printReportPage } from "@/lib/print-utils";
 
 export default function DayBook() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
@@ -29,7 +30,7 @@ export default function DayBook() {
             <Label className="text-sm">Date</Label>
             <Input type="date" className="w-36" value={date} onChange={e => setDate(e.target.value)} />
           </div>
-          <Button variant="outline" size="sm" onClick={() => window.print()}>Print</Button>
+          <Button variant="outline" size="sm" onClick={() => printReportPage("Day Book")}>Print</Button>
         </div>
       </div>
 

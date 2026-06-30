@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useDocSettings, DocCustomizerPanel } from "@/components/doc-customizer";
 import { cn } from "@/lib/utils";
+import { printReportPage } from "@/lib/print-utils";
 
 const MODE_ICONS: Record<string, React.FC<{ className?: string }>> = {
   NEFT: Building2, RTGS: Building2, UPI: Smartphone,
@@ -33,7 +34,7 @@ export default function ReceiptDetail() {
   const ModeIcon = MODE_ICONS[r.paymentMode] ?? Building2;
   const paidPct = r.grossAmount > 0 ? 100 : 0;
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => printReportPage(`Receipt – ${r?.receiptNo ?? ""}`);
 
   return (
     <>
@@ -60,7 +61,7 @@ export default function ReceiptDetail() {
             <Button size="sm" variant="outline" onClick={handlePrint} className="rounded-xl">
               <Printer className="h-3.5 w-3.5 mr-1.5" /> Print
             </Button>
-            <Button size="sm" variant="outline" className="rounded-xl">
+            <Button size="sm" variant="outline" onClick={handlePrint} className="rounded-xl">
               <Download className="h-3.5 w-3.5 mr-1.5" /> PDF
             </Button>
             <Button size="sm" variant="outline" className="rounded-xl">

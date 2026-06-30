@@ -61,7 +61,12 @@ export default function InvoiceDetail() {
 
   const handlePrint = () => {
     setShowPrint(true);
-    setTimeout(() => { printInvoice(); setShowPrint(false); }, 300);
+    setTimeout(() => { printInvoice(invoice?.invoiceNo); setShowPrint(false); }, 300);
+  };
+
+  const handlePdf = () => {
+    setShowPrint(true);
+    setTimeout(() => { printInvoice(invoice?.invoiceNo); setShowPrint(false); }, 300);
   };
 
   if (isLoading) return (
@@ -123,7 +128,7 @@ export default function InvoiceDetail() {
             <Button size="sm" variant="outline" onClick={handlePrint} className="rounded-xl">
               <Printer className="h-3.5 w-3.5 mr-1.5" /> Print
             </Button>
-            <Button size="sm" variant="outline" className="rounded-xl">
+            <Button size="sm" variant="outline" onClick={handlePdf} className="rounded-xl">
               <Download className="h-3.5 w-3.5 mr-1.5" /> PDF
             </Button>
             <Button size="sm" variant="outline" className="rounded-xl">

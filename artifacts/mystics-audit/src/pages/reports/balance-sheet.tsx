@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/format";
+import { printReportPage } from "@/lib/print-utils";
 
 export default function BalanceSheet() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
@@ -56,7 +57,7 @@ export default function BalanceSheet() {
             <Input type="date" className="w-36" value={date} onChange={e => setDate(e.target.value)} />
           </div>
           <Badge variant={isBalanced ? "default" : "destructive"}>{isBalanced ? "Balanced" : "Unbalanced"}</Badge>
-          <Button variant="outline" size="sm" onClick={() => window.print()}>Print</Button>
+          <Button variant="outline" size="sm" onClick={() => printReportPage("Balance Sheet")}>Print</Button>
         </div>
       </div>
 

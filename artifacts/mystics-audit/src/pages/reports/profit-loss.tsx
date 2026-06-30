@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/format";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { printReportPage } from "@/lib/print-utils";
 
 export default function ProfitLoss() {
   const today = new Date();
@@ -46,7 +47,7 @@ export default function ProfitLoss() {
             <Label className="text-sm">To</Label>
             <Input type="date" className="w-36" value={to} onChange={e => setTo(e.target.value)} />
           </div>
-          <Button variant="outline" size="sm" onClick={() => window.print()}>Print</Button>
+          <Button variant="outline" size="sm" onClick={() => printReportPage("Profit & Loss Statement")}>Print</Button>
         </div>
       </div>
 

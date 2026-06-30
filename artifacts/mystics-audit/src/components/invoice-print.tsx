@@ -336,10 +336,38 @@ export function InvoicePrint({ invoice, settings, company = COMPANY }: Props) {
 }
 
 /* ── Print trigger helper ───────────────────────────── */
-export function printInvoice() {
-  const style = document.createElement("style");
-  style.innerHTML = `@media print { body > * { display:none !important; } #invoice-print-area { display:block !important; width:100% !important; margin:0 !important; padding:0 !important; } }`;
-  document.head.appendChild(style);
-  window.print();
-  setTimeout(() => document.head.removeChild(style), 1000);
+export function printInvoice(invoiceNo?: string) {
+  const el = document.getElementById("invoice-print-area");
+  if (!el) { window.print(); return; }
+
+  // The InvoicePrint component uses only inline styles, so no stylesheet copying needed.
+  // Open a new window so this works even inside iframes (e.g. Replit preview pane).
+  const win = window.open("", "_blank", "width=960,height=720");
+  if (!win) { window.print(); return; }
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>${invoiceNo ?? "Invoice"}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: white; font-family: 'Segoe UI', Arial, sans-serif; }
+    @media screen { body { padding: 20px; } }
+    @media print {
+      body { padding: 0; }
+      @page { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+${el.outerHTML}
+<script>
+  setTimeout(function () { window.print(); }, 400);
+<\/script>
+</body>
+</html>`;
+
+  win.document.write(html);
+  win.document.close();
 }

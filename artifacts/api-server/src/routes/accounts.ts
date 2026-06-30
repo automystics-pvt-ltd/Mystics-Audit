@@ -15,11 +15,33 @@ router.get("/accounts", async (req, res) => {
 
     const accounts = await query;
 
-    const enriched = accounts.map(a => ({
-      ...a,
-      openingBalance: Number(a.openingBalance),
-      currentBalance: Number(a.openingBalance),
-    }));
+    // Compute real current balance from journal lines for each account
+    const balanceSums = await db
+      .select({
+        accountId: journalLinesTable.accountId,
+        totalDebit: sql<number>`coalesce(sum(${journalLinesTable.debit}::numeric), 0)`,
+        totalCredit: sql<number>`coalesce(sum(${journalLinesTable.credit}::numeric), 0)`,
+      })
+      .from(journalLinesTable)
+      .innerJoin(journalEntriesTable, and(
+        eq(journalLinesTable.journalId, journalEntriesTable.id),
+        eq(journalEntriesTable.status, "posted"),
+      ))
+      .groupBy(journalLinesTable.accountId);
+
+    const balMap = new Map(balanceSums.map(b => [b.accountId, b]));
+
+    const enriched = accounts.map(a => {
+      const b = balMap.get(a.id);
+      const opening = Number(a.openingBalance);
+      const debit = b ? Number(b.totalDebit) : 0;
+      const credit = b ? Number(b.totalCredit) : 0;
+      const currentBalance = a.normalBalance === "Debit"
+        ? opening + debit - credit
+        : opening + credit - debit;
+      return { ...a, openingBalance: opening, currentBalance };
+    });
+
     res.json(enriched);
   } catch (err) {
     req.log.error(err);

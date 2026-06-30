@@ -683,6 +683,10 @@ export interface BillPaymentInput {
 
 export interface BankAccount {
   id: number;
+  /** @nullable */
+  accountId?: number | null;
+  /** @nullable */
+  glAccountCode?: string | null;
   accountName: string;
   bankName: string;
   accountNo: string;
@@ -705,6 +709,7 @@ export interface BankAccountInput {
   accountType: string;
   branch?: string;
   openingBalance?: number;
+  accountId?: number;
 }
 
 export interface BankTransaction {

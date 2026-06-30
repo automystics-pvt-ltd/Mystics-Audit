@@ -14,4 +14,5 @@ export interface BankAccountInput {
   accountType: string;
   branch?: string;
   openingBalance?: number;
+  accountId?: number;
 }

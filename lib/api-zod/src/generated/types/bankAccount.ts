@@ -8,6 +8,10 @@
 
 export interface BankAccount {
   id: number;
+  /** @nullable */
+  accountId?: number | null;
+  /** @nullable */
+  glAccountCode?: string | null;
   accountName: string;
   bankName: string;
   accountNo: string;

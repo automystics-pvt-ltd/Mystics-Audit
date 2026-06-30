@@ -1717,6 +1717,8 @@ export const PayBillResponse = zod.object({
  */
 export const ListBankAccountsResponseItem = zod.object({
   "id": zod.number(),
+  "accountId": zod.number().nullish(),
+  "glAccountCode": zod.string().nullish(),
   "accountName": zod.string(),
   "bankName": zod.string(),
   "accountNo": zod.string(),
@@ -1741,11 +1743,14 @@ export const CreateBankAccountBody = zod.object({
   "ifsc": zod.string(),
   "accountType": zod.string(),
   "branch": zod.string().optional(),
-  "openingBalance": zod.number().optional()
+  "openingBalance": zod.number().optional(),
+  "accountId": zod.number().optional()
 })
 
 export const CreateBankAccountResponse = zod.object({
   "id": zod.number(),
+  "accountId": zod.number().nullish(),
+  "glAccountCode": zod.string().nullish(),
   "accountName": zod.string(),
   "bankName": zod.string(),
   "accountNo": zod.string(),

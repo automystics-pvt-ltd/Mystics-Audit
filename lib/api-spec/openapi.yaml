@@ -2161,6 +2161,8 @@ components:
       type: object
       properties:
         id: { type: integer }
+        accountId: { type: ["integer", "null"] }
+        glAccountCode: { type: ["string", "null"] }
         accountName: { type: string }
         bankName: { type: string }
         accountNo: { type: string }
@@ -2183,6 +2185,7 @@ components:
         accountType: { type: string }
         branch: { type: string }
         openingBalance: { type: number }
+        accountId: { type: integer }
       required: [accountName, bankName, accountNo, ifsc, accountType]
 
     BankTransaction:

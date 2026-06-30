@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   FileText, Image, FileSpreadsheet, Search, Upload, Grid3X3, List,
   Tag, Link2, Trash2, Download, Eye, CheckCircle2, Clock, AlertCircle,
@@ -770,11 +771,18 @@ export default function Documents() {
     onSuccess: () => { qc.invalidateQueries({queryKey:["documents"]}); qc.invalidateQueries({queryKey:["documents-summary"]}); },
   });
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
   function handleDelete(id: number) {
-    if (!confirm("Delete this document? This cannot be undone.")) return;
-    deleteMut.mutate(id);
+    setConfirmDeleteId(id);
+  }
+
+  function doDeleteDoc() {
+    if (confirmDeleteId == null) return;
+    deleteMut.mutate(confirmDeleteId);
     toast({ title: "Document deleted" });
-    if (viewDoc?.id === id) setViewDoc(null);
+    if (viewDoc?.id === confirmDeleteId) setViewDoc(null);
+    setConfirmDeleteId(null);
   }
 
   function handleUploaded() {
@@ -993,6 +1001,17 @@ export default function Documents() {
       {/* Modals */}
       <UploadModal open={uploadOpen} onClose={()=>setUploadOpen(false)} onUploaded={handleUploaded}/>
       {viewDoc && <DocViewer doc={viewDoc} onClose={()=>setViewDoc(null)} onDelete={handleDelete}/>}
+
+      <ConfirmDialog
+        open={confirmDeleteId != null}
+        onOpenChange={o => !o && setConfirmDeleteId(null)}
+        title="Delete Document"
+        description="This will permanently remove the document from the repository. This action cannot be undone."
+        confirmLabel="Delete Document"
+        variant="destructive"
+        onConfirm={doDeleteDoc}
+        loading={deleteMut.isPending}
+      />
     </div>
   );
 }

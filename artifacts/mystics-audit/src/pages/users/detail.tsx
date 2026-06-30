@@ -1,6 +1,8 @@
 import { useGetUser, useUpdateUser, getGetUserQueryKey, getListUsersQueryKey } from "@workspace/api-client-react";
 import { useParams, Link } from "wouter";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,11 +18,14 @@ export default function UserDetail() {
   const qc = useQueryClient();
   const { data: user } = useGetUser(Number(id));
   const updateMutation = useUpdateUser();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const u = user as any;
 
-  const handleToggleActive = () => {
+  const handleToggleActive = () => setConfirmOpen(true);
+
+  const doToggleActive = () => {
     updateMutation.mutate({ id: Number(id), data: { isActive: !u.isActive } } as any, {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: getGetUserQueryKey(Number(id)) }); qc.invalidateQueries({ queryKey: getListUsersQueryKey() }); },
+      onSuccess: () => { setConfirmOpen(false); qc.invalidateQueries({ queryKey: getGetUserQueryKey(Number(id)) }); qc.invalidateQueries({ queryKey: getListUsersQueryKey() }); },
     });
   };
 
@@ -89,6 +94,21 @@ export default function UserDetail() {
           </CardContent>
         </Card>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={u.isActive ? "Suspend User" : "Activate User"}
+        description={
+          u.isActive
+            ? `Suspend ${u.name}? They will immediately lose access to the platform until re-activated.`
+            : `Activate ${u.name}? They will regain access to the platform with their assigned permissions.`
+        }
+        confirmLabel={u.isActive ? "Suspend" : "Activate"}
+        variant={u.isActive ? "destructive" : "default"}
+        onConfirm={doToggleActive}
+        loading={updateMutation.isPending}
+      />
 
       {(u.recentActivity ?? []).length > 0 && (
         <Card>

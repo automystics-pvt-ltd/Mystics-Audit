@@ -1,6 +1,8 @@
 import { useGetPurchaseOrder, useApprovePurchaseOrder, getGetPurchaseOrderQueryKey, getListPurchaseOrdersQueryKey } from "@workspace/api-client-react";
 import { useParams, Link } from "wouter";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,11 +15,14 @@ export default function PoDetail() {
   const qc = useQueryClient();
   const { data: po } = useGetPurchaseOrder(Number(id));
   const approveMutation = useApprovePurchaseOrder();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const p = po as any;
 
-  const handleApprove = () => {
+  const handleApprove = () => setConfirmOpen(true);
+
+  const doApprove = () => {
     approveMutation.mutate({ id: Number(id) } as any, {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: getGetPurchaseOrderQueryKey(Number(id)) }); qc.invalidateQueries({ queryKey: getListPurchaseOrdersQueryKey() }); },
+      onSuccess: () => { setConfirmOpen(false); qc.invalidateQueries({ queryKey: getGetPurchaseOrderQueryKey(Number(id)) }); qc.invalidateQueries({ queryKey: getListPurchaseOrdersQueryKey() }); },
     });
   };
 
@@ -71,6 +76,17 @@ export default function PoDetail() {
           </TableBody>
         </Table>
       </Card>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Approve Purchase Order"
+        description={`Approve ${p.poNo} for ₹${p.totalAmount?.toLocaleString("en-IN")}? Once approved, the PO will be sent to the vendor and goods receipt can be recorded.`}
+        confirmLabel="Approve PO"
+        variant="warning"
+        onConfirm={doApprove}
+        loading={approveMutation.isPending}
+      />
     </div>
   );
 }

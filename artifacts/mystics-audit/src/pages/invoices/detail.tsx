@@ -4,6 +4,7 @@ import {
   useGetInvoice, useUpdateInvoice, useDeleteInvoice, useListReceipts,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,20 +42,23 @@ export default function InvoiceDetail() {
   const deleteMutation = useDeleteInvoice();
 
   const { settings, update: updateSettings, reset: resetSettings } = useDocSettings("invoice");
+  const [confirm, setConfirm] = useState<"post" | "delete" | null>(null);
 
   const relatedReceipts = receipts?.filter((r: any) => r.customerId === invoice?.customerId) ?? [];
 
-  const handlePost = () => {
+  const handlePost = () => setConfirm("post");
+  const handleDelete = () => setConfirm("delete");
+
+  const doPost = () => {
     updateMutation.mutate({ id: Number(id), data: {} } as any, {
-      onSuccess: () => toast({ title: "✓ Invoice posted", description: "Journal entries created" }),
+      onSuccess: () => { setConfirm(null); toast({ title: "✓ Invoice posted", description: "Journal entries created" }); },
       onError: () => toast({ title: "Failed to post invoice", variant: "destructive" }),
     });
   };
 
-  const handleDelete = () => {
-    if (!confirm("Delete this draft invoice? This cannot be undone.")) return;
+  const doDelete = () => {
     deleteMutation.mutate({ id: Number(id) } as any, {
-      onSuccess: () => { toast({ title: "Invoice deleted" }); navigate("/invoices"); },
+      onSuccess: () => { setConfirm(null); toast({ title: "Invoice deleted" }); navigate("/invoices"); },
       onError: () => toast({ title: "Failed to delete invoice", variant: "destructive" }),
     });
   };
@@ -304,6 +308,28 @@ export default function InvoiceDetail() {
         settings={settings}
         onUpdate={updateSettings}
         onReset={resetSettings}
+      />
+
+      {/* ── Confirmation dialogs ── */}
+      <ConfirmDialog
+        open={confirm === "post"}
+        onOpenChange={o => !o && setConfirm(null)}
+        title="Post Invoice"
+        description="Posting will generate journal entries and lock this invoice for editing. This action cannot be undone."
+        confirmLabel="Post Invoice"
+        variant="warning"
+        onConfirm={doPost}
+        loading={updateMutation.isPending}
+      />
+      <ConfirmDialog
+        open={confirm === "delete"}
+        onOpenChange={o => !o && setConfirm(null)}
+        title="Delete Draft Invoice"
+        description="This will permanently delete the invoice. This action cannot be undone."
+        confirmLabel="Delete Invoice"
+        variant="destructive"
+        onConfirm={doDelete}
+        loading={deleteMutation.isPending}
       />
 
       {/* ── Print view (hidden, shown on print) ── */}

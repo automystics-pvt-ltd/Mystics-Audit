@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useListUsers } from "@workspace/api-client-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,8 @@ export default function UsersList() {
   const [resetUser, setResetUser] = useState<any>(null);
   const [tempPass, setTempPass] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [confirmLock, setConfirmLock] = useState<{ user: any; lock: boolean } | null>(null);
+  const [confirmReset, setConfirmReset] = useState<any>(null);
 
   // Fetch license info for this tenant (reuse users count vs org limit)
   const { data: license } = useQuery({
@@ -145,12 +148,12 @@ export default function UsersList() {
                 <TableCell>{u.isMfaEnabled ? <Badge variant="outline" className="text-green-600 border-green-600">Enabled</Badge> : <span className="text-xs text-muted-foreground">—</span>}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Reset password" onClick={() => resetMut.mutate(u.id)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Reset password" onClick={() => setConfirmReset(u)}>
                       <KeyRound className="w-3.5 h-3.5" />
                     </Button>
                     {u.isLocked
-                      ? <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600" title="Unlock" onClick={() => lockMut.mutate({ id: u.id, lock: false })}><Unlock className="w-3.5 h-3.5" /></Button>
-                      : <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive" title="Lock" onClick={() => lockMut.mutate({ id: u.id, lock: true })}><Lock className="w-3.5 h-3.5" /></Button>
+                      ? <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600" title="Unlock" onClick={() => setConfirmLock({ user: u, lock: false })}><Unlock className="w-3.5 h-3.5" /></Button>
+                      : <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive" title="Lock" onClick={() => setConfirmLock({ user: u, lock: true })}><Lock className="w-3.5 h-3.5" /></Button>
                     }
                   </div>
                 </TableCell>
@@ -160,6 +163,34 @@ export default function UsersList() {
           </TableBody>
         </Table>
       </Card>
+
+      {/* Lock / Unlock confirm */}
+      <ConfirmDialog
+        open={!!confirmLock}
+        onOpenChange={o => !o && setConfirmLock(null)}
+        title={confirmLock?.lock ? "Lock Account" : "Unlock Account"}
+        description={
+          confirmLock?.lock
+            ? `Lock ${confirmLock.user?.name}'s account? They will be immediately signed out and unable to log in.`
+            : `Unlock ${confirmLock?.user?.name}'s account? They will be able to sign in again.`
+        }
+        confirmLabel={confirmLock?.lock ? "Lock Account" : "Unlock Account"}
+        variant={confirmLock?.lock ? "destructive" : "default"}
+        onConfirm={() => { lockMut.mutate({ id: confirmLock!.user.id, lock: confirmLock!.lock }); setConfirmLock(null); }}
+        loading={lockMut.isPending}
+      />
+
+      {/* Reset password confirm */}
+      <ConfirmDialog
+        open={!!confirmReset}
+        onOpenChange={o => !o && setConfirmReset(null)}
+        title="Reset Password"
+        description={`Generate a temporary password for ${confirmReset?.name}? They will be required to change it on next login.`}
+        confirmLabel="Reset Password"
+        variant="warning"
+        onConfirm={() => { resetMut.mutate(confirmReset.id); setConfirmReset(null); }}
+        loading={resetMut.isPending}
+      />
 
       {/* Temp Password Dialog */}
       <Dialog open={!!tempPass} onOpenChange={() => { setTempPass(""); setResetUser(null); }}>

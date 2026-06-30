@@ -1,5 +1,7 @@
 import { useGetJournal, usePostJournal, useReverseJournal, getGetJournalQueryKey, getListJournalsQueryKey } from "@workspace/api-client-react";
 import { useParams, Link } from "wouter";
+import { useState } from "react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,18 +16,22 @@ export default function JournalDetail() {
   const { data: journal } = useGetJournal(Number(id));
   const postMutation = usePostJournal();
   const reverseMutation = useReverseJournal();
+  const [confirm, setConfirm] = useState<"post" | "reverse" | null>(null);
 
   const j = journal as any;
 
-  const handlePost = () => {
+  const handlePost = () => setConfirm("post");
+  const handleReverse = () => setConfirm("reverse");
+
+  const doPost = () => {
     postMutation.mutate({ id: Number(id) } as any, {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: getGetJournalQueryKey(Number(id)) }); qc.invalidateQueries({ queryKey: getListJournalsQueryKey() }); },
+      onSuccess: () => { setConfirm(null); qc.invalidateQueries({ queryKey: getGetJournalQueryKey(Number(id)) }); qc.invalidateQueries({ queryKey: getListJournalsQueryKey() }); },
     });
   };
 
-  const handleReverse = () => {
+  const doReverse = () => {
     reverseMutation.mutate({ id: Number(id) } as any, {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: getListJournalsQueryKey() }); },
+      onSuccess: () => { setConfirm(null); qc.invalidateQueries({ queryKey: getListJournalsQueryKey() }); },
     });
   };
 
@@ -43,7 +49,7 @@ export default function JournalDetail() {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={j.status === "posted" ? "default" : "secondary"}>{j.status}</Badge>
-          {j.status === "draft" && (
+              {j.status === "draft" && (
             <Button onClick={handlePost} disabled={!j.isBalanced || postMutation.isPending}>
               <CheckCircle className="w-4 h-4 mr-2" />Post
             </Button>
@@ -103,6 +109,27 @@ export default function JournalDetail() {
           </TableBody>
         </Table>
       </Card>
+
+      <ConfirmDialog
+        open={confirm === "post"}
+        onOpenChange={o => !o && setConfirm(null)}
+        title="Post Journal Entry"
+        description="Posting will finalise this journal entry and create immutable ledger records. This action cannot be undone."
+        confirmLabel="Post Journal"
+        variant="warning"
+        onConfirm={doPost}
+        loading={postMutation.isPending}
+      />
+      <ConfirmDialog
+        open={confirm === "reverse"}
+        onOpenChange={o => !o && setConfirm(null)}
+        title="Reverse Journal Entry"
+        description="This will create an equal and opposite journal entry to cancel the effects of this posting."
+        confirmLabel="Reverse Journal"
+        variant="warning"
+        onConfirm={doReverse}
+        loading={reverseMutation.isPending}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   Building2, Upload, Trash2, CheckCircle2, ImageIcon, Loader2,
   Globe, Phone, Mail, MapPin, Hash, FileText, Save, Camera,
 } from "lucide-react";
+import { INDIAN_STATES } from "@/lib/india-data";
 
 const COMPANY_TYPES = ["Private Limited", "Public Limited", "LLP", "Partnership", "Sole Proprietorship", "OPC", "NGO/Trust"];
 const FISCAL_YEARS  = ["April", "January", "July", "October"];
@@ -398,7 +399,12 @@ export default function CompanySettings() {
               <Input value={form.city} onChange={e => set("city", e.target.value)} placeholder="Chennai" />
             </Field>
             <Field label="State">
-              <Input value={form.state} onChange={e => set("state", e.target.value)} placeholder="Tamil Nadu" />
+              <Select value={form.state} onValueChange={v => set("state", v)}>
+                <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {INDIAN_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Pincode">
               <Input value={form.pincode} onChange={e => set("pincode", e.target.value)} placeholder="600 002" maxLength={6} className="font-mono" />

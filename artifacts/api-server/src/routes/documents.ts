@@ -74,7 +74,7 @@ router.get("/documents/summary", async (req, res) => {
 // ── GET /documents ───────────────────────────────────────────────────────────
 router.get("/documents", async (req, res) => {
   try {
-    const { search, docCategory, financialYear, period, filingStatus, department, project } = req.query as Record<string, string>;
+    const { search, docCategory, financialYear, period, filingStatus, department, project, fileType, linked } = req.query as Record<string, string>;
     const conditions: any[] = [];
     if (docCategory)   conditions.push(eq(documentsTable.docCategory, docCategory));
     if (financialYear) conditions.push(eq(documentsTable.financialYear, financialYear));
@@ -82,6 +82,8 @@ router.get("/documents", async (req, res) => {
     if (filingStatus)  conditions.push(eq(documentsTable.filingStatus, filingStatus));
     if (department)    conditions.push(eq(documentsTable.department, department));
     if (project)       conditions.push(eq(documentsTable.project, project));
+    if (fileType)      conditions.push(eq(documentsTable.fileType, fileType));
+    if (linked === "true") conditions.push(sql`${documentsTable.linkedEntityType} is not null`);
     if (search) conditions.push(or(
       ilike(documentsTable.name, `%${search}%`),
       ilike(documentsTable.originalName, `%${search}%`),

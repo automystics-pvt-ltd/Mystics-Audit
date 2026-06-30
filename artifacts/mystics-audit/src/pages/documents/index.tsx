@@ -778,6 +778,8 @@ export default function Documents() {
   const [fPeriod, setFPeriod]   = useState("");
   const [fFiling, setFFiling]   = useState("");
   const [fDept, setFDept]       = useState("");
+  const [fFileType, setFFileType] = useState("");
+  const [fLinked, setFLinked]   = useState(false);
 
   /* debounce */
   useEffect(() => { const t = setTimeout(()=>setSearch(searchInput),300); return ()=>clearTimeout(t); }, [searchInput]);
@@ -789,6 +791,8 @@ export default function Documents() {
   if (fPeriod)            params.set("period", fPeriod);
   if (fFiling)            params.set("filingStatus", fFiling);
   if (fDept)              params.set("department", fDept);
+  if (fFileType)          params.set("fileType", fFileType);
+  if (fLinked)            params.set("linked", "true");
 
   const { data: allDocs = [], isLoading, refetch } = useQuery<Doc[]>({
     queryKey: ["documents", params.toString()],
@@ -858,9 +862,9 @@ export default function Documents() {
 
   const totals  = summary?.totals ?? { total:0, totalSize:0, filed:0, unfiled:0, linked:0, pdfCount:0, imageCount:0, excelCount:0 };
   const periodOptions = (summary?.byPeriod ?? []).filter(p => p.period).sort((a,b)=>(b.period!).localeCompare(a.period!));
-  const hasFilter = fCategory!=="all" || !!fFY || !!fPeriod || !!fFiling || !!fDept || !!search;
+  const hasFilter = fCategory!=="all" || !!fFY || !!fPeriod || !!fFiling || !!fDept || !!search || !!fFileType || fLinked;
 
-  function clearFilters() { setFCategory("all"); setFFY(""); setFPeriod(""); setFFiling(""); setFDept(""); setSearchInput(""); setSearch(""); }
+  function clearFilters() { setFCategory("all"); setFFY(""); setFPeriod(""); setFFiling(""); setFDept(""); setSearchInput(""); setSearch(""); setFFileType(""); setFLinked(false); }
 
   return (
     <div className="h-full flex flex-col bg-muted/20 overflow-hidden">
@@ -928,13 +932,13 @@ export default function Documents() {
         {/* ── KPI Strip ── */}
         <div className="px-6 pb-3 flex items-center gap-2 overflow-x-auto">
           {[
-            { label:"Total",   value:totals.total,      icon:<File className="w-3.5 h-3.5"/>,          active: false,        onClick: ()=>clearFilters() },
-            { label:"Filed",   value:totals.filed,      icon:<CheckCircle2 className="w-3.5 h-3.5"/>,  active: fFiling==="filed",    onClick: ()=>setFFiling(p=>p==="filed"?"":"filed") },
-            { label:"Unfiled", value:totals.unfiled,    icon:<Clock className="w-3.5 h-3.5"/>,          active: fFiling==="unfiled",  onClick: ()=>setFFiling(p=>p==="unfiled"?"":"unfiled") },
-            { label:"Linked",  value:totals.linked,     icon:<Link2 className="w-3.5 h-3.5"/>,          active: false,        onClick: ()=>{} },
-            { label:"PDFs",    value:totals.pdfCount,   icon:<FileText className="w-3.5 h-3.5"/>,       active: false,        onClick: ()=>{} },
-            { label:"Images",  value:totals.imageCount, icon:<Image className="w-3.5 h-3.5"/>,          active: false,        onClick: ()=>{} },
-            { label:"Sheets",  value:totals.excelCount, icon:<FileSpreadsheet className="w-3.5 h-3.5"/>,active: false,        onClick: ()=>{} },
+            { label:"Total",   value:totals.total,      icon:<File className="w-3.5 h-3.5"/>,           active: !hasFilter,            onClick: ()=>clearFilters() },
+            { label:"Filed",   value:totals.filed,      icon:<CheckCircle2 className="w-3.5 h-3.5"/>,   active: fFiling==="filed",     onClick: ()=>{ setFFiling(p=>p==="filed"?"":"filed"); setFFileType(""); setFLinked(false); } },
+            { label:"Unfiled", value:totals.unfiled,    icon:<Clock className="w-3.5 h-3.5"/>,           active: fFiling==="unfiled",   onClick: ()=>{ setFFiling(p=>p==="unfiled"?"":"unfiled"); setFFileType(""); setFLinked(false); } },
+            { label:"Linked",  value:totals.linked,     icon:<Link2 className="w-3.5 h-3.5"/>,           active: fLinked,               onClick: ()=>{ setFLinked(p=>!p); setFFiling(""); setFFileType(""); } },
+            { label:"PDFs",    value:totals.pdfCount,   icon:<FileText className="w-3.5 h-3.5"/>,        active: fFileType==="pdf",     onClick: ()=>{ setFFileType(p=>p==="pdf"?"":"pdf"); setFFiling(""); setFLinked(false); } },
+            { label:"Images",  value:totals.imageCount, icon:<Image className="w-3.5 h-3.5"/>,           active: fFileType==="image",   onClick: ()=>{ setFFileType(p=>p==="image"?"":"image"); setFFiling(""); setFLinked(false); } },
+            { label:"Sheets",  value:totals.excelCount, icon:<FileSpreadsheet className="w-3.5 h-3.5"/>, active: fFileType==="excel",   onClick: ()=>{ setFFileType(p=>p==="excel"?"":"excel"); setFFiling(""); setFLinked(false); } },
           ].map(k => (
             <button key={k.label} onClick={k.onClick}
               className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs whitespace-nowrap transition-all shrink-0",

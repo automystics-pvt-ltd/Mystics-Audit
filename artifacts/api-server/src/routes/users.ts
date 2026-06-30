@@ -1,6 +1,13 @@
 import { Router } from "express";
 import { db, usersTable, auditLogsTable } from "@workspace/db";
-import { eq, and, desc, gte, lte } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+
+function genTempPassword(): string {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#";
+  let p = "";
+  for (let i = 0; i < 10; i++) p += chars[Math.floor(Math.random() * chars.length)];
+  return p;
+}
 
 const router = Router();
 
@@ -59,6 +66,28 @@ router.patch("/users/:id", async (req, res) => {
     req.log.error(err);
     res.status(500).json({ error: "Failed to update user" });
   }
+});
+
+router.post("/users/:id/lock", async (req, res) => {
+  try {
+    const [u] = await db.update(usersTable).set({ isLocked:true, lockedAt: new Date(), lockedReason: req.body.reason||"Admin action", isActive:false }).where(eq(usersTable.id, Number(req.params.id))).returning();
+    res.json({ success:true, user: u });
+  } catch (err) { req.log.error(err); res.status(500).json({ error: "Failed to lock user" }); }
+});
+
+router.post("/users/:id/unlock", async (req, res) => {
+  try {
+    const [u] = await db.update(usersTable).set({ isLocked:false, lockedAt: null as any, lockedReason: null as any, loginAttempts:0, isActive:true }).where(eq(usersTable.id, Number(req.params.id))).returning();
+    res.json({ success:true, user: u });
+  } catch (err) { req.log.error(err); res.status(500).json({ error: "Failed to unlock user" }); }
+});
+
+router.post("/users/:id/reset-password", async (req, res) => {
+  try {
+    const tempPass = genTempPassword();
+    const [u] = await db.update(usersTable).set({ tempPassword: tempPass, mustChangePassword:true, loginAttempts:0, isLocked:false, lockedAt: null as any }).where(eq(usersTable.id, Number(req.params.id))).returning();
+    res.json({ tempPassword: tempPass });
+  } catch (err) { req.log.error(err); res.status(500).json({ error: "Failed to reset password" }); }
 });
 
 router.get("/audit-logs", async (req, res) => {

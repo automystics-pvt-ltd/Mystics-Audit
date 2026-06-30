@@ -5,7 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import AdminLayout from "@/components/AdminLayout";
 import Dashboard from "@/pages/Dashboard";
 import Tenants from "@/pages/Tenants";
+import TenantDetail from "@/pages/TenantDetail";
 import Users from "@/pages/Users";
+import Billing from "@/pages/Billing";
 import Subscriptions from "@/pages/Subscriptions";
 import FeatureFlags from "@/pages/FeatureFlags";
 import AuditLogs from "@/pages/AuditLogs";
@@ -23,7 +25,9 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/tenants" component={Tenants} />
+        <Route path="/tenants/:id" component={TenantDetail} />
         <Route path="/users" component={Users} />
+        <Route path="/billing" component={Billing} />
         <Route path="/subscriptions" component={Subscriptions} />
         <Route path="/feature-flags" component={FeatureFlags} />
         <Route path="/audit-logs" component={AuditLogs} />

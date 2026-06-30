@@ -20,6 +20,10 @@ export function fmtDateTime(d: string | Date | null | undefined) {
   return new Date(d).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+export function fmtCurrency(n: number | string | null | undefined) {
+  return `₹${Number(n ?? 0).toLocaleString("en-IN")}`;
+}
+
 export function relTime(d: string | Date | null | undefined) {
   if (!d) return "—";
   const diff = Date.now() - new Date(d).getTime();

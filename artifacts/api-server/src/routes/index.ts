@@ -25,6 +25,7 @@ import documentsRouter from "./documents";
 import financeRouter from "./finance";
 import auditorRouter from "./auditor";
 import reportsExtendedRouter from "./reports-extended";
+import registerRouter from "./register";
 
 const router: IRouter = Router();
 
@@ -54,5 +55,6 @@ router.use(documentsRouter);
 router.use(financeRouter);
 router.use(auditorRouter);
 router.use(reportsExtendedRouter);
+router.use(registerRouter);
 
 export default router;

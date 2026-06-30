@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Building2, Users, CreditCard, Flag,
   ScrollText, Activity, Settings, Shield, LogOut, ChevronRight,
-  Bell, Search,
+  Bell, Search, Receipt, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ const NAV = [
   { label: "Dashboard",     icon: LayoutDashboard, path: "/" },
   { label: "Tenants",       icon: Building2,       path: "/tenants" },
   { label: "Users",         icon: Users,           path: "/users" },
-  { label: "Subscriptions", icon: CreditCard,      path: "/subscriptions" },
+  { label: "Billing",       icon: Receipt,         path: "/billing" },
   { label: "Feature Flags", icon: Flag,            path: "/feature-flags" },
   { label: "Audit Logs",    icon: ScrollText,      path: "/audit-logs" },
   { label: "System Health", icon: Activity,        path: "/health" },
@@ -57,6 +57,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Link>
             );
           })}
+
+          {/* Divider + quick link */}
+          <div className="mt-3 pt-3 border-t border-sidebar-border/50">
+            <a href="/" target="_blank" rel="noopener noreferrer">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-md text-xs cursor-pointer text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors">
+                <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>Open Main App</span>
+              </div>
+            </a>
+            <a href="/register" target="_blank" rel="noopener noreferrer">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-md text-xs cursor-pointer text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors">
+                <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>Registration Page</span>
+              </div>
+            </a>
+          </div>
         </nav>
 
         {/* Admin info */}

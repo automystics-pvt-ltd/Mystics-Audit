@@ -66,6 +66,7 @@ import BudgetVsActual from "@/pages/budgets/vs-actual";
 import UsersList from "@/pages/users/index";
 import NewUser from "@/pages/users/new";
 import UserDetail from "@/pages/users/detail";
+import Register from "@/pages/register";
 
 import AuditLogsList from "@/pages/audit-logs/index";
 
@@ -112,8 +113,9 @@ const queryClient = new QueryClient({
 function Router() {
   return (
     <Switch>
-      {/* Auth — no layout */}
+      {/* Auth / registration — no layout */}
       <Route path="/login" component={LoginPage} />
+      <Route path="/register" component={Register} />
 
       {/* Platform admin — own layout (dark) */}
       <Route path="/platform-admin/organizations/:id" component={OrgDetail} />

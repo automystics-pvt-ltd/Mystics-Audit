@@ -2,9 +2,10 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import {
   documentsTable, auditorSharesTable,
-  invoicesTable, vendorBillsTable, expenseClaimsTable,
+  invoicesTable, vendorBillsTable,
 } from "@workspace/db";
-import { eq, and, gte, lte, ilike, or, desc, inArray, sql } from "drizzle-orm";
+import { eq, and, gte, lte, ilike, desc, sql } from "drizzle-orm";
+import { sendEmail, buildAuditorEmailHtml } from "../lib/mailer";
 
 const router = Router();
 
@@ -25,14 +26,11 @@ router.get("/auditor/package", async (req, res) => {
       .where(conds.length ? and(...conds) : undefined)
       .orderBy(desc(documentsTable.createdAt));
 
-    /* Also pull matching transactions */
     const txConds: any[] = [];
     if (fy) {
       const yr = parseInt(fy.split("-")[0]);
-      const from = `${yr}-04-01`;
-      const to   = `${yr + 1}-03-31`;
-      txConds.push(gte(invoicesTable.date, from));
-      txConds.push(lte(invoicesTable.date, to));
+      txConds.push(gte(invoicesTable.date, `${yr}-04-01`));
+      txConds.push(lte(invoicesTable.date, `${yr + 1}-03-31`));
     }
     if (customer) txConds.push(ilike(invoicesTable.customerName, `%${customer}%`));
 
@@ -68,23 +66,15 @@ router.get("/auditor/package", async (req, res) => {
       .orderBy(desc(vendorBillsTable.date))
       .limit(50);
 
-    /* summary by doc category */
     const byCat: Record<string, number> = {};
     for (const d of docs) byCat[d.docCategory] = (byCat[d.docCategory] ?? 0) + 1;
-
     const totalSize = docs.reduce((s, d) => s + d.sizeBytes, 0);
 
     res.json({
       docs,
       invoices: invoices.map(i => ({ ...i, amount: Number(i.amount) })),
       bills:    bills.map(b => ({ ...b, amount: Number(b.amount) })),
-      summary: {
-        docCount: docs.length,
-        totalSize,
-        byCat,
-        invoiceCount: invoices.length,
-        billCount: bills.length,
-      },
+      summary: { docCount: docs.length, totalSize, byCat, invoiceCount: invoices.length, billCount: bills.length },
     });
   } catch (e: any) {
     req.log?.error(e);
@@ -107,7 +97,7 @@ router.get("/auditor/shares", async (req, res) => {
   }
 });
 
-/* ─── POST /auditor/shares — log a share event ─── */
+/* ─── POST /auditor/shares — log share + send email if shareType=email ─── */
 router.post("/auditor/shares", async (req, res) => {
   try {
     const {
@@ -117,6 +107,32 @@ router.post("/auditor/shares", async (req, res) => {
       docIds, docCount, notes,
     } = req.body;
 
+    let emailStatus: "sent" | "failed" | "not_configured" = "sent";
+    let emailError: string | undefined;
+
+    if (shareType === "email" && recipientEmail) {
+      const html = buildAuditorEmailHtml({
+        recipientName,
+        message,
+        docCount: docCount || 0,
+        filterFY,
+        filterPeriod,
+      });
+
+      const result = await sendEmail({
+        to: recipientEmail,
+        toName: recipientName,
+        subject: subject || "Audit Document Package",
+        html,
+      });
+
+      if (!result.ok) {
+        emailStatus = result.error?.includes("SMTP not configured") ? "not_configured" : "failed";
+        emailError = result.error;
+        req.log?.warn({ recipientEmail, error: result.error }, "Auditor email send failed");
+      }
+    }
+
     const [share] = await db
       .insert(auditorSharesTable)
       .values({
@@ -125,14 +141,15 @@ router.post("/auditor/shares", async (req, res) => {
         subject, message,
         recipientEmail, recipientName,
         filterFY, filterPeriod, filterProject, filterCustomer, filterVendor,
-        docIds:         JSON.stringify(docIds || []),
-        docCount:       docCount || 0,
+        docIds:   JSON.stringify(docIds || []),
+        docCount: docCount || 0,
         notes,
-        sharedBy:       "Current User",
-        status:         "sent",
+        sharedBy: "Current User",
+        status:   emailStatus,
       })
       .returning();
-    res.status(201).json(share);
+
+    res.status(201).json({ ...share, emailError });
   } catch (e: any) {
     req.log?.error(e);
     res.status(500).json({ error: e.message });

@@ -107,8 +107,24 @@ export default function AuditorCollaboration() {
   });
 
   const shareMut = useMutation({
-    mutationFn: (data: any) => fetch("/api/auditor/shares", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data) }).then(r => r.json()),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["auditor-shares"] }); },
+    mutationFn: (data: any) =>
+      fetch("/api/auditor/shares", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data) })
+        .then(r => r.json()),
+    onSuccess: (result: any, vars: any) => {
+      qc.invalidateQueries({ queryKey: ["auditor-shares"] });
+      if (vars.shareType === "email") {
+        if (result.status === "sent") {
+          toast({ title:"Email Sent", description:`Audit package emailed to ${vars.recipientEmail} successfully.` });
+        } else if (result.status === "not_configured") {
+          toast({ title:"SMTP Not Configured", description:"Email saved but not delivered. Configure SMTP_HOST, SMTP_USER, and SMTP_PASS in environment variables.", variant:"destructive" });
+        } else if (result.status === "failed") {
+          toast({ title:"Email Delivery Failed", description: result.emailError || "Failed to send email. Check server logs.", variant:"destructive" });
+        }
+      }
+    },
+    onError: () => {
+      toast({ title:"Error", description:"Failed to process request.", variant:"destructive" });
+    },
   });
 
   function buildPackageSummary() {
@@ -137,9 +153,13 @@ export default function AuditorCollaboration() {
   function handleEmail() {
     const { totalDocs } = buildPackageSummary();
     if (!emailForm.recipientEmail) { toast({ title:"Email required", variant:"destructive" }); return; }
-    shareMut.mutate({ shareType:"email", format:"pdf", ...emailForm, filterFY:fy, filterPeriod:period, filterProject:project, filterCustomer:customer, filterVendor:vendor, docIds:[...selDocs,...selInv,...selBill], docCount:totalDocs });
-    toast({ title:"Email Sent", description:`Audit package emailed to ${emailForm.recipientEmail} with ${totalDocs} attachments.` });
     setEmailOpen(false);
+    shareMut.mutate({
+      shareType:"email", format:"pdf", ...emailForm,
+      filterFY:fy, filterPeriod:period, filterProject:project,
+      filterCustomer:customer, filterVendor:vendor,
+      docIds:[...selDocs,...selInv,...selBill], docCount:totalDocs,
+    });
   }
 
   const totalSelected = selDocs.size + selInv.size + selBill.size;

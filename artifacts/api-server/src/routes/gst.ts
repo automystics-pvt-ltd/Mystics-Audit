@@ -40,7 +40,7 @@ router.get("/gst/itc-ledger", async (req, res) => {
     const entries = bills.map(b => ({
       date: b.date,
       vendorName: b.vendorName,
-      vendorGstin: b.vendorGstin || null,
+      vendorGstin: null,
       invoiceNo: b.vendorInvoiceNo || b.billNo,
       cgst: Number(b.cgst),
       sgst: Number(b.sgst),
@@ -199,7 +199,7 @@ router.get("/gst/reconciliation", async (req, res) => {
       const gstnAmount = isMatched ? bookAmount : 0;
       return {
         partyName: b.vendorName,
-        gstin: b.vendorGstin || "—",
+        gstin: "—",
         invoiceNo: b.vendorInvoiceNo || b.billNo,
         invoiceDate: b.date,
         booksAmount: bookAmount,

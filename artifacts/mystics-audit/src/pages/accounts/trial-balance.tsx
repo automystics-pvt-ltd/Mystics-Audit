@@ -1,6 +1,7 @@
 import { useGetTrialBalance } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateInput } from "@/components/ui/date-input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ export default function TrialBalance() {
         </div>
         <div className="flex items-center gap-2">
           <Label>As of</Label>
-          <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-40" />
+          <DateInput value={date} onChange={e => setDate(e.target.value)} className="w-40" />
         </div>
       </div>
 

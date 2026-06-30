@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -157,7 +158,7 @@ export default function NewExpense() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-gray-500">Submission Date *</Label>
-                <Input type="date" value={submittedDate} onChange={e => setSubmittedDate(e.target.value)} />
+                <DateInput value={submittedDate} onChange={e => setSubmittedDate(e.target.value)} />
               </div>
             </div>
           </div>
@@ -221,7 +222,7 @@ export default function NewExpense() {
                   <div className="grid grid-cols-12 gap-3">
                     <div className="col-span-2 space-y-1">
                       <Label className="text-xs text-gray-400">Date *</Label>
-                      <Input type="date" className="text-sm" value={l.date} onChange={e => updateLine(i, "date", e.target.value)} />
+                      <DateInput className="text-sm" value={l.date} onChange={e => updateLine(i, "date", e.target.value)} />
                     </div>
                     <div className="col-span-3 space-y-1">
                       <Label className="text-xs text-gray-400">Category *</Label>

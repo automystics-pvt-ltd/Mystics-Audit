@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,7 +52,7 @@ export default function NewGrn() {
               <SelectContent>{orders.map((o: any) => <SelectItem key={o.id} value={String(o.id)}>{o.poNo} — {o.vendorName}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="space-y-1"><Label>Receipt Date *</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+          <div className="space-y-1"><Label>Receipt Date *</Label><DateInput value={date} onChange={e => setDate(e.target.value)} /></div>
           <div className="space-y-1"><Label>Notes</Label><Input value={notes} onChange={e => setNotes(e.target.value)} /></div>
         </CardContent>
       </Card>

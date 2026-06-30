@@ -2,6 +2,7 @@ import { useCreateJournal, useListAccounts } from "@workspace/api-client-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,7 +72,7 @@ export default function NewJournal() {
           </div>
           <div className="space-y-1">
             <Label>Date</Label>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            <DateInput value={date} onChange={e => setDate(e.target.value)} />
           </div>
           <div className="space-y-1 col-span-3">
             <Label>Narration</Label>

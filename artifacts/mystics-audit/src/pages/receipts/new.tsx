@@ -6,6 +6,7 @@ import {
 import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -174,7 +175,7 @@ export default function NewReceipt() {
                 </FieldWrap>
 
                 <FieldWrap label="Receipt Date *">
-                  <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="rounded-xl" />
+                  <DateInput value={date} onChange={e => setDate(e.target.value)} className="rounded-xl" />
                 </FieldWrap>
 
                 <div className="col-span-2">
@@ -229,7 +230,7 @@ export default function NewReceipt() {
                 {paymentMode === "Cheque" && (
                   <>
                     <FieldWrap label="Cheque Date">
-                      <Input type="date" value={chequeDate} onChange={e => setChequeDate(e.target.value)} className="rounded-xl" />
+                      <DateInput value={chequeDate} onChange={e => setChequeDate(e.target.value)} className="rounded-xl" />
                     </FieldWrap>
                     <FieldWrap label="Drawee Bank">
                       <Input value={bankName} onChange={e => setBankName(e.target.value)} placeholder="HDFC Bank, Chennai…" className="rounded-xl" />

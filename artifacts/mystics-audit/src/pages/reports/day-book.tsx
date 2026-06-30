@@ -1,6 +1,7 @@
 import { useGetDayBook } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { DateInput } from "@/components/ui/date-input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,7 @@ export default function DayBook() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Label className="text-sm">Date</Label>
-            <Input type="date" className="w-36" value={date} onChange={e => setDate(e.target.value)} />
+            <DateInput className="w-36" value={date} onChange={e => setDate(e.target.value)} />
           </div>
           <Button variant="outline" size="sm" onClick={() => printReportPage("Day Book")}>Print</Button>
         </div>

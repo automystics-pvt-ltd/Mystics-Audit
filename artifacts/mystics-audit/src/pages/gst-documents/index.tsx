@@ -6,6 +6,7 @@ import {
   TrendingUp, TrendingDown, Banknote, ArrowUpRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -126,7 +127,7 @@ function AddDocModal({ open, onClose, onSaved }: { open: boolean; onClose: () =>
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-gray-500">Document Date *</Label>
-              <Input type="date" value={form.docDate} onChange={e => set("docDate", e.target.value)} />
+              <DateInput value={form.docDate} onChange={e => set("docDate", e.target.value)} />
             </div>
           </div>
 

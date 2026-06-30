@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -175,12 +176,12 @@ export default function NewBill() {
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-gray-600">Bill Date *</Label>
-                <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="rounded-xl" />
+                <DateInput value={date} onChange={e => setDate(e.target.value)} className="rounded-xl" />
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-gray-600">Due Date *</Label>
-                <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
+                <DateInput value={dueDate} onChange={e => setDueDate(e.target.value)}
                   className={cn("rounded-xl", errors.dueDate && "border-red-400")} />
                 {errors.dueDate && <p className="text-xs text-red-500">{errors.dueDate}</p>}
               </div>

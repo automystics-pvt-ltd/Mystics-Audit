@@ -1,6 +1,7 @@
 import { useGetBalanceSheet } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,7 +55,7 @@ export default function BalanceSheet() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Label className="text-sm">As of</Label>
-            <Input type="date" className="w-36" value={date} onChange={e => setDate(e.target.value)} />
+            <DateInput className="w-36" value={date} onChange={e => setDate(e.target.value)} />
           </div>
           <Badge variant={isBalanced ? "default" : "destructive"}>{isBalanced ? "Balanced" : "Unbalanced"}</Badge>
           <Button variant="outline" size="sm" onClick={() => printReportPage("Balance Sheet")}>Print</Button>

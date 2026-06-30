@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,8 +68,8 @@ export default function GstPurchaseRegister() {
 
       <Card><CardContent className="py-3">
         <div className="flex items-end gap-4">
-          <div><Label className="text-xs">From</Label><Input type="date" className="mt-1 w-36" value={from} onChange={e=>{ setFrom(e.target.value); setPage(1); }} /></div>
-          <div><Label className="text-xs">To</Label><Input type="date" className="mt-1 w-36" value={to} onChange={e=>{ setTo(e.target.value); setPage(1); }} /></div>
+          <div><Label className="text-xs">From</Label><DateInput className="mt-1 w-36" value={from} onChange={e=>{ setFrom(e.target.value); setPage(1); }} /></div>
+          <div><Label className="text-xs">To</Label><DateInput className="mt-1 w-36" value={to} onChange={e=>{ setTo(e.target.value); setPage(1); }} /></div>
           <div className="flex-1"><Label className="text-xs">Search</Label><Input className="mt-1" placeholder="Bill no, vendor…" value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} /></div>
         </div>
       </CardContent></Card>

@@ -4,6 +4,7 @@ import {
   useCreateInvoice, useListCustomers, useListItems,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -236,10 +237,10 @@ export default function NewInvoice() {
                 )}
 
                 <Field label="Invoice Date *" error={errors.date}>
-                  <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="rounded-xl" />
+                  <DateInput value={date} onChange={e => setDate(e.target.value)} className="rounded-xl" />
                 </Field>
                 <Field label="Due Date *">
-                  <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="rounded-xl" />
+                  <DateInput value={dueDate} onChange={e => setDueDate(e.target.value)} className="rounded-xl" />
                 </Field>
                 <Field label="Place of Supply">
                   <Select value={placeOfSupply} onValueChange={setPlaceOfSupply}>

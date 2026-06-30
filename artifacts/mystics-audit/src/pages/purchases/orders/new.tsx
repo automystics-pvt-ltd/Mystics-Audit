@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,8 +52,8 @@ export default function NewPo() {
               <SelectContent>{vendors.map((v: any) => <SelectItem key={v.id} value={String(v.id)}>{v.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="space-y-1"><Label>PO Date *</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
-          <div className="space-y-1"><Label>Delivery Date</Label><Input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} /></div>
+          <div className="space-y-1"><Label>PO Date *</Label><DateInput value={date} onChange={e => setDate(e.target.value)} /></div>
+          <div className="space-y-1"><Label>Delivery Date</Label><DateInput value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} /></div>
           <div className="col-span-2 space-y-1"><Label>Notes</Label><Input value={notes} onChange={e => setNotes(e.target.value)} /></div>
         </CardContent>
       </Card>

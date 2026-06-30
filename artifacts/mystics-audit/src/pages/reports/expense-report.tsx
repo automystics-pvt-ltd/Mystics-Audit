@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,8 +74,8 @@ export default function ExpenseReport() {
 
       <Card><CardContent className="py-3">
         <div className="flex items-end gap-3 flex-wrap">
-          <div><Label className="text-xs">From</Label><Input type="date" className="mt-1 w-36" value={from} onChange={e=>{ setFrom(e.target.value); setPage(1); }} /></div>
-          <div><Label className="text-xs">To</Label><Input type="date" className="mt-1 w-36" value={to} onChange={e=>{ setTo(e.target.value); setPage(1); }} /></div>
+          <div><Label className="text-xs">From</Label><DateInput className="mt-1 w-36" value={from} onChange={e=>{ setFrom(e.target.value); setPage(1); }} /></div>
+          <div><Label className="text-xs">To</Label><DateInput className="mt-1 w-36" value={to} onChange={e=>{ setTo(e.target.value); setPage(1); }} /></div>
           <div className="w-36">
             <Label className="text-xs">Department</Label>
             <Select value={dept} onValueChange={v=>{ setDept(v); setPage(1); }}>

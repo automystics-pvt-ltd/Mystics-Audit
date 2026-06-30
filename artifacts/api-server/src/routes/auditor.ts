@@ -5,7 +5,7 @@ import {
   invoicesTable, vendorBillsTable,
 } from "@workspace/db";
 import { eq, and, gte, lte, ilike, desc, sql } from "drizzle-orm";
-import { sendEmail, buildAuditorEmailHtml } from "../lib/mailer";
+import { sendEmail, buildAuditorEmailHtml, resolveSmtpOverride } from "../lib/mailer";
 
 const router = Router();
 
@@ -162,11 +162,13 @@ router.post("/auditor/shares", async (req, res) => {
         filterPeriod,
       });
 
+      const smtpOverride = await resolveSmtpOverride();
       const result = await sendEmail({
         to: recipientEmail,
         toName: recipientName,
         subject: subject || "Audit Document Package",
         html,
+        smtpOverride,
         attachments: allRows.length > 0 ? [{
           filename: attachmentName,
           content: csvContent,

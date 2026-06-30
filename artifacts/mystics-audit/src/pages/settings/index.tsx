@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useListCompanies, useUpdateCompany, getListCompaniesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import {
   Building2, Upload, Trash2, CheckCircle2, ImageIcon, Loader2,
   Globe, Phone, Mail, MapPin, Hash, FileText, Save, Camera,
+  Server, Eye, EyeOff, SendHorizonal, ShieldCheck, AlertCircle, Lock,
 } from "lucide-react";
 import { INDIAN_STATES } from "@/lib/india-data";
 
@@ -173,6 +174,171 @@ function Section({ icon: Icon, title, subtitle }: {
       <div>
         <p className="text-sm font-bold">{title}</p>
         {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ── Email Configuration sub-component ── */
+function EmailConfigSection() {
+  const { toast } = useToast();
+  const [settings, setSettings] = useState<any>(null);
+  const [form, setForm] = useState({ provider: "gmail", smtpHost: "", smtpPort: "587", smtpUser: "", smtpPass: "", smtpFrom: "" });
+  const [showPass, setShowPass] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/settings/email").then(r => r.json()).then(d => {
+      setSettings(d);
+      setForm({
+        provider: d.provider ?? "gmail",
+        smtpHost: d.smtpHost ?? "",
+        smtpPort: String(d.smtpPort ?? "587"),
+        smtpUser: d.smtpUser ?? "",
+        smtpPass: "",
+        smtpFrom: d.smtpFrom ?? "",
+      });
+    });
+  }, []);
+
+  function setF(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
+
+  const PROVIDERS = [
+    { value: "gmail",   label: "Gmail", host: "smtp.gmail.com",       port: "587" },
+    { value: "outlook", label: "Outlook / Office 365", host: "smtp.office365.com", port: "587" },
+    { value: "custom",  label: "Custom SMTP", host: "", port: "587" },
+  ];
+
+  function handleProviderChange(v: string) {
+    const p = PROVIDERS.find(x => x.value === v);
+    if (!p) return;
+    setF("provider", v);
+    if (v !== "custom") {
+      setF("smtpHost", p.host);
+      setF("smtpPort", p.port);
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const body: any = { provider: form.provider, smtpHost: form.smtpHost, smtpPort: parseInt(form.smtpPort), smtpUser: form.smtpUser, smtpFrom: form.smtpFrom };
+      if (form.smtpPass) body.smtpPass = form.smtpPass;
+      const r = await fetch("/api/settings/email", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const d = await r.json();
+      setSettings(d);
+      setForm(f => ({ ...f, smtpPass: "" }));
+      toast({ title: "Email settings saved" });
+    } catch (e: any) {
+      toast({ title: "Save failed", description: e.message, variant: "destructive" });
+    } finally { setSaving(false); }
+  }
+
+  async function handleTest() {
+    if (!testEmail) { toast({ title: "Enter a test recipient email", variant: "destructive" }); return; }
+    setTesting(true);
+    try {
+      const r = await fetch("/api/settings/email/test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ toEmail: testEmail }) });
+      const d = await r.json();
+      if (d.ok) {
+        toast({ title: "Test email sent!", description: `Check ${testEmail} for the confirmation email.` });
+        setSettings((s: any) => s ? { ...s, isVerified: true } : s);
+      } else {
+        toast({ title: "Test failed", description: d.error, variant: "destructive" });
+      }
+    } catch (e: any) {
+      toast({ title: "Test failed", description: e.message, variant: "destructive" });
+    } finally { setTesting(false); }
+  }
+
+  if (!settings) return <div className="flex items-center gap-2 text-muted-foreground py-4"><Loader2 className="w-4 h-4 animate-spin" /> Loading…</div>;
+
+  if (!settings.configAllowed) {
+    return (
+      <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+        <Lock className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+        <div>
+          <p className="text-sm font-semibold text-amber-800">Email Configuration Locked</p>
+          <p className="text-xs text-amber-700 mt-1">Email configuration is controlled by your platform administrator. Contact them to enable this feature for your account.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {settings.isVerified && (
+        <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-sm">
+          <ShieldCheck className="w-4 h-4" /><span className="font-medium">Email configuration verified and active</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Email Provider" required>
+          <Select value={form.provider} onValueChange={handleProviderChange}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PROVIDERS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field label="SMTP Host" required hint={form.provider === "gmail" ? "smtp.gmail.com (auto-filled)" : ""}>
+          <Input value={form.smtpHost} onChange={e => setF("smtpHost", e.target.value)} placeholder="smtp.gmail.com" disabled={form.provider !== "custom"} />
+        </Field>
+
+        <Field label="SMTP Port">
+          <Input value={form.smtpPort} onChange={e => setF("smtpPort", e.target.value)} placeholder="587" disabled={form.provider !== "custom"} />
+        </Field>
+
+        <Field label="SMTP Username / Email" required>
+          <Input value={form.smtpUser} onChange={e => setF("smtpUser", e.target.value)} placeholder="yourname@gmail.com" />
+        </Field>
+
+        <Field label={settings.hasPassword ? "SMTP Password (leave blank to keep current)" : "SMTP Password"} required={!settings.hasPassword} hint={form.provider === "gmail" ? "Use a Gmail App Password — not your login password" : ""}>
+          <div className="relative">
+            <Input
+              type={showPass ? "text" : "password"}
+              value={form.smtpPass}
+              onChange={e => setF("smtpPass", e.target.value)}
+              placeholder={settings.hasPassword ? "••••••••••••••••" : "App password"}
+              className="pr-10"
+            />
+            <button type="button" onClick={() => setShowPass(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </Field>
+
+        <Field label="Sender Name / From Address" hint="Shown as the 'From' in recipient's inbox">
+          <Input value={form.smtpFrom} onChange={e => setF("smtpFrom", e.target.value)} placeholder="accounts@company.com" />
+        </Field>
+      </div>
+
+      <div className="flex items-center gap-3 pt-2">
+        <Button onClick={handleSave} disabled={saving} className="gap-2">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saving ? "Saving…" : "Save Email Settings"}
+        </Button>
+        <span className="text-muted-foreground text-sm">then test below</span>
+      </div>
+
+      <div className="border-t pt-4 space-y-3">
+        <p className="text-sm font-semibold">Send Test Email</p>
+        <div className="flex items-center gap-2">
+          <Input className="max-w-xs" type="email" placeholder="test@example.com" value={testEmail} onChange={e => setTestEmail(e.target.value)} />
+          <Button variant="outline" onClick={handleTest} disabled={testing} className="gap-2">
+            {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendHorizonal className="w-4 h-4" />}
+            {testing ? "Sending…" : "Send Test"}
+          </Button>
+        </div>
+        {!settings.hasPassword && !form.smtpPass && (
+          <div className="flex items-center gap-2 text-amber-600 text-xs">
+            <AlertCircle className="w-3.5 h-3.5" />Save your credentials first before sending a test
+          </div>
+        )}
       </div>
     </div>
   );
@@ -411,6 +577,12 @@ export default function CompanySettings() {
             </Field>
           </div>
         </div>
+      </div>
+
+      {/* ── Email Configuration ── */}
+      <div className="bg-white border rounded-2xl p-6 shadow-sm space-y-5">
+        <Section icon={Server} title="Email Configuration" subtitle="SMTP settings for sending audit emails, reports and notifications from your account." />
+        <EmailConfigSection />
       </div>
 
       {/* ── Save button (bottom) ── */}

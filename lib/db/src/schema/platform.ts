@@ -111,6 +111,23 @@ export const systemSettingsTable = pgTable("system_settings", {
   updatedAt:   timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
+/* ── Email Settings (per-org SMTP configuration) ────────── */
+export const emailSettingsTable = pgTable("email_settings", {
+  id:            serial("id").primaryKey(),
+  orgSlug:       text("org_slug").notNull().unique().default("default"),
+  configAllowed: boolean("config_allowed").notNull().default(false),  // platform admin gate
+  provider:      text("provider").notNull().default("gmail"),          // gmail | outlook | custom
+  smtpHost:      text("smtp_host"),
+  smtpPort:      integer("smtp_port").default(587),
+  smtpUser:      text("smtp_user"),
+  smtpPass:      text("smtp_pass"),
+  smtpFrom:      text("smtp_from"),
+  isVerified:    boolean("is_verified").notNull().default(false),
+  updatedAt:     timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export type EmailSettings = typeof emailSettingsTable.$inferSelect;
+
 export const insertTenantSchema = createInsertSchema(tenantsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertPlatformAdminUserSchema = createInsertSchema(platformAdminUsersTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertFeatureFlagSchema = createInsertSchema(featureFlagsTable).omit({ id: true, createdAt: true, updatedAt: true });

@@ -26,6 +26,7 @@ import financeRouter from "./finance";
 import auditorRouter from "./auditor";
 import reportsExtendedRouter from "./reports-extended";
 import registerRouter from "./register";
+import emailSettingsRouter from "./email-settings";
 
 const router: IRouter = Router();
 
@@ -56,5 +57,6 @@ router.use(financeRouter);
 router.use(auditorRouter);
 router.use(reportsExtendedRouter);
 router.use(registerRouter);
+router.use(emailSettingsRouter);
 
 export default router;

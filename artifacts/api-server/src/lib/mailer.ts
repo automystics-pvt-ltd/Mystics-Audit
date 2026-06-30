@@ -1,18 +1,28 @@
 import nodemailer from "nodemailer";
 
-function createTransport() {
+interface SmtpConfig {
+  host: string;
+  port: number;
+  user: string;
+  pass: string;
+  from: string;
+}
+
+function envSmtpConfig(): SmtpConfig | null {
   const host = process.env.SMTP_HOST;
   const port = parseInt(process.env.SMTP_PORT ?? "587");
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-
   if (!host || !user || !pass) return null;
+  return { host, port, user, pass, from: process.env.SMTP_FROM || user };
+}
 
+function buildTransport(cfg: SmtpConfig) {
   return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
+    host: cfg.host,
+    port: cfg.port,
+    secure: cfg.port === 465,
+    auth: { user: cfg.user, pass: cfg.pass },
   });
 }
 
@@ -22,6 +32,14 @@ export interface EmailAttachment {
   contentType: string;
 }
 
+export interface SmtpOverride {
+  host: string;
+  port: number;
+  user: string;
+  pass: string;
+  from: string;
+}
+
 export interface SendEmailOptions {
   to: string;
   toName?: string;
@@ -29,23 +47,31 @@ export interface SendEmailOptions {
   html: string;
   text?: string;
   attachments?: EmailAttachment[];
+  /** Pass DB-stored SMTP settings to override env vars */
+  smtpOverride?: SmtpOverride;
 }
 
-export async function sendEmail(opts: SendEmailOptions): Promise<{ ok: boolean; error?: string }> {
-  const transport = createTransport();
+export async function sendEmail(
+  opts: SendEmailOptions,
+  log?: { warn?: (...a: any[]) => void },
+): Promise<{ ok: boolean; error?: string }> {
+  /* prefer explicit override, fall back to env vars */
+  const cfg: SmtpConfig | null = opts.smtpOverride
+    ? { ...opts.smtpOverride }
+    : envSmtpConfig();
 
-  if (!transport) {
+  if (!cfg) {
     return {
       ok: false,
       error: "SMTP not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS environment variables.",
     };
   }
 
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const transport = buildTransport(cfg);
 
   try {
     await transport.sendMail({
-      from: `"Mystics Audit" <${from}>`,
+      from: `"Mystics Audit" <${cfg.from}>`,
       to: opts.toName ? `"${opts.toName}" <${opts.to}>` : opts.to,
       subject: opts.subject,
       text: opts.text ?? opts.html.replace(/<[^>]+>/g, ""),
@@ -60,6 +86,34 @@ export async function sendEmail(opts: SendEmailOptions): Promise<{ ok: boolean; 
   } catch (err: any) {
     return { ok: false, error: err.message };
   }
+}
+
+/* ── Load DB email settings and use them for sending (used by auditor route) ── */
+export async function resolveSmtpOverride(): Promise<SmtpOverride | undefined> {
+  try {
+    const { db } = await import("@workspace/db");
+    const { emailSettingsTable } = await import("@workspace/db");
+    const { eq } = await import("drizzle-orm");
+
+    const [row] = await db
+      .select()
+      .from(emailSettingsTable)
+      .where(eq(emailSettingsTable.orgSlug, "default"))
+      .limit(1);
+
+    if (row?.smtpHost && row?.smtpUser && row?.smtpPass) {
+      return {
+        host: row.smtpHost,
+        port: row.smtpPort ?? 587,
+        user: row.smtpUser,
+        pass: row.smtpPass,
+        from: row.smtpFrom ?? row.smtpUser,
+      };
+    }
+  } catch {
+    /* ignore — fall back to env vars */
+  }
+  return undefined;
 }
 
 export function buildAuditorEmailHtml(opts: {

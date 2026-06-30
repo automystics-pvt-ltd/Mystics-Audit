@@ -23,6 +23,7 @@ export const organizationsTable = pgTable("organizations", {
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
   subscriptionStartedAt: timestamp("subscription_started_at", { withTimezone: true }),
   notes: text("notes"),
+  emailConfigEnabled: boolean("email_config_enabled").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

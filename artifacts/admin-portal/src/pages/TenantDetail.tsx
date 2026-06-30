@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Building2, Users, CreditCard, Shield, Lock, Unlock, KeyRound,
   AlertTriangle, CheckCircle2, Clock, Ban, LayoutGrid, Plus, Eye, EyeOff,
-  RefreshCw, Zap,
+  RefreshCw, Zap, Mail, ToggleLeft, ToggleRight,
 } from "lucide-react";
 
 const ALL_MODULES = ["dashboard","accounts","invoicing","gst","receivables","payables","bank","expenses","purchases","inventory","reports","audit","budgets","users","settings"];
@@ -47,6 +47,7 @@ export default function TenantDetail() {
   const { toast } = useToast();
   const [maxUsersEdit, setMaxUsersEdit] = useState("");
   const [provisionOpen, setProvisionOpen] = useState(false);
+  const [emailConfigAllowed, setEmailConfigAllowed] = useState<boolean | null>(null);
   const [provForm, setProvForm] = useState({ name:"", email:"", role:"Staff", department:"" });
   const [tempPass, setTempPass] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -109,6 +110,22 @@ export default function TenantDetail() {
   const resetPassMut = useMutation({
     mutationFn: (userId: number) => api.post<any>(`/admin/users/${userId}/reset-password`, {}),
     onSuccess: (d, userId) => { setResetUserId(userId); setTempPass(d.tempPassword ?? ""); setShowPass(false); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const { data: emailConfig, refetch: refetchEmailConfig } = useQuery({
+    queryKey: ["admin-tenant-email-config", id],
+    queryFn: () => api.get<any>(`/admin/tenants/${id}/email-config`),
+    enabled: !!id,
+  });
+
+  const emailConfigMut = useMutation({
+    mutationFn: (configAllowed: boolean) => api.patch(`/admin/tenants/${id}/email-config`, { configAllowed }),
+    onSuccess: (_, configAllowed) => {
+      setEmailConfigAllowed(configAllowed);
+      refetchEmailConfig();
+      toast({ title: configAllowed ? "Email configuration enabled for this tenant" : "Email configuration disabled" });
+    },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
@@ -178,6 +195,7 @@ export default function TenantDetail() {
         <TabsList className="h-8">
           <TabsTrigger value="license" className="text-xs h-7">License & Modules</TabsTrigger>
           <TabsTrigger value="users" className="text-xs h-7">Users ({usersData?.users?.length ?? 0})</TabsTrigger>
+          <TabsTrigger value="email" className="text-xs h-7">Email Config</TabsTrigger>
           <TabsTrigger value="info" className="text-xs h-7">Details</TabsTrigger>
         </TabsList>
 
@@ -304,6 +322,65 @@ export default function TenantDetail() {
                 </tbody>
               </table>
             </div>
+          </Card>
+        </TabsContent>
+
+        {/* Email Config Tab */}
+        <TabsContent value="email" className="mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Mail className="w-4 h-4 text-primary" />Email Configuration Access
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <p className="text-sm text-muted-foreground">
+                Control whether this tenant can configure their own SMTP email settings from within the app.
+                When enabled, admins of this organisation can set up their Gmail, Outlook, or custom SMTP credentials in Settings → Email Configuration.
+              </p>
+
+              {/* Toggle */}
+              <div className="flex items-center justify-between p-4 border rounded-xl bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${(emailConfigAllowed ?? emailConfig?.configAllowed) ? "bg-emerald-100" : "bg-gray-200"}`}>
+                    <Mail className={`w-5 h-5 ${(emailConfigAllowed ?? emailConfig?.configAllowed) ? "text-emerald-600" : "text-gray-400"}`} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Email Configuration</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(emailConfigAllowed ?? emailConfig?.configAllowed) ? "Tenant can configure their own email settings" : "Tenant cannot configure email settings"}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={emailConfigAllowed ?? emailConfig?.configAllowed ?? false}
+                  onCheckedChange={v => emailConfigMut.mutate(v)}
+                  disabled={emailConfigMut.isPending}
+                />
+              </div>
+
+              {/* Current config status */}
+              {emailConfig?.settings && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Current Configuration</p>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
+                    {[
+                      ["Provider", emailConfig.settings.provider || "—"],
+                      ["SMTP Host", emailConfig.settings.smtpHost || "Not set"],
+                      ["SMTP Port", emailConfig.settings.smtpPort || "—"],
+                      ["SMTP User", emailConfig.settings.smtpUser || "Not set"],
+                      ["Password", emailConfig.settings.hasPassword ? "••••••••" : "Not set"],
+                      ["Status", emailConfig.settings.isVerified ? "✓ Verified" : "Not verified"],
+                    ].map(([label, value]) => (
+                      <div key={label} className="flex justify-between border-b border-dashed border-muted py-1">
+                        <span className="text-muted-foreground">{label}</span>
+                        <span className={`font-medium ${label === "Status" && emailConfig.settings.isVerified ? "text-emerald-600" : ""}`}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
           </Card>
         </TabsContent>
 

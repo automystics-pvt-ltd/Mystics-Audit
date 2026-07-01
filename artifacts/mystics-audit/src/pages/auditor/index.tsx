@@ -37,6 +37,9 @@ import {
   Zap, Bell, BellOff, Play, ToggleLeft, ToggleRight, XCircle,
   Link2, FileUp, MessageCircle, ChevronDown, ChevronUp, Inbox,
   CheckCheck, HelpCircle, ThumbsUp, Paperclip, FilePlus2,
+  LayoutGrid, List, Table2, SortAsc, SortDesc, CircleDot,
+  TrendingUp, TrendingDown, Minus, Star, ArrowRight, GanttChart,
+  UserCircle, Tag, CalendarRange,
 } from "lucide-react";
 
 /* ── helpers ── */
@@ -1151,6 +1154,11 @@ export default function AuditorWorkspace() {
   const [taskDetail, setTaskDetail] = useState<any>(null);
   const [commentMsg, setCommentMsg] = useState("");
   const [taskFilter, setTaskFilter] = useState({ clientId:"", status:"", priority:"" });
+  const [taskView, setTaskView] = useState<"list"|"kanban"|"table">("list");
+  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
+  const [tableSort, setTableSort] = useState<{ col: string; dir: "asc"|"desc" }>({ col: "dueDate", dir: "asc" });
+  const [quickAdd, setQuickAdd] = useState<{ open: boolean; title: string; clientId: string; priority: string; dueDate: string }>({ open: false, title: "", clientId: "", priority: "medium", dueDate: "" });
+  const [kanbanAdd, setKanbanAdd] = useState<{ status: string; title: string } | null>(null);
 
   function openNewTask(clientId = "") { setTaskDlg({ open: true, form: { ...emptyTask, clientId } }); }
   function openEditTask(t: any) {
@@ -1194,7 +1202,7 @@ export default function AuditorWorkspace() {
     });
   }
 
-  /* ── filtered tasks ── */
+  /* ── filtered + sorted tasks ── */
   const filteredTasks = useMemo(() => {
     let t = allTasks as any[];
     if (taskFilter.clientId) t = t.filter(x => String(x.clientId) === taskFilter.clientId);
@@ -1203,10 +1211,66 @@ export default function AuditorWorkspace() {
     return t;
   }, [allTasks, taskFilter]);
 
+  const sortedTasks = useMemo(() => {
+    const PRIO_ORDER: Record<string,number> = { critical:0, high:1, medium:2, low:3 };
+    return [...filteredTasks].sort((a, b) => {
+      let va: any, vb: any;
+      if (tableSort.col === "priority") { va = PRIO_ORDER[a.priority]??9; vb = PRIO_ORDER[b.priority]??9; }
+      else if (tableSort.col === "status") { va = STATUS_FLOW.indexOf(a.status); vb = STATUS_FLOW.indexOf(b.status); }
+      else { va = a[tableSort.col] ?? ""; vb = b[tableSort.col] ?? ""; }
+      return tableSort.dir === "asc" ? (va < vb ? -1 : va > vb ? 1 : 0) : (va > vb ? -1 : va < vb ? 1 : 0);
+    });
+  }, [filteredTasks, tableSort]);
+
+  function toggleTaskSel(id: number) {
+    setSelectedTasks(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+  }
+  function toggleAllTasks() {
+    if (selectedTasks.size === filteredTasks.length) setSelectedTasks(new Set());
+    else setSelectedTasks(new Set(filteredTasks.map((t: any) => t.id)));
+  }
+  function bulkSetStatus(status: string) {
+    const ids = Array.from(selectedTasks);
+    Promise.all(ids.map(id => new Promise(res => updateStatus.mutate({ id, data: { status } } as any, { onSuccess: res, onError: res }))))
+      .then(() => { toast({ title: `${ids.length} tasks updated` }); invalidate(); setSelectedTasks(new Set()); });
+  }
+  function bulkDelete() {
+    if (!confirm(`Delete ${selectedTasks.size} tasks?`)) return;
+    const ids = Array.from(selectedTasks);
+    Promise.all(ids.map(id => new Promise(res => deleteTask.mutate({ id } as any, { onSuccess: res, onError: res }))))
+      .then(() => { toast({ title: `${ids.length} tasks deleted` }); invalidate(); setSelectedTasks(new Set()); setTaskDetail(null); });
+  }
+  function submitQuickAdd() {
+    if (!quickAdd.title.trim()) return;
+    const clientId = quickAdd.clientId || taskFilter.clientId;
+    if (!clientId) { toast({ title: "Select a client first", variant: "destructive" }); return; }
+    createTask.mutate({ data: { clientId: Number(clientId), title: quickAdd.title, taskType: "document_request", description: "", instructions: "", priority: quickAdd.priority, dueDate: quickAdd.dueDate, assignee: "" } } as any, {
+      onSuccess: () => { toast({ title: "Task created" }); invalidate(); setQuickAdd(q => ({ ...q, title: "", dueDate: "", open: false })); },
+    });
+  }
+  function submitKanbanAdd(status: string) {
+    if (!kanbanAdd?.title.trim()) return;
+    const clientId = taskFilter.clientId || (clients[0]?.id ? String(clients[0].id) : "");
+    if (!clientId) { toast({ title: "Select a client filter first", variant: "destructive" }); return; }
+    createTask.mutate({ data: { clientId: Number(clientId), title: kanbanAdd.title, taskType: "document_request", description: "", instructions: "", priority: "medium", dueDate: "", assignee: "", status } } as any, {
+      onSuccess: () => { toast({ title: "Task created" }); invalidate(); setKanbanAdd(null); },
+    });
+  }
+
+  const KANBAN_COL_CFG: Record<string,{ bg: string; border: string; dot: string; text: string }> = {
+    created:      { bg:"bg-gray-50",    border:"border-gray-200",  dot:"bg-gray-400",   text:"text-gray-600" },
+    assigned:     { bg:"bg-blue-50",   border:"border-blue-200",  dot:"bg-blue-500",   text:"text-blue-700" },
+    in_progress:  { bg:"bg-amber-50",  border:"border-amber-200", dot:"bg-amber-500",  text:"text-amber-700" },
+    under_review: { bg:"bg-violet-50", border:"border-violet-200",dot:"bg-violet-500", text:"text-violet-700" },
+    completed:    { bg:"bg-emerald-50",border:"border-emerald-200",dot:"bg-emerald-500",text:"text-emerald-700" },
+    archived:     { bg:"bg-gray-50",   border:"border-gray-200",  dot:"bg-gray-300",   text:"text-gray-400" },
+  };
+
   /* ── event dialog ── */
   const emptyEvent = { clientId:"", eventType:"custom", title:"", period:"", dueDate:"", notes:"" };
   const [eventDlg, setEventDlg] = useState<{ open: boolean; edit?: any; form: typeof emptyEvent }>({ open: false, form: emptyEvent });
   const [calMonth, setCalMonth] = useState(() => today.slice(0, 7));
+  const [calView, setCalView] = useState<"calendar"|"timeline">("calendar");
 
   function saveEvent() {
     const { form, edit } = eventDlg;
@@ -1417,9 +1481,13 @@ export default function AuditorWorkspace() {
                 const phase          = c.engagementPhase ?? "planning";
                 const phaseLabels: Record<string, string> = { planning:"Planning", fieldwork:"Fieldwork", review:"Review", reporting:"Reporting", closed:"Closed" };
                 const phaseColors: Record<string, string> = { planning:"bg-blue-100 text-blue-700", fieldwork:"bg-amber-100 text-amber-700", review:"bg-violet-100 text-violet-700", reporting:"bg-emerald-100 text-emerald-700", closed:"bg-gray-100 text-gray-500" };
+                const clientCollabOpen2 = allCollab.filter((r: any) => r.clientId === c.id && !["completed","cancelled"].includes(r.status));
+                const hasOverdueCollab = clientCollabOpen2.some((r: any) => r.dueDate && r.dueDate < today);
+                const health = (overdueTasks.length > 0 || hasOverdueCollab) ? "critical" : openFindings.length > 0 ? "warning" : "healthy";
                 return (
-                  <Card key={c.id} className="rounded-2xl border-gray-200 hover:shadow-md transition-shadow flex flex-col">
-                    <CardContent className="p-4 flex flex-col gap-3 h-full">
+                <Card key={c.id} className={cn("rounded-2xl hover:shadow-md transition-shadow flex flex-col",
+                  health === "critical" ? "border-red-200 shadow-sm shadow-red-50" : health === "warning" ? "border-amber-200" : "border-gray-200")}>
+                  <CardContent className="p-4 flex flex-col gap-3 h-full">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <Link href={`/auditor/clients/${c.id}`}>
@@ -1427,7 +1495,20 @@ export default function AuditorWorkspace() {
                           </Link>
                           {c.gstin && <p className="text-xs font-mono text-gray-400 mt-0.5 truncate">{c.gstin}</p>}
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {health === "critical" && (
+                            <span className="flex items-center gap-1 text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full border border-red-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />OVERDUE
+                            </span>
+                          )}
+                          {health === "warning" && (
+                            <span className="flex items-center gap-1 text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full border border-amber-200">
+                              <AlertTriangle className="w-2.5 h-2.5" />REVIEW
+                            </span>
+                          )}
+                          {health === "healthy" && (
+                            <span className="w-2 h-2 rounded-full bg-emerald-400" title="All clear" />
+                          )}
                           <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", c.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>{c.status}</span>
                           <button onClick={() => openEditClient(c)} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"><Pencil className="w-3.5 h-3.5" /></button>
                           <button onClick={() => removeClient(c.id)} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -1482,14 +1563,15 @@ export default function AuditorWorkspace() {
       {/* ── TASKS TAB ── */}
       {tab === "tasks" && (
         <div className="space-y-4">
-          {/* filter bar */}
+
+          {/* ── filter + view toggle bar ── */}
           <div className="flex flex-wrap items-center gap-2">
             <Select value={taskFilter.clientId} onValueChange={v => setTaskFilter(f => ({ ...f, clientId: v }))}>
               <SelectTrigger className="h-8 w-44 rounded-lg text-xs"><SelectValue placeholder="All clients" /></SelectTrigger>
               <SelectContent><SelectItem value="">All clients</SelectItem>{clients.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
             </Select>
             <Select value={taskFilter.status} onValueChange={v => setTaskFilter(f => ({ ...f, status: v }))}>
-              <SelectTrigger className="h-8 w-44 rounded-lg text-xs"><SelectValue placeholder="All statuses" /></SelectTrigger>
+              <SelectTrigger className="h-8 w-40 rounded-lg text-xs"><SelectValue placeholder="All statuses" /></SelectTrigger>
               <SelectContent><SelectItem value="">All statuses</SelectItem>{STATUS_FLOW.map(s => <SelectItem key={s} value={s}>{STATUS_CFG[s].label}</SelectItem>)}</SelectContent>
             </Select>
             <Select value={taskFilter.priority} onValueChange={v => setTaskFilter(f => ({ ...f, priority: v }))}>
@@ -1497,124 +1579,495 @@ export default function AuditorWorkspace() {
               <SelectContent><SelectItem value="">All priorities</SelectItem>{Object.entries(PRIORITY_CFG).map(([k,v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
             </Select>
             {(taskFilter.clientId || taskFilter.status || taskFilter.priority) && (
-              <button onClick={() => setTaskFilter({ clientId:"", status:"", priority:"" })} className="text-xs text-gray-400 hover:text-gray-700 underline">Clear filters</button>
+              <button onClick={() => setTaskFilter({ clientId:"", status:"", priority:"" })} className="text-xs text-gray-400 hover:text-gray-700 underline">Clear</button>
             )}
             <div className="ml-auto flex items-center gap-2">
               <span className="text-xs text-gray-400">{filteredTasks.length} task{filteredTasks.length !== 1 ? "s" : ""}</span>
-              <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700 h-8" onClick={() => openNewTask(taskFilter.clientId)}><Plus className="w-3.5 h-3.5 mr-1" />New Task</Button>
+              {/* view toggle */}
+              <div className="flex rounded-xl border border-gray-200 bg-gray-50 p-0.5 gap-0.5">
+                {([["list", List, "List"], ["kanban", LayoutGrid, "Board"], ["table", Table2, "Table"]] as const).map(([v, Icon, label]) => (
+                  <button key={v} onClick={() => { setTaskView(v); setSelectedTasks(new Set()); setTaskDetail(null); }}
+                    className={cn("flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
+                      taskView === v ? "bg-white shadow-sm text-violet-700 border border-gray-200" : "text-gray-500 hover:text-gray-700")}>
+                    <Icon className="w-3.5 h-3.5" />{label}
+                  </button>
+                ))}
+              </div>
+              {taskView === "list" && (
+                <button onClick={() => setQuickAdd(q => ({ ...q, open: !q.open }))}
+                  className={cn("h-8 px-3 rounded-xl border text-xs font-medium flex items-center gap-1 transition-all",
+                    quickAdd.open ? "bg-violet-50 border-violet-300 text-violet-700" : "border-gray-200 text-gray-600 hover:border-violet-200 hover:text-violet-600")}>
+                  <Zap className="w-3.5 h-3.5" />Quick Add
+                </button>
+              )}
+              <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700 h-8" onClick={() => openNewTask(taskFilter.clientId)}>
+                <Plus className="w-3.5 h-3.5 mr-1" />New Task
+              </Button>
             </div>
           </div>
 
-          <div className={cn("grid gap-4", taskDetail ? "grid-cols-5" : "grid-cols-1")}>
-            {/* Task list */}
-            <div className={cn("space-y-2", taskDetail ? "col-span-3" : "")}>
-              {filteredTasks.length === 0 ? (
-                <Card className="rounded-2xl border-dashed border-gray-300">
-                  <CardContent className="py-14 text-center">
-                    <ClipboardList className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                    <p className="text-sm text-gray-500 mb-3">No tasks match your filters</p>
-                    <Button size="sm" className="rounded-xl" onClick={() => openNewTask()}><Plus className="w-3.5 h-3.5 mr-1" />Create Task</Button>
-                  </CardContent>
-                </Card>
-              ) : filteredTasks.map((t: any) => {
-                const isOverdue = t.dueDate && t.dueDate < today && !["completed","archived"].includes(t.status);
-                const isSelected = taskDetail?.id === t.id;
+          {/* ── bulk action bar ── */}
+          {selectedTasks.size > 0 && (
+            <div className="flex items-center gap-3 bg-violet-600 text-white rounded-xl px-4 py-2.5 shadow-lg">
+              <CheckSquare className="w-4 h-4 shrink-0" />
+              <span className="text-sm font-semibold">{selectedTasks.size} task{selectedTasks.size !== 1 ? "s" : ""} selected</span>
+              <div className="flex items-center gap-2 ml-4 flex-wrap">
+                <span className="text-xs text-violet-200">Move to:</span>
+                {STATUS_FLOW.filter(s => !["archived"].includes(s)).map(s => (
+                  <button key={s} onClick={() => bulkSetStatus(s)}
+                    className="text-xs px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-medium transition-all">
+                    {STATUS_CFG[s].label}
+                  </button>
+                ))}
+              </div>
+              <div className="ml-auto flex items-center gap-2">
+                <button onClick={bulkDelete} className="text-xs px-2.5 py-1 rounded-lg bg-red-500/80 hover:bg-red-500 font-medium flex items-center gap-1">
+                  <Trash2 className="w-3 h-3" />Delete
+                </button>
+                <button onClick={() => setSelectedTasks(new Set())} className="text-xs px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-medium">
+                  ✕ Clear
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── quick-add row (list view) ── */}
+          {taskView === "list" && quickAdd.open && (
+            <div className="flex items-center gap-2 bg-violet-50/60 border border-violet-200 rounded-xl px-4 py-3">
+              <Zap className="w-4 h-4 text-violet-500 shrink-0" />
+              <Input value={quickAdd.title} onChange={e => setQuickAdd(q => ({ ...q, title: e.target.value }))}
+                onKeyDown={e => e.key === "Enter" && submitQuickAdd()}
+                placeholder="Task title… (press Enter to create)" autoFocus
+                className="h-8 text-xs rounded-lg flex-1 border-violet-200 focus-visible:ring-violet-400" />
+              <Select value={quickAdd.clientId || taskFilter.clientId} onValueChange={v => setQuickAdd(q => ({ ...q, clientId: v }))}>
+                <SelectTrigger className="h-8 w-36 rounded-lg text-xs border-violet-200"><SelectValue placeholder="Client" /></SelectTrigger>
+                <SelectContent>{clients.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+              <Select value={quickAdd.priority} onValueChange={v => setQuickAdd(q => ({ ...q, priority: v }))}>
+                <SelectTrigger className="h-8 w-28 rounded-lg text-xs border-violet-200"><SelectValue /></SelectTrigger>
+                <SelectContent>{Object.entries(PRIORITY_CFG).map(([k,v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
+              </Select>
+              <Input type="date" value={quickAdd.dueDate} onChange={e => setQuickAdd(q => ({ ...q, dueDate: e.target.value }))}
+                className="h-8 w-36 text-xs rounded-lg border-violet-200" />
+              <Button size="sm" className="h-8 rounded-lg bg-violet-600 hover:bg-violet-700 px-3" onClick={submitQuickAdd}>Add</Button>
+              <button onClick={() => setQuickAdd(q => ({ ...q, open: false }))} className="text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
+            </div>
+          )}
+
+          {/* ══════════════════════════ LIST VIEW ══════════════════════════ */}
+          {taskView === "list" && (
+            <div className={cn("grid gap-4", taskDetail ? "grid-cols-5" : "grid-cols-1")}>
+              <div className={cn("space-y-2", taskDetail ? "col-span-3" : "")}>
+                {/* select-all row */}
+                {filteredTasks.length > 0 && (
+                  <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-gray-400">
+                    <button onClick={toggleAllTasks} className="flex items-center gap-1.5 hover:text-gray-600">
+                      {selectedTasks.size === filteredTasks.length && filteredTasks.length > 0
+                        ? <CheckSquare className="w-3.5 h-3.5 text-violet-600" />
+                        : <Square className="w-3.5 h-3.5" />}
+                      {selectedTasks.size > 0 ? `${selectedTasks.size} selected` : "Select all"}
+                    </button>
+                  </div>
+                )}
+                {filteredTasks.length === 0 ? (
+                  <Card className="rounded-2xl border-dashed border-gray-300">
+                    <CardContent className="py-14 text-center">
+                      <ClipboardList className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                      <p className="text-sm text-gray-500 mb-3">No tasks match your filters</p>
+                      <Button size="sm" className="rounded-xl" onClick={() => openNewTask()}><Plus className="w-3.5 h-3.5 mr-1" />Create Task</Button>
+                    </CardContent>
+                  </Card>
+                ) : filteredTasks.map((t: any) => {
+                  const isOverdue = t.dueDate && t.dueDate < today && !["completed","archived"].includes(t.status);
+                  const isFocused = taskDetail?.id === t.id;
+                  const isBulkSel = selectedTasks.has(t.id);
+                  return (
+                    <div key={t.id}
+                      onClick={() => setTaskDetail(isFocused ? null : t)}
+                      className={cn("border rounded-xl px-4 py-3 cursor-pointer transition-all hover:shadow-sm",
+                        isFocused ? "border-violet-300 bg-violet-50/40" : isBulkSel ? "border-violet-200 bg-violet-50/20" : "border-gray-200 bg-white hover:border-gray-300",
+                        isOverdue && "border-red-200 bg-red-50/30")}>
+                      <div className="flex items-start gap-3">
+                        <button onClick={e => { e.stopPropagation(); toggleTaskSel(t.id); }} className="mt-0.5 shrink-0">
+                          {isBulkSel ? <CheckSquare className="w-4 h-4 text-violet-600" /> : <Square className="w-4 h-4 text-gray-300 hover:text-gray-500" />}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-semibold text-gray-800">{t.title}</p>
+                            {isOverdue && <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold uppercase">Overdue</span>}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5">{t.clientName ?? `Client #${t.clientId}`} · {TASK_TYPE_LABELS[t.taskType] ?? t.taskType}</p>
+                          {t.description && <p className="text-xs text-gray-500 mt-1 line-clamp-1">{t.description}</p>}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {t.dueDate && <span className={cn("text-xs", isOverdue ? "text-red-600 font-semibold" : "text-gray-400")}>{fmtDate(t.dueDate)}</span>}
+                          <PriorityBadge priority={t.priority} />
+                          <StatusBadge status={t.status} />
+                          <div className="flex gap-1">
+                            <button onClick={e => { e.stopPropagation(); openEditTask(t); }} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"><Pencil className="w-3.5 h-3.5" /></button>
+                            <button onClick={e => { e.stopPropagation(); removeTask(t.id); }} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* detail panel */}
+              {taskDetail && (
+                <div className="col-span-2">
+                  <Card className="rounded-2xl border-gray-200 sticky top-4">
+                    <CardHeader className="pb-3 border-b border-gray-100">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0 pr-2">
+                          <p className="font-bold text-gray-800 leading-snug">{taskDetail.title}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{taskDetail.clientName}</p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => openEditTask(taskDetail)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => setTaskDetail(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto">
+                      <div className="flex flex-wrap gap-2">
+                        <StatusBadge status={taskDetail.status} />
+                        <PriorityBadge priority={taskDetail.priority} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Move Status</p>
+                        <div className="flex gap-2">
+                          <button onClick={() => moveStatus(taskDetail, -1)} disabled={STATUS_FLOW.indexOf(taskDetail.status) === 0}
+                            className="text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 flex items-center gap-1">
+                            <ChevronLeft className="w-3 h-3" />Back
+                          </button>
+                          <button onClick={() => moveStatus(taskDetail, 1)} disabled={STATUS_FLOW.indexOf(taskDetail.status) === STATUS_FLOW.length - 1}
+                            className="text-xs px-2.5 py-1.5 rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50 disabled:opacity-40 flex items-center gap-1">
+                            Advance<ChevronRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                      {taskDetail.instructions && (
+                        <div>
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Instructions</p>
+                          <p className="text-xs text-gray-600 bg-gray-50 rounded-lg p-2.5 leading-relaxed">{taskDetail.instructions}</p>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                        <div><span className="font-semibold text-gray-600">Due</span><br/>{fmtDate(taskDetail.dueDate)}</div>
+                        <div><span className="font-semibold text-gray-600">Assignee</span><br/>{taskDetail.assignee || "—"}</div>
+                        <div><span className="font-semibold text-gray-600">Type</span><br/>{TASK_TYPE_LABELS[taskDetail.taskType]}</div>
+                        <div><span className="font-semibold text-gray-600">Created</span><br/>{fmtDate(taskDetail.createdAt)}</div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Comments ({(taskDetail.comments ?? []).length})</p>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {(taskDetail.comments ?? []).map((c: any) => (
+                            <div key={c.id} className={cn("rounded-lg px-3 py-2 text-xs", c.authorType === "auditor" ? "bg-violet-50 border border-violet-100" : "bg-gray-50 border border-gray-100")}>
+                              <p className="font-semibold text-gray-700 mb-0.5">{c.author} <span className="text-gray-400 font-normal">· {fmtDate(c.createdAt)}</span></p>
+                              <p className="text-gray-600">{c.message}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <Input value={commentMsg} onChange={e => setCommentMsg(e.target.value)} placeholder="Add comment…" className="h-8 text-xs rounded-lg flex-1"
+                            onKeyDown={e => e.key === "Enter" && sendComment(taskDetail.id)} />
+                          <Button size="sm" className="h-8 rounded-lg bg-violet-600 hover:bg-violet-700 px-3" onClick={() => sendComment(taskDetail.id)}>
+                            <Send className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ══════════════════════════ KANBAN VIEW ══════════════════════════ */}
+          {taskView === "kanban" && (
+            <div className="flex gap-3 overflow-x-auto pb-4 -mx-1 px-1">
+              {STATUS_FLOW.map(status => {
+                const col = filteredTasks.filter((t: any) => t.status === status);
+                const cfg = KANBAN_COL_CFG[status] ?? KANBAN_COL_CFG.created;
+                const isAddingHere = kanbanAdd?.status === status;
                 return (
-                  <div key={t.id}
-                    onClick={() => setTaskDetail(isSelected ? null : t)}
-                    className={cn("border rounded-xl px-4 py-3 cursor-pointer transition-all hover:shadow-sm", isSelected ? "border-violet-300 bg-violet-50/40" : "border-gray-200 bg-white hover:border-gray-300", isOverdue && "border-red-200 bg-red-50/30")}>
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-semibold text-gray-800">{t.title}</p>
-                          {isOverdue && <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-bold uppercase">Overdue</span>}
-                        </div>
-                        <p className="text-xs text-gray-400 mt-0.5">{t.clientName ?? `Client #${t.clientId}`} · {TASK_TYPE_LABELS[t.taskType] ?? t.taskType}</p>
-                        {t.description && <p className="text-xs text-gray-500 mt-1 line-clamp-1">{t.description}</p>}
+                  <div key={status} className="flex-shrink-0 w-72 flex flex-col">
+                    {/* column header */}
+                    <div className={cn("rounded-xl border px-3 py-2 mb-2 flex items-center justify-between", cfg.bg, cfg.border)}>
+                      <div className="flex items-center gap-2">
+                        <span className={cn("w-2 h-2 rounded-full", cfg.dot)} />
+                        <span className={cn("text-xs font-bold", cfg.text)}>{STATUS_CFG[status].label}</span>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {t.dueDate && <span className={cn("text-xs", isOverdue ? "text-red-600 font-semibold" : "text-gray-400")}>{fmtDate(t.dueDate)}</span>}
-                        <PriorityBadge priority={t.priority} />
-                        <StatusBadge status={t.status} />
-                        <div className="flex gap-1">
-                          <button onClick={e => { e.stopPropagation(); openEditTask(t); }} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"><Pencil className="w-3.5 h-3.5" /></button>
-                          <button onClick={e => { e.stopPropagation(); removeTask(t.id); }} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn("text-xs rounded-full px-1.5 py-0.5 font-bold bg-white/70 border", cfg.border, cfg.text)}>{col.length}</span>
+                        <button onClick={() => setKanbanAdd(isAddingHere ? null : { status, title: "" })}
+                          className={cn("p-0.5 rounded hover:bg-white/60 transition-all", cfg.text)}>
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    {/* inline quick-add */}
+                    {isAddingHere && (
+                      <div className="mb-2 bg-white border border-violet-200 rounded-xl p-2.5 shadow-sm space-y-2">
+                        <Input value={kanbanAdd.title} onChange={e => setKanbanAdd(k => k ? { ...k, title: e.target.value } : k)}
+                          onKeyDown={e => { if (e.key === "Enter") submitKanbanAdd(status); if (e.key === "Escape") setKanbanAdd(null); }}
+                          placeholder="Task title… (Enter to add)" autoFocus className="h-7 text-xs rounded-lg" />
+                        <div className="flex gap-2 justify-end">
+                          <button onClick={() => setKanbanAdd(null)} className="text-xs text-gray-400 hover:text-gray-600 px-2">Cancel</button>
+                          <button onClick={() => submitKanbanAdd(status)} className="text-xs bg-violet-600 text-white px-3 py-1 rounded-lg hover:bg-violet-700">Add</button>
                         </div>
                       </div>
+                    )}
+                    {/* task cards */}
+                    <div className="flex-1 space-y-2 min-h-16">
+                      {col.length === 0 && !isAddingHere && (
+                        <div className="border border-dashed border-gray-200 rounded-xl py-6 text-center">
+                          <p className="text-xs text-gray-300">No tasks</p>
+                        </div>
+                      )}
+                      {col.map((t: any) => {
+                        const isOverdue = t.dueDate && t.dueDate < today && !["completed","archived"].includes(t.status);
+                        const isFocused = taskDetail?.id === t.id;
+                        return (
+                          <div key={t.id}
+                            onClick={() => setTaskDetail(isFocused ? null : t)}
+                            className={cn("bg-white border rounded-xl p-3 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 group",
+                              isFocused ? "border-violet-400 shadow-md ring-1 ring-violet-200" : "border-gray-200 hover:border-gray-300",
+                              isOverdue && "border-red-200 bg-red-50/20")}>
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <p className="text-xs font-semibold text-gray-800 leading-snug flex-1 line-clamp-2">{t.title}</p>
+                              {isOverdue && <span className="text-[9px] bg-red-100 text-red-700 px-1 py-0.5 rounded-full font-bold uppercase shrink-0">OD</span>}
+                            </div>
+                            <p className="text-[11px] text-gray-400 mb-2 truncate">{t.clientName ?? `Client #${t.clientId}`}</p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <PriorityBadge priority={t.priority} />
+                              {t.dueDate && <span className={cn("text-[10px]", isOverdue ? "text-red-600 font-semibold" : "text-gray-400")}>{fmtDate(t.dueDate)}</span>}
+                            </div>
+                            <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
+                              <button onClick={e => { e.stopPropagation(); moveStatus(t, -1); }} disabled={STATUS_FLOW.indexOf(t.status) === 0}
+                                className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 disabled:opacity-30">
+                                <ChevronLeft className="w-3 h-3" />
+                              </button>
+                              <button onClick={e => { e.stopPropagation(); moveStatus(t, 1); }} disabled={STATUS_FLOW.indexOf(t.status) === STATUS_FLOW.length - 1}
+                                className="p-1 rounded hover:bg-violet-50 text-gray-400 hover:text-violet-600 disabled:opacity-30">
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
+                              <button onClick={e => { e.stopPropagation(); openEditTask(t); }} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
               })}
             </div>
+          )}
 
-            {/* Task detail panel */}
-            {taskDetail && (
-              <div className="col-span-2">
-                <Card className="rounded-2xl border-gray-200 sticky top-4">
-                  <CardHeader className="pb-3 border-b border-gray-100">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0 pr-2">
-                        <p className="font-bold text-gray-800 leading-snug">{taskDetail.title}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{taskDetail.clientName}</p>
-                      </div>
-                      <button onClick={() => setTaskDetail(null)} className="text-gray-400 hover:text-gray-600 shrink-0 text-lg leading-none">×</button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto">
-                    <div className="flex flex-wrap gap-2">
-                      <StatusBadge status={taskDetail.status} />
-                      <PriorityBadge priority={taskDetail.priority} />
-                    </div>
-                    {/* Status workflow */}
-                    <div className="space-y-1.5">
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Move Status</p>
-                      <div className="flex gap-2">
-                        <button onClick={() => moveStatus(taskDetail, -1)} disabled={STATUS_FLOW.indexOf(taskDetail.status) === 0}
-                          className="text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 flex items-center gap-1">
-                          <ChevronLeft className="w-3 h-3" />Back
-                        </button>
-                        <button onClick={() => moveStatus(taskDetail, 1)} disabled={STATUS_FLOW.indexOf(taskDetail.status) === STATUS_FLOW.length - 1}
-                          className="text-xs px-2.5 py-1.5 rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50 disabled:opacity-40 flex items-center gap-1">
-                          Advance <ChevronRight className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                    {taskDetail.instructions && (
-                      <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Instructions</p>
-                        <p className="text-xs text-gray-600 bg-gray-50 rounded-lg p-2.5 leading-relaxed">{taskDetail.instructions}</p>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-                      <div><span className="font-semibold text-gray-600">Due</span><br/>{fmtDate(taskDetail.dueDate)}</div>
-                      <div><span className="font-semibold text-gray-600">Assignee</span><br/>{taskDetail.assignee || "—"}</div>
-                      <div><span className="font-semibold text-gray-600">Type</span><br/>{TASK_TYPE_LABELS[taskDetail.taskType]}</div>
-                      <div><span className="font-semibold text-gray-600">Created</span><br/>{fmtDate(taskDetail.createdAt)}</div>
-                    </div>
-                    {/* Comments */}
-                    <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Comments ({(taskDetail.comments ?? []).length})</p>
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {(taskDetail.comments ?? []).map((c: any) => (
-                          <div key={c.id} className={cn("rounded-lg px-3 py-2 text-xs", c.authorType === "auditor" ? "bg-violet-50 border border-violet-100" : "bg-gray-50 border border-gray-100")}>
-                            <p className="font-semibold text-gray-700 mb-0.5">{c.author} <span className="text-gray-400 font-normal">· {fmtDate(c.createdAt)}</span></p>
-                            <p className="text-gray-600">{c.message}</p>
-                          </div>
+          {/* ══════════════════════════ TABLE VIEW ══════════════════════════ */}
+          {taskView === "table" && (
+            <div className={cn("grid gap-4", taskDetail ? "grid-cols-5" : "grid-cols-1")}>
+              <div className={cn(taskDetail ? "col-span-3" : "")}>
+                <div className="rounded-2xl border border-gray-200 overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="w-8 px-3 py-2.5">
+                          <button onClick={toggleAllTasks}>
+                            {selectedTasks.size === filteredTasks.length && filteredTasks.length > 0
+                              ? <CheckSquare className="w-3.5 h-3.5 text-violet-600" />
+                              : <Square className="w-3.5 h-3.5 text-gray-300" />}
+                          </button>
+                        </th>
+                        {([["title","Task"], ["clientName","Client"], ["taskType","Type"], ["priority","Priority"], ["dueDate","Due"], ["status","Status"], ["assignee","Assignee"]] as const).map(([col, label]) => (
+                          <th key={col} className="px-3 py-2.5 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-700 select-none"
+                            onClick={() => setTableSort(s => ({ col, dir: s.col === col && s.dir === "asc" ? "desc" : "asc" }))}>
+                            <div className="flex items-center gap-1">
+                              {label}
+                              {tableSort.col === col ? (tableSort.dir === "asc" ? <SortAsc className="w-3 h-3" /> : <SortDesc className="w-3 h-3" />) : <Minus className="w-3 h-3 opacity-30" />}
+                            </div>
+                          </th>
                         ))}
-                      </div>
-                      <div className="flex gap-2 mt-2">
-                        <Input value={commentMsg} onChange={e => setCommentMsg(e.target.value)} placeholder="Add comment…" className="h-8 text-xs rounded-lg flex-1"
-                          onKeyDown={e => e.key === "Enter" && sendComment(taskDetail.id)} />
-                        <Button size="sm" className="h-8 rounded-lg bg-violet-600 hover:bg-violet-700 px-3" onClick={() => sendComment(taskDetail.id)}>
-                          <Send className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                        <th className="px-3 py-2.5 w-16"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedTasks.length === 0 ? (
+                        <tr><td colSpan={9} className="py-12 text-center text-sm text-gray-400">No tasks match your filters</td></tr>
+                      ) : sortedTasks.map((t: any) => {
+                        const isOverdue = t.dueDate && t.dueDate < today && !["completed","archived"].includes(t.status);
+                        const isFocused = taskDetail?.id === t.id;
+                        const isBulkSel = selectedTasks.has(t.id);
+                        return (
+                          <tr key={t.id} onClick={() => setTaskDetail(isFocused ? null : t)}
+                            className={cn("border-b border-gray-100 cursor-pointer transition-colors",
+                              isFocused ? "bg-violet-50" : isBulkSel ? "bg-violet-50/40" : isOverdue ? "bg-red-50/30 hover:bg-red-50/50" : "hover:bg-gray-50/70")}>
+                            <td className="px-3 py-2.5">
+                              <button onClick={e => { e.stopPropagation(); toggleTaskSel(t.id); }}>
+                                {isBulkSel ? <CheckSquare className="w-3.5 h-3.5 text-violet-600" /> : <Square className="w-3.5 h-3.5 text-gray-300 hover:text-gray-500" />}
+                              </button>
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-gray-800 line-clamp-1">{t.title}</span>
+                                {isOverdue && <span className="text-[9px] bg-red-100 text-red-700 px-1 py-0.5 rounded-full font-bold uppercase shrink-0">OD</span>}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 text-gray-500 truncate max-w-[120px]">{t.clientName ?? `#${t.clientId}`}</td>
+                            <td className="px-3 py-2.5 text-gray-400">{TASK_TYPE_LABELS[t.taskType] ?? t.taskType}</td>
+                            <td className="px-3 py-2.5"><PriorityBadge priority={t.priority} /></td>
+                            <td className={cn("px-3 py-2.5 font-medium", isOverdue ? "text-red-600" : "text-gray-500")}>{fmtDate(t.dueDate)}</td>
+                            <td className="px-3 py-2.5"><StatusBadge status={t.status} /></td>
+                            <td className="px-3 py-2.5 text-gray-400">{t.assignee || <span className="text-gray-300">—</span>}</td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+                                <button onClick={e => { e.stopPropagation(); openEditTask(t); }} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"><Pencil className="w-3 h-3" /></button>
+                                <button onClick={e => { e.stopPropagation(); removeTask(t.id); }} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 className="w-3 h-3" /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            )}
-          </div>
+              {/* detail panel (shared) */}
+              {taskDetail && (
+                <div className="col-span-2">
+                  <Card className="rounded-2xl border-gray-200 sticky top-4">
+                    <CardHeader className="pb-3 border-b border-gray-100">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0 pr-2">
+                          <p className="font-bold text-gray-800 leading-snug">{taskDetail.title}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{taskDetail.clientName}</p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => openEditTask(taskDetail)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => setTaskDetail(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto">
+                      <div className="flex flex-wrap gap-2">
+                        <StatusBadge status={taskDetail.status} />
+                        <PriorityBadge priority={taskDetail.priority} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Move Status</p>
+                        <div className="flex gap-2">
+                          <button onClick={() => moveStatus(taskDetail, -1)} disabled={STATUS_FLOW.indexOf(taskDetail.status) === 0}
+                            className="text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 flex items-center gap-1">
+                            <ChevronLeft className="w-3 h-3" />Back
+                          </button>
+                          <button onClick={() => moveStatus(taskDetail, 1)} disabled={STATUS_FLOW.indexOf(taskDetail.status) === STATUS_FLOW.length - 1}
+                            className="text-xs px-2.5 py-1.5 rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50 disabled:opacity-40 flex items-center gap-1">
+                            Advance<ChevronRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                      {taskDetail.instructions && (
+                        <div>
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Instructions</p>
+                          <p className="text-xs text-gray-600 bg-gray-50 rounded-lg p-2.5 leading-relaxed">{taskDetail.instructions}</p>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                        <div><span className="font-semibold text-gray-600">Due</span><br/>{fmtDate(taskDetail.dueDate)}</div>
+                        <div><span className="font-semibold text-gray-600">Assignee</span><br/>{taskDetail.assignee || "—"}</div>
+                        <div><span className="font-semibold text-gray-600">Type</span><br/>{TASK_TYPE_LABELS[taskDetail.taskType]}</div>
+                        <div><span className="font-semibold text-gray-600">Created</span><br/>{fmtDate(taskDetail.createdAt)}</div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Comments ({(taskDetail.comments ?? []).length})</p>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {(taskDetail.comments ?? []).map((c: any) => (
+                            <div key={c.id} className={cn("rounded-lg px-3 py-2 text-xs", c.authorType === "auditor" ? "bg-violet-50 border border-violet-100" : "bg-gray-50 border border-gray-100")}>
+                              <p className="font-semibold text-gray-700 mb-0.5">{c.author} <span className="text-gray-400 font-normal">· {fmtDate(c.createdAt)}</span></p>
+                              <p className="text-gray-600">{c.message}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <Input value={commentMsg} onChange={e => setCommentMsg(e.target.value)} placeholder="Add comment…" className="h-8 text-xs rounded-lg flex-1"
+                            onKeyDown={e => e.key === "Enter" && sendComment(taskDetail.id)} />
+                          <Button size="sm" className="h-8 rounded-lg bg-violet-600 hover:bg-violet-700 px-3" onClick={() => sendComment(taskDetail.id)}>
+                            <Send className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* kanban detail panel floats below board */}
+          {taskView === "kanban" && taskDetail && (
+            <Card className="rounded-2xl border-gray-200 mt-2">
+              <CardHeader className="pb-3 border-b border-gray-100">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <p className="font-bold text-gray-800 leading-snug">{taskDetail.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{taskDetail.clientName} · <StatusBadge status={taskDetail.status} /></p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => openEditTask(taskDetail)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600"><Pencil className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => setTaskDetail(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4 grid grid-cols-3 gap-6 text-sm">
+                <div className="space-y-3">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Move Status</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => moveStatus(taskDetail, -1)} disabled={STATUS_FLOW.indexOf(taskDetail.status) === 0}
+                      className="text-xs px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 flex items-center gap-1">
+                      <ChevronLeft className="w-3 h-3" />Back
+                    </button>
+                    <button onClick={() => moveStatus(taskDetail, 1)} disabled={STATUS_FLOW.indexOf(taskDetail.status) === STATUS_FLOW.length - 1}
+                      className="text-xs px-2.5 py-1.5 rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50 disabled:opacity-40 flex items-center gap-1">
+                      Advance<ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                  {taskDetail.instructions && (
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Instructions</p>
+                      <p className="text-xs text-gray-600 bg-gray-50 rounded-lg p-2.5 leading-relaxed">{taskDetail.instructions}</p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                    <div><span className="font-semibold text-gray-600">Due</span><br/>{fmtDate(taskDetail.dueDate)}</div>
+                    <div><span className="font-semibold text-gray-600">Priority</span><br/><PriorityBadge priority={taskDetail.priority} /></div>
+                    <div><span className="font-semibold text-gray-600">Type</span><br/>{TASK_TYPE_LABELS[taskDetail.taskType]}</div>
+                    <div><span className="font-semibold text-gray-600">Assignee</span><br/>{taskDetail.assignee || "—"}</div>
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Comments ({(taskDetail.comments ?? []).length})</p>
+                  <div className="space-y-2 max-h-32 overflow-y-auto mb-2">
+                    {(taskDetail.comments ?? []).map((c: any) => (
+                      <div key={c.id} className={cn("rounded-lg px-3 py-2 text-xs", c.authorType === "auditor" ? "bg-violet-50 border border-violet-100" : "bg-gray-50 border border-gray-100")}>
+                        <p className="font-semibold text-gray-700 mb-0.5">{c.author} <span className="text-gray-400 font-normal">· {fmtDate(c.createdAt)}</span></p>
+                        <p className="text-gray-600">{c.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input value={commentMsg} onChange={e => setCommentMsg(e.target.value)} placeholder="Add comment…" className="h-8 text-xs rounded-lg flex-1"
+                      onKeyDown={e => e.key === "Enter" && sendComment(taskDetail.id)} />
+                    <Button size="sm" className="h-8 rounded-lg bg-violet-600 hover:bg-violet-700 px-3" onClick={() => sendComment(taskDetail.id)}>
+                      <Send className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -1627,11 +2080,111 @@ export default function AuditorWorkspace() {
               <p className="font-semibold text-gray-800 w-32 text-center">{new Date(calMonth + "-01").toLocaleDateString("en-IN", { month:"long", year:"numeric" })}</p>
               <button onClick={() => { const d = new Date(calMonth + "-01"); d.setMonth(d.getMonth()+1); setCalMonth(d.toISOString().slice(0,7)); }} className="p-1.5 rounded-lg border hover:bg-gray-50"><ChevronRight className="w-4 h-4"/></button>
             </div>
-            <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700" onClick={() => setEventDlg({ open: true, form: emptyEvent })}><Plus className="w-3.5 h-3.5 mr-1" />Add Event</Button>
+            <div className="flex items-center gap-2">
+              {/* view toggle */}
+              <div className="flex rounded-xl border border-gray-200 bg-gray-50 p-0.5 gap-0.5">
+                {([["calendar", CalendarDays, "Calendar"], ["timeline", GanttChart, "Timeline"]] as const).map(([v, Icon, label]) => (
+                  <button key={v} onClick={() => setCalView(v)}
+                    className={cn("flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all",
+                      calView === v ? "bg-white shadow-sm text-violet-700 border border-gray-200" : "text-gray-500 hover:text-gray-700")}>
+                    <Icon className="w-3.5 h-3.5" />{label}
+                  </button>
+                ))}
+              </div>
+              <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700" onClick={() => setEventDlg({ open: true, form: emptyEvent })}><Plus className="w-3.5 h-3.5 mr-1" />Add Event</Button>
+            </div>
           </div>
 
-          {/* Events for month */}
-          {(() => {
+          {/* ══ TIMELINE VIEW ══ */}
+          {calView === "timeline" && (() => {
+            const allEvents = (events as any[]).filter((e: any) => e.dueDate);
+            const allRequests = (allCollab as any[]).filter((r: any) => r.dueDate && !["completed","cancelled"].includes(r.status));
+            const combined = [
+              ...allEvents.map((e: any) => ({
+                id: `e-${e.id}`, date: e.dueDate, type: "event", subtype: e.eventType,
+                label: (EVENT_TYPES.find((x: any) => x.value === e.eventType)?.label ?? e.eventType).toUpperCase(),
+                title: e.title, client: e.clientName ?? "",
+                status: e.status, isOverdue: e.dueDate < today && e.status === "pending",
+                colorCls: EVENT_COLORS[e.eventType] ?? EVENT_COLORS.custom,
+              })),
+              ...allRequests.map((r: any) => ({
+                id: `r-${r.id}`, date: r.dueDate, type: "request", subtype: "req",
+                label: "REQ", title: r.title, client: r.clientName ?? `Client #${r.clientId}`,
+                status: r.status, isOverdue: r.dueDate < today,
+                colorCls: "bg-violet-50 text-violet-700 border-violet-200",
+              })),
+            ].sort((a, b) => a.date.localeCompare(b.date));
+
+            const grouped = combined.reduce<Record<string, typeof combined>>((acc, item) => {
+              (acc[item.date] ??= []).push(item); return acc;
+            }, {});
+
+            if (combined.length === 0) return (
+              <Card className="rounded-2xl border-dashed border-gray-300">
+                <CardContent className="py-12 text-center">
+                  <CalendarRange className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                  <p className="text-sm text-gray-500 mb-3">No events or deadlines yet</p>
+                  <Button size="sm" className="rounded-xl" onClick={() => setEventDlg({ open: true, form: emptyEvent })}><Plus className="w-3.5 h-3.5 mr-1" />Add Event</Button>
+                </CardContent>
+              </Card>
+            );
+
+            return (
+              <div className="relative space-y-0 pl-6">
+                {/* vertical spine */}
+                <div className="absolute left-2.5 top-2 bottom-2 w-0.5 bg-gradient-to-b from-violet-200 via-gray-200 to-transparent rounded-full" />
+                {Object.entries(grouped).map(([date, items], gi) => {
+                  const isPast = date < today;
+                  const isToday = date === today;
+                  return (
+                    <div key={date} className="relative pb-6">
+                      {/* dot on spine */}
+                      <div className={cn("absolute -left-6 w-5 h-5 rounded-full border-2 flex items-center justify-center",
+                        isToday ? "border-violet-500 bg-violet-100" : isPast ? "border-gray-300 bg-gray-100" : "border-violet-300 bg-white")}>
+                        {isToday && <span className="w-2 h-2 rounded-full bg-violet-500" />}
+                      </div>
+                      {/* date label */}
+                      <div className="flex items-center gap-2 mb-2 -ml-0.5">
+                        <p className={cn("text-xs font-bold", isToday ? "text-violet-700" : isPast ? "text-gray-400" : "text-gray-700")}>
+                          {isToday ? "Today — " : ""}{new Date(date + "T00:00:00").toLocaleDateString("en-IN", { weekday:"short", day:"2-digit", month:"short", year:"numeric" })}
+                        </p>
+                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                          isPast ? "bg-gray-100 text-gray-500" : "bg-violet-50 text-violet-600")}>
+                          {isPast ? "Past" : "Upcoming"}
+                        </span>
+                      </div>
+                      {/* items for this date */}
+                      <div className="space-y-2">
+                        {items.map(item => (
+                          <div key={item.id} onClick={() => item.type === "request" ? setTab("collaboration") : undefined}
+                            className={cn("flex items-center gap-3 border rounded-xl px-4 py-3 bg-white hover:shadow-sm transition-all",
+                              item.isOverdue ? "border-red-200 bg-red-50/20" : "border-gray-200",
+                              item.type === "request" && "cursor-pointer")}>
+                            <span className={cn("text-xs font-bold px-2 py-1 rounded-lg border shrink-0", item.colorCls)}>{item.label}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-800 truncate">{item.title}</p>
+                              {item.client && <p className="text-xs text-gray-400">{item.client}</p>}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {item.isOverdue && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">Overdue</span>}
+                              <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium",
+                                item.status === "filed" || item.status === "completed" ? "bg-green-100 text-green-700"
+                                  : item.status === "overdue" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700")}>
+                                {item.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* ══ CALENDAR VIEW ══ */}
+          {calView === "calendar" && (() => {
             const monthEvents   = (events as any[]).filter((e: any) => e.dueDate.startsWith(calMonth));
             const monthRequests = allCollab.filter((r: any) => r.dueDate?.startsWith(calMonth) && !["completed","cancelled"].includes(r.status));
             return (

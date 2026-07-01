@@ -201,7 +201,7 @@ function timeAgoCollab(ts: string | Date) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-function CollaborationHub({ clients }: { clients: any[] }) {
+function CollaborationHub({ clients, onCreateTask }: { clients: any[]; onCreateTask?: (prefill: { clientId: string; title: string; description: string; dueDate: string; taskType: string }) => void }) {
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -477,8 +477,21 @@ function CollaborationHub({ clients }: { clients: any[] }) {
                       {selectedReq?.dueDate && ` · Due ${selectedReq.dueDate}`}
                     </p>
                   </div>
-                  {/* Status action buttons */}
+                  {/* Status action buttons + Create Task */}
                   <div className="flex gap-1.5 shrink-0 flex-wrap">
+                    {onCreateTask && selectedReq && (
+                      <button
+                        onClick={() => onCreateTask({
+                          clientId:    String(selectedReq.clientId),
+                          title:       selectedReq.title,
+                          description: selectedReq.description ?? "",
+                          dueDate:     selectedReq.dueDate ?? "",
+                          taskType:    selectedReq.requestType === "approval" ? "approval" : "document_request",
+                        })}
+                        className="text-[10px] font-semibold px-2.5 py-1 rounded-full border bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 transition-colors flex items-center gap-1">
+                        <ClipboardList className="w-3 h-3" />Create Task
+                      </button>
+                    )}
                     {(STATUS_TRANSITIONS[selectedReq?.status ?? "pending"] ?? []).map((s: string) => (
                       <button key={s} onClick={() => handleStatusChange(selectedReq.id, s, selectedReq)}
                         className={cn(
@@ -1029,6 +1042,8 @@ export default function AuditorWorkspace() {
   const { data: allFindings = [], refetch: refetchFindings } = useListAuditFindings({});
   const { data: allCustomers = [] } = useListCustomers({});
   const { data: allVendors = [] }   = useListVendors({});
+  const { data: allCollabRaw = [] } = useListCollaborationRequests({});
+  const allCollab: any[] = allCollabRaw as any[];
 
   /* ── mutations ── */
   const createClient  = useCreateAuditClient();
@@ -1284,14 +1299,19 @@ export default function AuditorWorkspace() {
       {tab === "dashboard" && (
         <div className="space-y-5">
           {/* KPI cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {(() => {
+            const pendingCollab  = allCollab.filter((r: any) => ["pending","in_progress"].includes(r.status));
+            const overdueCollab  = allCollab.filter((r: any) => r.dueDate && r.dueDate < today && !["completed","cancelled","overdue"].includes(r.status));
+            return (
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {[
-              { label:"Active Clients",      value: activeClients.length, icon:<Building2 className="w-5 h-5 text-violet-500"/>, sub:`${clients.length} total`, color:"bg-violet-50 border-violet-100" },
-              { label:"Open Tasks",          value: openTasks.length,     icon:<ClipboardList className="w-5 h-5 text-blue-500"/>,   sub:"Pending completion",    color:"bg-blue-50 border-blue-100" },
-              { label:"Overdue Tasks",       value: overdueTasks.length,  icon:<AlertTriangle className="w-5 h-5 text-red-500"/>,    sub:"Need immediate action", color:"bg-red-50 border-red-100" },
-              { label:"Upcoming Deadlines",  value: pendingEvents.length, icon:<CalendarDays className="w-5 h-5 text-amber-500"/>,   sub:"Compliance pending",    color:"bg-amber-50 border-amber-100" },
+              { label:"Active Clients",      value: activeClients.length,  icon:<Building2 className="w-5 h-5 text-violet-500"/>, sub:`${clients.length} total`, color:"bg-violet-50 border-violet-100", onClick: () => setTab("clients") },
+              { label:"Open Tasks",          value: openTasks.length,      icon:<ClipboardList className="w-5 h-5 text-blue-500"/>,   sub:"Pending completion",    color:"bg-blue-50 border-blue-100",   onClick: () => setTab("tasks") },
+              { label:"Overdue Tasks",       value: overdueTasks.length,   icon:<AlertTriangle className="w-5 h-5 text-red-500"/>,    sub:"Need immediate action", color:"bg-red-50 border-red-100",     onClick: () => setTab("tasks") },
+              { label:"Upcoming Deadlines",  value: pendingEvents.length,  icon:<CalendarDays className="w-5 h-5 text-amber-500"/>,   sub:"Compliance pending",    color:"bg-amber-50 border-amber-100", onClick: () => setTab("calendar") },
+              { label:"Pending Requests",    value: pendingCollab.length,  icon:<MessageCircle className="w-5 h-5 text-violet-600"/>, sub: overdueCollab.length > 0 ? `${overdueCollab.length} overdue` : "Client collaboration", color: overdueCollab.length > 0 ? "bg-red-50 border-red-200" : "bg-violet-50 border-violet-100", onClick: () => setTab("collaboration") },
             ].map(k => (
-              <Card key={k.label} className={cn("rounded-2xl border", k.color)}>
+              <Card key={k.label} className={cn("rounded-2xl border cursor-pointer hover:shadow-md transition-shadow", k.color)} onClick={(k as any).onClick}>
                 <CardContent className="p-4 flex items-start gap-3">
                   <div className="p-2 bg-white rounded-xl shadow-sm shrink-0">{k.icon}</div>
                   <div>
@@ -1303,6 +1323,8 @@ export default function AuditorWorkspace() {
               </Card>
             ))}
           </div>
+            );
+          })()}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             {/* Recent tasks */}
@@ -1328,28 +1350,38 @@ export default function AuditorWorkspace() {
               </CardContent>
             </Card>
 
-            {/* Upcoming compliance */}
+            {/* Upcoming compliance + collaboration deadlines */}
             <Card className="rounded-2xl border-gray-200">
               <CardHeader className="pb-3 border-b border-gray-100 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm font-bold text-gray-700">Upcoming Deadlines</CardTitle>
                 <button onClick={() => setTab("calendar")} className="text-xs text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1">Calendar <ArrowUpRight className="w-3 h-3"/></button>
               </CardHeader>
               <CardContent className="p-0 divide-y divide-gray-50">
-                {pendingEvents.slice(0, 8).map((e: any) => {
-                  const isOverdue = e.dueDate < today;
-                  return (
-                    <div key={e.id} className="flex items-start gap-3 px-4 py-3">
-                      <span className={cn("text-xs font-medium px-1.5 py-0.5 rounded border mt-0.5", EVENT_COLORS[e.eventType] ?? EVENT_COLORS.custom)}>{e.eventType.toUpperCase()}</span>
+                {(() => {
+                  const collabDue = allCollab
+                    .filter((r: any) => r.dueDate && !["completed","cancelled"].includes(r.status))
+                    .sort((a: any, b: any) => a.dueDate.localeCompare(b.dueDate))
+                    .slice(0, 4);
+                  const complianceDue = pendingEvents.slice(0, 4);
+                  const combined = [
+                    ...complianceDue.map((e: any) => ({ id: `c-${e.id}`, type: "compliance", label: e.eventType.toUpperCase(), title: e.title, dueDate: e.dueDate, isOverdue: e.dueDate < today, onClick: () => setTab("calendar") })),
+                    ...collabDue.map((r: any) => ({ id: `r-${r.id}`, type: "request", label: "REQ", title: r.title, dueDate: r.dueDate, isOverdue: r.dueDate < today, onClick: () => setTab("collaboration") })),
+                  ].sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+                  if (combined.length === 0) return <div className="py-10 text-center text-sm text-gray-400">No upcoming deadlines</div>;
+                  return combined.map(item => (
+                    <div key={item.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer" onClick={item.onClick}>
+                      <span className={cn("text-xs font-medium px-1.5 py-0.5 rounded border mt-0.5 shrink-0",
+                        item.type === "request" ? "bg-violet-50 text-violet-700 border-violet-200" : (EVENT_COLORS[item.label.toLowerCase()] ?? EVENT_COLORS.custom)
+                      )}>{item.label}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-800 truncate">{e.title}</p>
-                        <p className={cn("text-xs mt-0.5", isOverdue ? "text-red-600 font-semibold" : "text-gray-400")}>
-                          {isOverdue ? "OVERDUE · " : ""}{fmtDate(e.dueDate)}
+                        <p className="text-xs font-medium text-gray-800 truncate">{item.title}</p>
+                        <p className={cn("text-xs mt-0.5", item.isOverdue ? "text-red-600 font-semibold" : "text-gray-400")}>
+                          {item.isOverdue ? "OVERDUE · " : ""}{fmtDate(item.dueDate)}
                         </p>
                       </div>
                     </div>
-                  );
-                })}
-                {pendingEvents.length === 0 && <div className="py-10 text-center text-sm text-gray-400">No upcoming deadlines</div>}
+                  ));
+                })()}
               </CardContent>
             </Card>
           </div>
@@ -1408,20 +1440,31 @@ export default function AuditorWorkspace() {
                         {engs.length > 2 && <span className="text-xs text-gray-400">+{engs.length - 2}</span>}
                       </div>
                       <Separator />
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div>
-                          <p className="text-base font-bold text-gray-700">{openTasks.length}</p>
-                          <p className="text-[10px] text-gray-400 leading-tight">Open tasks</p>
-                        </div>
-                        <div>
-                          <p className={cn("text-base font-bold", overdueTasks.length > 0 ? "text-red-600" : "text-gray-700")}>{overdueTasks.length}</p>
-                          <p className="text-[10px] text-gray-400 leading-tight">Overdue</p>
-                        </div>
-                        <div>
-                          <p className={cn("text-base font-bold", openFindings.length > 0 ? "text-orange-600" : "text-gray-700")}>{openFindings.length}</p>
-                          <p className="text-[10px] text-gray-400 leading-tight">Findings</p>
-                        </div>
-                      </div>
+                      {(() => {
+                        const clientCollabOpen = allCollab.filter((r: any) => r.clientId === c.id && !["completed","cancelled"].includes(r.status));
+                        return (
+                          <div className="grid grid-cols-4 gap-2 text-center">
+                            <div>
+                              <p className="text-base font-bold text-gray-700">{openTasks.length}</p>
+                              <p className="text-[10px] text-gray-400 leading-tight">Open tasks</p>
+                            </div>
+                            <div>
+                              <p className={cn("text-base font-bold", overdueTasks.length > 0 ? "text-red-600" : "text-gray-700")}>{overdueTasks.length}</p>
+                              <p className="text-[10px] text-gray-400 leading-tight">Overdue</p>
+                            </div>
+                            <div>
+                              <p className={cn("text-base font-bold", openFindings.length > 0 ? "text-orange-600" : "text-gray-700")}>{openFindings.length}</p>
+                              <p className="text-[10px] text-gray-400 leading-tight">Findings</p>
+                            </div>
+                            <div
+                              className="cursor-pointer hover:opacity-75"
+                              onClick={() => { setTab("collaboration"); }}>
+                              <p className={cn("text-base font-bold", clientCollabOpen.length > 0 ? "text-violet-600" : "text-gray-700")}>{clientCollabOpen.length}</p>
+                              <p className="text-[10px] text-gray-400 leading-tight">Requests</p>
+                            </div>
+                          </div>
+                        );
+                      })()}
                       <Link href={`/auditor/clients/${c.id}`} className="mt-auto">
                         <Button size="sm" variant="outline" className="w-full rounded-xl text-violet-700 border-violet-200 hover:bg-violet-50 hover:border-violet-300 text-xs h-8">
                           Open Client Workspace <ArrowUpRight className="w-3 h-3 ml-1"/>
@@ -1589,18 +1632,53 @@ export default function AuditorWorkspace() {
 
           {/* Events for month */}
           {(() => {
-            const monthEvents = events.filter((e: any) => e.dueDate.startsWith(calMonth));
+            const monthEvents   = (events as any[]).filter((e: any) => e.dueDate.startsWith(calMonth));
+            const monthRequests = allCollab.filter((r: any) => r.dueDate?.startsWith(calMonth) && !["completed","cancelled"].includes(r.status));
             return (
               <div className="space-y-3">
-                {monthEvents.length === 0 ? (
+                {/* Collaboration request deadlines */}
+                {monthRequests.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <MessageCircle className="w-3.5 h-3.5 text-violet-500" />Collaboration Request Deadlines
+                    </p>
+                    <div className="space-y-2">
+                      {monthRequests.map((r: any) => {
+                        const isOverdue = r.dueDate < today;
+                        const sc = COLLAB_STATUS_CFG[r.status] ?? COLLAB_STATUS_CFG.pending;
+                        return (
+                          <div key={r.id} className={cn("flex items-center gap-3 border rounded-xl px-4 py-3 bg-white hover:shadow-sm transition-all cursor-pointer", isOverdue && "border-red-200 bg-red-50/30")} onClick={() => setTab("collaboration")}>
+                            <span className="text-xs font-bold px-2 py-1 rounded-lg border bg-violet-50 text-violet-700 border-violet-200 shrink-0">REQ</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-800">{r.title}</p>
+                              <p className="text-xs text-gray-400">{r.clientName ?? `Client #${r.clientId}`} · Due: {fmtDate(r.dueDate)}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {isOverdue && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">Overdue</span>}
+                              <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1", sc.badge)}>
+                                <span className={cn("w-1.5 h-1.5 rounded-full", sc.dot)} />{sc.label}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {/* Compliance events */}
+                {monthEvents.length === 0 && monthRequests.length === 0 ? (
                   <Card className="rounded-2xl border-dashed border-gray-300">
                     <CardContent className="py-12 text-center">
                       <CalendarDays className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                      <p className="text-sm text-gray-500 mb-3">No compliance events for this month</p>
+                      <p className="text-sm text-gray-500 mb-3">No events or request deadlines for this month</p>
                       <Button size="sm" className="rounded-xl" onClick={() => setEventDlg({ open: true, form: { ...emptyEvent, dueDate: calMonth + "-20" } })}><Plus className="w-3.5 h-3.5 mr-1" />Add Event</Button>
                     </CardContent>
                   </Card>
-                ) : monthEvents.map((e: any) => {
+                ) : monthEvents.length > 0 ? (
+                  <div>
+                    {monthRequests.length > 0 && <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5 text-amber-500" />Compliance Events</p>}
+                    <div className="space-y-2">
+                {monthEvents.map((e: any) => {
                   const isOverdue = e.dueDate < today && e.status === "pending";
                   return (
                     <div key={e.id} className={cn("flex items-center gap-3 border rounded-xl px-4 py-3 bg-white hover:shadow-sm transition-all", isOverdue && "border-red-200 bg-red-50/30")}>
@@ -1626,6 +1704,9 @@ export default function AuditorWorkspace() {
                     </div>
                   );
                 })}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             );
           })()}
@@ -2023,7 +2104,15 @@ export default function AuditorWorkspace() {
       })()}
 
       {/* ── COLLABORATION HUB TAB ── */}
-      {tab === "collaboration" && <CollaborationHub clients={clients as any[]} />}
+      {tab === "collaboration" && (
+        <CollaborationHub
+          clients={clients as any[]}
+          onCreateTask={(prefill) => {
+            setTaskDlg({ open: true, form: { ...emptyTask, ...prefill } });
+            setTab("tasks");
+          }}
+        />
+      )}
 
       {/* ── AUTOMATION HUB TAB ── */}
       {tab === "automation" && <AutomationHub />}

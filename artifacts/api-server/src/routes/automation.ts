@@ -3,9 +3,9 @@ import { db } from "@workspace/db";
 import {
   notificationsTable, automationRulesTable,
   auditTasksTable, complianceEventsTable, auditQueriesTable,
-  auditClientsTable,
+  auditClientsTable, collaborationRequestsTable,
 } from "@workspace/db";
-import { eq, desc, and, lte, or } from "drizzle-orm";
+import { eq, desc, and, lte, or, lt, notInArray } from "drizzle-orm";
 
 const router = Router();
 const today = () => new Date().toISOString().split("T")[0];
@@ -303,6 +303,53 @@ export async function runAutomationChecks(): Promise<{ created: number; types: R
       message: "Assign team members to ensure accountability",
       entityType: "task",
       actionUrl: "/auditor?tab=workload",
+    });
+  }
+
+  /* ── 5. Overdue collaboration requests ── */
+  const overdueCollab = await db
+    .select({ r: collaborationRequestsTable, c: auditClientsTable })
+    .from(collaborationRequestsTable)
+    .leftJoin(auditClientsTable, eq(collaborationRequestsTable.clientId, auditClientsTable.id))
+    .where(
+      and(
+        lt(collaborationRequestsTable.dueDate, td),
+        notInArray(collaborationRequestsTable.status, ["completed", "cancelled", "overdue"])
+      )
+    );
+
+  for (const { r, c } of overdueCollab) {
+    if (!r.dueDate) continue;
+    const daysOverdue = Math.floor((Date.now() - new Date(r.dueDate).getTime()) / 86400000);
+    await notify({
+      type: "overdue_collaboration", priority: daysOverdue >= 7 ? "critical" : "high",
+      title: `Overdue Request: ${r.title}`,
+      message: `Document/info request is ${daysOverdue} day${daysOverdue !== 1 ? "s" : ""} overdue${c?.name ? ` · ${c.name}` : ""}`,
+      entityType: "collaboration_request", entityId: r.id,
+      clientId: r.clientId ?? undefined, clientName: c?.name ?? undefined,
+      actionUrl: "/auditor?tab=collaboration",
+    });
+  }
+
+  /* ── 6. Stale collaboration requests (no activity for 5+ days) ── */
+  const stale5 = new Date(Date.now() - 5 * 86400000).toISOString();
+  const staleCollab = await db
+    .select({ r: collaborationRequestsTable, c: auditClientsTable })
+    .from(collaborationRequestsTable)
+    .leftJoin(auditClientsTable, eq(collaborationRequestsTable.clientId, auditClientsTable.id));
+
+  for (const { r, c } of staleCollab) {
+    if (!["pending", "in_progress"].includes(r.status)) continue;
+    const updatedAt = r.updatedAt?.toISOString() ?? r.createdAt?.toISOString() ?? "";
+    if (updatedAt >= stale5) continue;
+    const daysStale = Math.floor((Date.now() - new Date(updatedAt).getTime()) / 86400000);
+    await notify({
+      type: "stale_collaboration", priority: "medium",
+      title: `No Activity: ${r.title}`,
+      message: `Collaboration request has been ${r.status} for ${daysStale} day${daysStale !== 1 ? "s" : ""} with no updates${c?.name ? ` · ${c.name}` : ""}`,
+      entityType: "collaboration_request", entityId: r.id,
+      clientId: r.clientId ?? undefined, clientName: c?.name ?? undefined,
+      actionUrl: "/auditor?tab=collaboration",
     });
   }
 

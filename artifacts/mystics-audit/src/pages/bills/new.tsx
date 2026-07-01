@@ -298,16 +298,16 @@ export default function NewBill() {
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
                     <th className="px-2 py-2.5 text-center text-xs font-bold text-gray-400 w-6">#</th>
-                    <th className="px-2 py-2.5 text-left text-xs font-bold text-gray-500 w-32">Item</th>
+                    <th className="px-2 py-2.5 text-left text-xs font-bold text-gray-500 w-24">Item</th>
                     <th className="px-2 py-2.5 text-left text-xs font-bold text-gray-500">Description</th>
-                    <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-14 text-center">HSN/SAC</th>
-                    <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-10 text-right">Qty</th>
-                    <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-14">Unit</th>
+                    <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-12 text-center">HSN/SAC</th>
+                    <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-12 text-right">Qty</th>
+                    <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-16">Unit</th>
                     <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-16 text-right">Rate (₹)</th>
-                    <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-10 text-right">Disc%</th>
-                    <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-14 text-right">GST%</th>
-                    <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-16 text-right">Amount</th>
-                    <th className="px-2 py-2.5 w-10"></th>
+                    <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-12 text-right">Disc%</th>
+                    <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-16 text-right">GST%</th>
+                    <th className="px-2 py-2.5 text-xs font-bold text-gray-500 w-20 text-right">Amount</th>
+                    <th className="px-2 py-2.5 w-9"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -362,7 +362,7 @@ export default function NewBill() {
                             </SelectContent>
                           </Select>
                         </td>
-                        <td className="px-2 py-2 text-right font-semibold text-xs text-gray-800 whitespace-nowrap">{formatCurrency(c.total)}</td>
+                        <td className="px-2 py-2 text-right font-semibold text-xs text-gray-800 truncate" title={formatCurrency(c.total)}>{formatCurrency(c.total)}</td>
                         <td className="px-1.5 py-2">
                           <div className="flex items-center justify-center gap-0.5">
                             <button onClick={() => duplicateLine(i)} title="Duplicate line"

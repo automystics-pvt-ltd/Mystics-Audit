@@ -5,13 +5,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { Plus, ShoppingCart, Clock, CheckCircle2, Archive, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const STATUS_CFG: Record<string, { color: string; label: string }> = {
-  approved:  { color: "bg-blue-100 text-blue-700 border-blue-200",      label: "Approved" },
-  draft:     { color: "bg-gray-100 text-gray-600 border-gray-200",      label: "Draft" },
-  closed:    { color: "bg-emerald-100 text-emerald-700 border-emerald-200", label: "Closed" },
-  cancelled: { color: "bg-red-100 text-red-700 border-red-200",         label: "Cancelled" },
-};
+import { StatusBadge } from "@/components/StatusBadge";
 
 export default function PoList() {
   const [status, setStatus] = useState("");
@@ -98,7 +92,6 @@ export default function PoList() {
           </div>
         ) : (
           all.map((o: any) => {
-            const cfg = STATUS_CFG[o.status] ?? STATUS_CFG.draft;
             const received = Number(o.receivedAmount ?? 0);
             const total    = Number(o.totalAmount ?? 0);
             const pct      = total > 0 ? Math.round((received / total) * 100) : 0;
@@ -118,7 +111,7 @@ export default function PoList() {
                   {pct > 0 && <div className="text-[10px] text-gray-400">{pct}% received</div>}
                 </div>
                 <div className="self-center">
-                  <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border", cfg.color)}>{cfg.label}</span>
+                  <StatusBadge status={o.status} />
                 </div>
               </div>
             );

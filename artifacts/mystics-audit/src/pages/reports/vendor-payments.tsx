@@ -5,15 +5,11 @@ import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Download, Printer, RefreshCw } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
 import { cn } from "@/lib/utils";
-
-function inr(n: number) { return new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", maximumFractionDigits:2 }).format(n); }
-function fmtDate(s: string) { return s ? new Date(s).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "—"; }
-
-const STATUS_COLORS: Record<string,string> = { draft:"bg-gray-100 text-gray-700", posted:"bg-blue-100 text-blue-700", paid:"bg-green-100 text-green-700" };
+import { formatCurrency, formatDate } from "@/lib/format";
+import { StatusBadge } from "@/components/StatusBadge";
 const COLORS = ["#7c3aed","#06b6d4","#10b981","#f59e0b","#ef4444","#8b5cf6","#3b82f6","#ec4899"];
 
 function exportCSV(rows: any[]) {
@@ -66,10 +62,10 @@ export default function VendorPayments() {
 
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label:"Total Billed",   value:inr(totals.billed),      sub:`${rows.length} bills`, bg:"bg-gray-700" },
-          { label:"Total Paid",     value:inr(totals.paid),        sub:"Payments made",        bg:"bg-emerald-600" },
-          { label:"Outstanding AP", value:inr(totals.outstanding), sub:"Yet to pay",            bg:"bg-red-600" },
-          { label:"TDS Deducted",   value:inr(totals.tds),         sub:"Withheld at source",   bg:"bg-amber-600" },
+          { label:"Total Billed",   value:formatCurrency(totals.billed),      sub:`${rows.length} bills`, bg:"bg-gray-700" },
+          { label:"Total Paid",     value:formatCurrency(totals.paid),        sub:"Payments made",        bg:"bg-emerald-600" },
+          { label:"Outstanding AP", value:formatCurrency(totals.outstanding), sub:"Yet to pay",            bg:"bg-red-600" },
+          { label:"TDS Deducted",   value:formatCurrency(totals.tds),         sub:"Withheld at source",   bg:"bg-amber-600" },
         ].map(k => (
           <div key={k.label} className={cn("rounded-2xl px-5 py-5 text-white", k.bg)}>
             <p className="text-xs font-medium opacity-80">{k.label}</p>
@@ -87,7 +83,7 @@ export default function VendorPayments() {
               <BarChart data={byVendor} layout="vertical" margin={{left:8,right:24}}>
                 <XAxis type="number" tickFormatter={v=>`₹${(v/100_000).toFixed(1)}L`} tick={{fontSize:10}} />
                 <YAxis type="category" dataKey="vendorName" tick={{fontSize:10}} width={110} />
-                <Tooltip formatter={(v:any)=>inr(v)} />
+                <Tooltip formatter={(v:any)=>formatCurrency(v)} />
                 <Legend />
                 <Bar dataKey="totalBilled" name="Billed" stackId="a" fill="#7c3aed" />
                 <Bar dataKey="totalPaid" name="Paid" stackId="b" fill="#10b981" radius={[0,3,3,0]} />
@@ -127,22 +123,22 @@ export default function VendorPayments() {
                   {pageRows.map((r:any, i:number) => (
                     <tr key={r.id} className={cn("border-b last:border-0 hover:bg-gray-50", i%2===1?"bg-gray-50/30":"")}>
                       <td className="px-3 py-2 font-medium text-primary">{r.billNo}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">{fmtDate(r.date)}</td>
-                      <td className={cn("px-3 py-2 whitespace-nowrap", r.status==="posted"&&r.dueDate<new Date().toISOString().split("T")[0]?"text-red-600 font-medium":"")}>{fmtDate(r.dueDate)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap">{formatDate(r.date)}</td>
+                      <td className={cn("px-3 py-2 whitespace-nowrap", r.status==="posted"&&r.dueDate<new Date().toISOString().split("T")[0]?"text-red-600 font-medium":"")}>{formatDate(r.dueDate)}</td>
                       <td className="px-3 py-2 max-w-[160px] truncate">{r.vendorName}</td>
-                      <td className="px-3 py-2 text-right font-semibold">{inr(r.totalAmount)}</td>
-                      <td className="px-3 py-2 text-right text-green-700">{inr(r.paidAmount)}</td>
-                      <td className={cn("px-3 py-2 text-right font-semibold", r.outstanding>0?"text-red-600":"text-gray-400")}>{inr(r.outstanding)}</td>
-                      <td className="px-3 py-2 text-right text-amber-700">{inr(r.tdsAmount)}</td>
-                      <td className="px-3 py-2"><Badge className={cn("text-xs", STATUS_COLORS[r.status]||"bg-gray-100")}>{r.status}</Badge></td>
+                      <td className="px-3 py-2 text-right font-semibold">{formatCurrency(r.totalAmount)}</td>
+                      <td className="px-3 py-2 text-right text-green-700">{formatCurrency(r.paidAmount)}</td>
+                      <td className={cn("px-3 py-2 text-right font-semibold", r.outstanding>0?"text-red-600":"text-gray-400")}>{formatCurrency(r.outstanding)}</td>
+                      <td className="px-3 py-2 text-right text-amber-700">{formatCurrency(r.tdsAmount)}</td>
+                      <td className="px-3 py-2"><StatusBadge status={r.status} /></td>
                     </tr>
                   ))}
                   <tr className="bg-gray-100 font-semibold border-t-2">
                     <td colSpan={4} className="px-3 py-2 text-right">TOTAL</td>
-                    <td className="px-3 py-2 text-right">{inr(totals.billed)}</td>
-                    <td className="px-3 py-2 text-right text-green-700">{inr(totals.paid)}</td>
-                    <td className="px-3 py-2 text-right text-red-700">{inr(totals.outstanding)}</td>
-                    <td className="px-3 py-2 text-right text-amber-700">{inr(totals.tds)}</td>
+                    <td className="px-3 py-2 text-right">{formatCurrency(totals.billed)}</td>
+                    <td className="px-3 py-2 text-right text-green-700">{formatCurrency(totals.paid)}</td>
+                    <td className="px-3 py-2 text-right text-red-700">{formatCurrency(totals.outstanding)}</td>
+                    <td className="px-3 py-2 text-right text-amber-700">{formatCurrency(totals.tds)}</td>
                     <td></td>
                   </tr>
                 </tbody>

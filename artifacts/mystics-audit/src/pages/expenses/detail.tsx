@@ -9,19 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Building2,
   FolderOpen, MapPin, Users2, Briefcase, Banknote, CreditCard,
   Clock, ChevronRight, Receipt, FileText,
 } from "lucide-react";
-
-const STATUS_COLOR: Record<string, string> = {
-  submitted:  "bg-amber-50 text-amber-700 border-amber-200",
-  approved:   "bg-blue-50 text-blue-700 border-blue-200",
-  rejected:   "bg-red-50 text-red-700 border-red-200",
-  reimbursed: "bg-violet-50 text-violet-700 border-violet-200",
-  paid:       "bg-emerald-50 text-emerald-700 border-emerald-200",
-};
 
 const ACTION_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   submitted:  { label: "Submitted",  color: "text-gray-500",   icon: <Receipt className="w-4 h-4" /> },
@@ -78,9 +71,7 @@ export default function ExpenseDetail() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold font-mono text-gray-900">{e.claimNo}</h1>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${STATUS_COLOR[e.status] ?? "bg-gray-50 text-gray-500 border-gray-200"}`}>
-                {e.status.charAt(0).toUpperCase() + e.status.slice(1)}
-              </span>
+              <StatusBadge status={e.status} className="text-sm px-3 py-1" />
             </div>
             <p className="text-sm text-gray-500 mt-0.5">{e.employeeName} · Submitted {formatDate(e.submittedDate)}</p>
           </div>

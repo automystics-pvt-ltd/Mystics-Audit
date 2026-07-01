@@ -5,16 +5,12 @@ import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, Printer, RefreshCw, AlertTriangle } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { cn } from "@/lib/utils";
-
-function inr(n: number) { return new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", maximumFractionDigits:2 }).format(n); }
-function fmtDate(s: string) { return s ? new Date(s).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "—"; }
-
-const STATUS_COLORS: Record<string,string> = { submitted:"bg-amber-100 text-amber-700", approved:"bg-blue-100 text-blue-700", rejected:"bg-red-100 text-red-700", reimbursed:"bg-emerald-100 text-emerald-700", paid:"bg-green-100 text-green-700" };
+import { formatCurrency, formatDate } from "@/lib/format";
+import { StatusBadge } from "@/components/StatusBadge";
 const PIE_COLORS = ["#7c3aed","#06b6d4","#10b981","#f59e0b","#ef4444","#8b5cf6","#3b82f6","#ec4899","#f97316","#14b8a6"];
 
 const DEPARTMENTS = ["","Finance","Operations","HR","Sales","Marketing","Technology","Admin","Legal","Projects"];
@@ -99,9 +95,9 @@ export default function ExpenseReport() {
 
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label:"Total Claimed",     value:inr(totals.totalAmount),               sub:`${totals.count} claims`, bg:"bg-gray-700" },
-          { label:"GST Component",     value:inr(totals.totalGst),                  sub:"Input tax",              bg:"bg-amber-600" },
-          { label:"Net Expense",       value:inr(totals.totalAmount-totals.totalGst),sub:"Excl. GST",             bg:"bg-violet-600" },
+          { label:"Total Claimed",     value:formatCurrency(totals.totalAmount),               sub:`${totals.count} claims`, bg:"bg-gray-700" },
+          { label:"GST Component",     value:formatCurrency(totals.totalGst),                  sub:"Input tax",              bg:"bg-amber-600" },
+          { label:"Net Expense",       value:formatCurrency(totals.totalAmount-totals.totalGst),sub:"Excl. GST",             bg:"bg-violet-600" },
           { label:"Policy Violations", value:String(totals.violations),             sub:"Claims with breach",     bg:totals.violations>0?"bg-red-600":"bg-emerald-600" },
         ].map(k => (
           <div key={k.label} className={cn("rounded-2xl px-5 py-5 text-white", k.bg)}>
@@ -122,7 +118,7 @@ export default function ExpenseReport() {
                 <ResponsiveContainer width="100%" height={160}>
                   <PieChart><Pie data={byCategory} dataKey="total" nameKey="category" cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={2}>
                     {byCategory.map((_,i)=><Cell key={i} fill={PIE_COLORS[i%PIE_COLORS.length]} />)}
-                  </Pie><Tooltip formatter={(v:any)=>inr(v)} /></PieChart>
+                  </Pie><Tooltip formatter={(v:any)=>formatCurrency(v)} /></PieChart>
                 </ResponsiveContainer>
                 <div className="space-y-1 max-h-32 overflow-y-auto">
                   {byCategory.slice(0,6).map((c,i)=>(
@@ -146,7 +142,7 @@ export default function ExpenseReport() {
                 <BarChart data={byDept.slice(0,6)} layout="vertical" margin={{left:4,right:16}}>
                   <XAxis type="number" tickFormatter={v=>`₹${(v/1000).toFixed(0)}K`} tick={{fontSize:10}} />
                   <YAxis type="category" dataKey="department" tick={{fontSize:10}} width={60} />
-                  <Tooltip formatter={(v:any)=>inr(v)} />
+                  <Tooltip formatter={(v:any)=>formatCurrency(v)} />
                   <Bar dataKey="total" name="Expenses" fill="#7c3aed" radius={[0,3,3,0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -160,9 +156,9 @@ export default function ExpenseReport() {
           <CardContent className="space-y-2">
             {byStatus.length === 0 ? <div className="text-center py-8 text-gray-400 text-sm">No data</div> : byStatus.map(s => (
               <div key={s.status} className="flex items-center justify-between">
-                <Badge className={cn("text-xs capitalize", STATUS_COLORS[s.status]||"bg-gray-100 text-gray-700")}>{s.status}</Badge>
+                <StatusBadge status={s.status} />
                 <div className="text-right">
-                  <p className="text-sm font-semibold">{inr(s.total)}</p>
+                  <p className="text-sm font-semibold">{formatCurrency(s.total)}</p>
                   <p className="text-xs text-gray-400">{s.count} claims</p>
                 </div>
               </div>
@@ -204,14 +200,14 @@ export default function ExpenseReport() {
                     return (
                       <tr key={r.id} className={cn("border-b last:border-0 hover:bg-gray-50", i%2===1?"bg-gray-50/30":"")}>
                         <td className="px-3 py-2 font-medium text-primary">{r.claimNo}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">{fmtDate(r.submittedDate)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDate(r.submittedDate)}</td>
                         <td className="px-3 py-2">{r.employeeName}</td>
                         <td className="px-3 py-2 text-gray-600">{r.category}</td>
                         <td className="px-3 py-2 text-gray-500">{r.department||"—"}</td>
                         <td className="px-3 py-2 text-gray-500">{r.project||"—"}</td>
-                        <td className="px-3 py-2 text-right font-semibold">{inr(r.totalAmount)}</td>
-                        <td className="px-3 py-2 text-right text-amber-700">{inr(r.gstAmount)}</td>
-                        <td className="px-3 py-2"><Badge className={cn("text-xs capitalize", STATUS_COLORS[r.status]||"bg-gray-100")}>{r.status}</Badge></td>
+                        <td className="px-3 py-2 text-right font-semibold">{formatCurrency(r.totalAmount)}</td>
+                        <td className="px-3 py-2 text-right text-amber-700">{formatCurrency(r.gstAmount)}</td>
+                        <td className="px-3 py-2"><StatusBadge status={r.status} /></td>
                         <td className="px-3 py-2">{hasViolations?<span className="flex items-center gap-1 text-xs text-red-600"><AlertTriangle className="w-3 h-3" />Breach</span>:"—"}</td>
                       </tr>
                     );

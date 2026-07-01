@@ -11,7 +11,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus, AlertTriangle, Search, Filter, BarChart3,
-  CheckCircle2, Clock, XCircle, Banknote, RefreshCw,
+  CheckCircle2, Clock, RefreshCw,
   Building2, FolderOpen, MapPin, Briefcase,
   ThumbsUp, ThumbsDown, CreditCard, ChevronDown,
 } from "lucide-react";

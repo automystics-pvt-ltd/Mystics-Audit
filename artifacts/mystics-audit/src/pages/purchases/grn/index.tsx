@@ -4,13 +4,7 @@ import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/format";
 import { Plus, Package, CheckCircle2, Clock, Truck, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const STATUS_CFG: Record<string, { color: string; label: string }> = {
-  received:  { color: "bg-emerald-100 text-emerald-700 border-emerald-200", label: "Received" },
-  partial:   { color: "bg-amber-100 text-amber-700 border-amber-200",       label: "Partial" },
-  pending:   { color: "bg-blue-100 text-blue-700 border-blue-200",          label: "Pending" },
-  cancelled: { color: "bg-red-100 text-red-700 border-red-200",             label: "Cancelled" },
-};
+import { StatusBadge } from "@/components/StatusBadge";
 
 export default function GrnList() {
   const { data, isLoading } = useListGrns({});
@@ -83,7 +77,6 @@ export default function GrnList() {
           </div>
         ) : (
           all.map((g: any) => {
-            const cfg = STATUS_CFG[g.status] ?? STATUS_CFG.pending;
             return (
               <div key={g.id} className="grid grid-cols-[160px_160px_1fr_110px_100px] gap-0 px-4 py-3 border-b border-gray-50 hover:bg-violet-50/30 transition-colors">
                 <div className="self-center">
@@ -99,7 +92,7 @@ export default function GrnList() {
                 <div className="self-center text-sm font-medium text-gray-700 pr-4 truncate">{g.vendorName}</div>
                 <div className="self-center text-sm text-gray-500">{formatDate(g.date)}</div>
                 <div className="self-center">
-                  <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border", cfg.color)}>{cfg.label}</span>
+                  <StatusBadge status={g.status} />
                 </div>
               </div>
             );

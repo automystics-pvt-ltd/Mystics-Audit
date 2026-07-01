@@ -222,11 +222,11 @@ export default function NewExpense() {
                   {/* Row 1: primary fields */}
                   <div className="grid grid-cols-[minmax(120px,auto)_1fr_2fr_minmax(110px,auto)_36px] gap-3 items-end">
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-400">Date *</Label>
+                      <Label className="text-xs text-gray-400 whitespace-nowrap">Date *</Label>
                       <DateInput className="text-sm w-full" value={l.date} onChange={e => updateLine(i, "date", e.target.value)} />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-400">Category *</Label>
+                      <Label className="text-xs text-gray-400 whitespace-nowrap">Category *</Label>
                       <Select value={l.category} onValueChange={v => updateLine(i, "category", v)}>
                         <SelectTrigger className="text-sm"><SelectValue placeholder="Select…" /></SelectTrigger>
                         <SelectContent className="max-h-72">
@@ -240,14 +240,14 @@ export default function NewExpense() {
                       </Select>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-400">Description *</Label>
+                      <Label className="text-xs text-gray-400 whitespace-nowrap">Description *</Label>
                       <Input className="text-sm" value={l.description} onChange={e => updateLine(i, "description", e.target.value)} placeholder="Purpose / details..." />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-400">Amount (₹) *</Label>
+                      <Label className="text-xs text-gray-400 whitespace-nowrap">Amount (₹) *</Label>
                       <Input className="text-sm text-right font-mono" value={l.amount} onChange={e => updateLine(i, "amount", e.target.value)} placeholder="0" />
                     </div>
-                    <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-600 hover:bg-red-50 h-9 w-9" onClick={() => removeLine(i)}>
+                    <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-600 hover:bg-red-50 h-9 w-9 self-end" onClick={() => removeLine(i)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -255,20 +255,20 @@ export default function NewExpense() {
                   {/* Row 2: vendor & GST details — 4 equal columns */}
                   <div className="grid grid-cols-4 gap-3 items-end">
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-400">Vendor Name</Label>
+                      <Label className="text-xs text-gray-400 whitespace-nowrap">Vendor Name</Label>
                       <Input className="text-sm" value={l.vendorName} onChange={e => updateLine(i, "vendorName", e.target.value)} placeholder="Supplier / store..." />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-400">Vendor GSTIN</Label>
+                      <Label className="text-xs text-gray-400 whitespace-nowrap">Vendor GSTIN</Label>
                       <Input className="text-sm font-mono" value={l.vendorGstin} onChange={e => updateLine(i, "vendorGstin", e.target.value)} placeholder="22AAAAA0000A1Z5" />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-400">HSN / SAC Code</Label>
+                      <Label className="text-xs text-gray-400 whitespace-nowrap">HSN / SAC Code</Label>
                       <Input className="text-sm font-mono" value={l.hsnCode} onChange={e => updateLine(i, "hsnCode", e.target.value)} placeholder="9963..." />
                     </div>
                     {/* GST Rate + Amount + Billable grouped in one cell */}
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-400">GST Rate &amp; Amount (₹)</Label>
+                      <Label className="text-xs text-gray-400 whitespace-nowrap">GST Rate &amp; Amount (₹)</Label>
                       <div className="flex items-center gap-2">
                         <Select value={l.gstRate} onValueChange={v => updateLine(i, "gstRate", v)}>
                           <SelectTrigger className="text-sm w-24 shrink-0"><SelectValue /></SelectTrigger>

@@ -13,7 +13,7 @@ import {
   Globe, Phone, Mail, MapPin, Hash, FileText, Save, Camera,
   Server, Eye, EyeOff, SendHorizonal, ShieldCheck, AlertCircle, Lock,
 } from "lucide-react";
-import { INDIAN_STATES } from "@/lib/india-data";
+import { LocationSelector } from "@/components/LocationSelector";
 
 const COMPANY_TYPES = ["Private Limited", "Public Limited", "LLP", "Partnership", "Sole Proprietorship", "OPC", "NGO/Trust"];
 const FISCAL_YEARS  = ["April", "January", "July", "October"];
@@ -375,6 +375,7 @@ export default function CompanySettings() {
       address:            company.address ?? "",
       city:               company.city ?? "",
       state:              company.state ?? "",
+      country:            company.country ?? "India",
       pincode:            company.pincode ?? "",
       logoUrl:            company.logoUrl ?? null,
       fiscalYearStart:    company.fiscalYearStart ?? "April",
@@ -560,18 +561,15 @@ export default function CompanySettings() {
           <Field label="Street Address">
             <Textarea value={form.address} onChange={e => set("address", e.target.value)} rows={2} placeholder="Building No., Street, Area…" />
           </Field>
+          <LocationSelector
+            country={form.country ?? ""}
+            state={form.state ?? ""}
+            city={form.city ?? ""}
+            onCountryChange={v => set("country", v)}
+            onStateChange={v => set("state", v)}
+            onCityChange={v => set("city", v)}
+          />
           <div className="grid grid-cols-3 gap-4">
-            <Field label="City">
-              <Input value={form.city} onChange={e => set("city", e.target.value)} placeholder="Chennai" />
-            </Field>
-            <Field label="State">
-              <Select value={form.state} onValueChange={v => set("state", v)}>
-                <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {INDIAN_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
             <Field label="Pincode">
               <Input value={form.pincode} onChange={e => set("pincode", e.target.value)} placeholder="600 002" maxLength={6} className="font-mono" />
             </Field>

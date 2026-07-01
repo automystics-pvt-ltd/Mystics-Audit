@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, ArrowRight, ArrowLeft, Shield, Building2, CreditCard, User, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { LocationSelector } from "@/components/LocationSelector";
 
 const PLANS = [
   { slug:"trial",        name:"Free Trial",   price:0,     maxUsers:5,   desc:"14-day trial, no credit card required", color:"slate",   highlight:false },
@@ -36,7 +37,7 @@ export default function Register() {
   const [showPass, setShowPass] = useState(false);
 
   const [form, setForm] = useState({
-    orgName:"", legalName:"", industry:"", gstin:"", city:"", state:"",
+    orgName:"", legalName:"", industry:"", gstin:"", city:"", state:"", country:"India",
     contactName:"", contactEmail:"", contactPhone:"",
     planSlug:"professional", billingCycle:"monthly",
     adminName:"", adminEmail:"", adminPassword:"", adminPhone:"",
@@ -169,13 +170,15 @@ export default function Register() {
                 <Label>Contact Email *</Label>
                 <Input type="email" value={form.contactEmail} onChange={set("contactEmail")} placeholder="accounts@acme.in" />
               </div>
-              <div className="space-y-1.5">
-                <Label>City</Label>
-                <Input value={form.city} onChange={set("city")} placeholder="Mumbai" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>State</Label>
-                <Input value={form.state} onChange={set("state")} placeholder="Maharashtra" />
+              <div className="col-span-2">
+                <LocationSelector
+                  country={form.country}
+                  state={form.state}
+                  city={form.city}
+                  onCountryChange={v => setForm(f => ({ ...f, country: v, state: "", city: "" }))}
+                  onStateChange={v => setForm(f => ({ ...f, state: v, city: "" }))}
+                  onCityChange={v => setForm(f => ({ ...f, city: v }))}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Contact Name</Label>

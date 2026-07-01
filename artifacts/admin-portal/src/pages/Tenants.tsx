@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Building2, Plus, Search, MoreHorizontal, Pause, Play, Trash2, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { LocationSelector } from "@/components/LocationSelector";
 
 const STATUS_BADGE: Record<string, string> = {
   active: "bg-green-50 text-green-700 border-green-200",
@@ -70,7 +71,7 @@ export default function Tenants() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-tenants"] }); toast({ title: "Tenant deleted" }); },
   });
 
-  const [form, setForm] = useState({ orgName: "", contactEmail: "", plan: "trial", industry: "", contactName: "", contactPhone: "", city: "", state: "", notes: "" });
+  const [form, setForm] = useState({ orgName: "", contactEmail: "", plan: "trial", industry: "", contactName: "", contactPhone: "", city: "", state: "", country: "India", notes: "" });
   const handleCreate = (e: React.FormEvent) => { e.preventDefault(); createMut.mutate(form); };
 
   return (
@@ -226,13 +227,15 @@ export default function Tenants() {
                 <Label>Contact Phone</Label>
                 <Input value={form.contactPhone} onChange={e => setForm(f => ({...f, contactPhone: e.target.value}))} />
               </div>
-              <div className="space-y-1.5">
-                <Label>City</Label>
-                <Input value={form.city} onChange={e => setForm(f => ({...f, city: e.target.value}))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>State</Label>
-                <Input value={form.state} onChange={e => setForm(f => ({...f, state: e.target.value}))} />
+              <div className="col-span-2">
+                <LocationSelector
+                  country={form.country}
+                  state={form.state}
+                  city={form.city}
+                  onCountryChange={v => setForm(f => ({ ...f, country: v, state: "", city: "" }))}
+                  onStateChange={v => setForm(f => ({ ...f, state: v, city: "" }))}
+                  onCityChange={v => setForm(f => ({ ...f, city: v }))}
+                />
               </div>
               <div className="col-span-2 space-y-1.5">
                 <Label>Notes</Label>

@@ -9,12 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, AlertCircle } from "lucide-react";
-import { INDIAN_STATES, GSTIN_REGEX, PAN_REGEX, PHONE_REGEX } from "@/lib/india-data";
+import { GSTIN_REGEX, PAN_REGEX, PHONE_REGEX } from "@/lib/india-data";
 import { cn } from "@/lib/utils";
+import { LocationSelector } from "@/components/LocationSelector";
 
 interface FormState {
   name: string; gstin: string; pan: string; email: string; phone: string;
-  city: string; state: string; paymentTerms: string; openingBalance: string;
+  city: string; state: string; country: string; paymentTerms: string; openingBalance: string;
   tdsSection: string; msmeRegistrationNo: string;
 }
 
@@ -34,7 +35,7 @@ export default function NewVendor() {
 
   const [form, setForm] = useState<FormState>({
     name: "", gstin: "", pan: "", email: "", phone: "",
-    city: "", state: "Maharashtra", paymentTerms: "30 days",
+    city: "", state: "Maharashtra", country: "India", paymentTerms: "30 days",
     openingBalance: "0", tdsSection: "", msmeRegistrationNo: "",
   });
   const [isMsme, setIsMsme] = useState(false);
@@ -158,22 +159,16 @@ export default function NewVendor() {
               {submitted && <FieldError msg={errors.phone} />}
             </div>
 
-            <div className="space-y-1">
-              <Label>City</Label>
-              <Input value={form.city} onChange={set("city")} placeholder="Mumbai" />
-            </div>
-
-            <div className="space-y-1">
-              <Label>State <span className="text-destructive">*</span></Label>
-              <Select value={form.state} onValueChange={v => setVal("state", v)}>
-                <SelectTrigger className={cn(submitted && errors.state && "border-destructive")}>
-                  <SelectValue placeholder="Select state" />
-                </SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {INDIAN_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              {submitted && <FieldError msg={errors.state} />}
+            <div className="col-span-2">
+              <LocationSelector
+                country={form.country}
+                state={form.state}
+                city={form.city}
+                onCountryChange={v => setVal("country", v)}
+                onStateChange={v => setVal("state", v)}
+                onCityChange={v => setVal("city", v)}
+                errors={{ state: submitted ? errors.state : undefined }}
+              />
             </div>
 
             <div className="space-y-1">

@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, AlertCircle } from "lucide-react";
-import { INDIAN_STATES, GSTIN_REGEX, PAN_REGEX, PHONE_REGEX } from "@/lib/india-data";
+import { GSTIN_REGEX, PAN_REGEX, PHONE_REGEX } from "@/lib/india-data";
 import { cn } from "@/lib/utils";
+import { LocationSelector } from "@/components/LocationSelector";
 
 type FormData = {
   name: string; type: string; gstin: string; pan: string;
-  email: string; phone: string; city: string; state: string;
+  email: string; phone: string; city: string; state: string; country: string;
   creditLimit: string; paymentTerms: string;
 };
 
@@ -30,10 +31,12 @@ export default function NewCustomer() {
     register, handleSubmit, setValue, watch,
     formState: { errors },
   } = useForm<FormData>({
-    defaultValues: { type: "Business", paymentTerms: "30 days", creditLimit: "0", state: "Maharashtra" },
+    defaultValues: { type: "Business", paymentTerms: "30 days", creditLimit: "0", country: "India", state: "Maharashtra" },
   });
 
-  const selectedState = watch("state");
+  const selectedCountry = watch("country");
+  const selectedState   = watch("state");
+  const selectedCity    = watch("city");
 
   const onSubmit = (data: FormData) => {
     mutation.mutate({ data: { ...data, creditLimit: data.creditLimit, openingBalance: "0" } } as any, {
@@ -135,23 +138,18 @@ export default function NewCustomer() {
               <FieldError msg={errors.phone?.message} />
             </div>
 
-            <div className="space-y-1">
-              <Label>City</Label>
-              <Input {...register("city")} placeholder="Mumbai" />
-            </div>
-
-            <div className="space-y-1">
-              <Label>State <span className="text-destructive">*</span></Label>
-              <Select value={selectedState} onValueChange={v => setValue("state", v, { shouldValidate: true })}>
-                <SelectTrigger className={cn(errors.state && "border-destructive")}>
-                  <SelectValue placeholder="Select state" />
-                </SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {INDIAN_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <input type="hidden" {...register("state", { required: "State is required" })} />
-              <FieldError msg={errors.state?.message} />
+            <div className="col-span-2">
+              <input type="hidden" {...register("country")} />
+              <input type="hidden" {...register("state")} />
+              <input type="hidden" {...register("city")} />
+              <LocationSelector
+                country={selectedCountry ?? ""}
+                state={selectedState ?? ""}
+                city={selectedCity ?? ""}
+                onCountryChange={v => setValue("country", v)}
+                onStateChange={v => setValue("state", v)}
+                onCityChange={v => setValue("city", v)}
+              />
             </div>
 
           </CardContent>

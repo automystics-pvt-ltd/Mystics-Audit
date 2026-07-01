@@ -13,6 +13,7 @@ export interface AuditTask {
   clientName?: string | null;
   title: string;
   taskType: string;
+  phase: string;
   /** @nullable */
   description?: string | null;
   /** @nullable */

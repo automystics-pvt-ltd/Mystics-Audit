@@ -508,33 +508,56 @@ export default function AuditorWorkspace() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {clients.map((c: any) => {
                 const engs: string[] = parseTags(c.engagementTypes ?? "[]");
-                const clientTasks = allTasks.filter((t: any) => t.clientId === c.id);
-                const openClientTasks = clientTasks.filter((t: any) => !["completed","archived"].includes(t.status));
+                const clientTasks    = (allTasks as any[]).filter((t: any) => t.clientId === c.id);
+                const openTasks      = clientTasks.filter((t: any) => !["completed","archived"].includes(t.status));
+                const overdueTasks   = clientTasks.filter((t: any) => t.dueDate && t.dueDate < new Date().toISOString().split("T")[0] && !["completed","archived"].includes(t.status));
+                const clientFindings = (allFindings as any[]).filter((f: any) => f.clientId === c.id);
+                const openFindings   = clientFindings.filter((f: any) => ["open","in_progress"].includes(f.status));
+                const phase          = c.engagementPhase ?? "planning";
+                const phaseLabels: Record<string, string> = { planning:"Planning", fieldwork:"Fieldwork", review:"Review", reporting:"Reporting", closed:"Closed" };
+                const phaseColors: Record<string, string> = { planning:"bg-blue-100 text-blue-700", fieldwork:"bg-amber-100 text-amber-700", review:"bg-violet-100 text-violet-700", reporting:"bg-emerald-100 text-emerald-700", closed:"bg-gray-100 text-gray-500" };
                 return (
-                  <Card key={c.id} className="rounded-2xl border-gray-200 hover:shadow-md transition-shadow">
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold text-gray-800">{c.name}</p>
-                          {c.gstin && <p className="text-xs font-mono text-gray-400 mt-0.5">{c.gstin}</p>}
+                  <Card key={c.id} className="rounded-2xl border-gray-200 hover:shadow-md transition-shadow flex flex-col">
+                    <CardContent className="p-4 flex flex-col gap-3 h-full">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <Link href={`/auditor/clients/${c.id}`}>
+                            <p className="font-semibold text-gray-800 hover:text-violet-700 cursor-pointer truncate">{c.name}</p>
+                          </Link>
+                          {c.gstin && <p className="text-xs font-mono text-gray-400 mt-0.5 truncate">{c.gstin}</p>}
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0">
                           <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", c.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>{c.status}</span>
                           <button onClick={() => openEditClient(c)} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"><Pencil className="w-3.5 h-3.5" /></button>
                           <button onClick={() => removeClient(c.id)} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       </div>
-                      {c.contactName && <p className="text-xs text-gray-500 flex items-center gap-1"><Phone className="w-3 h-3"/>{c.contactName} {c.contactPhone ? `· ${c.contactPhone}` : ""}</p>}
-                      {engs.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {engs.map(e => <span key={e} className="text-xs bg-violet-50 text-violet-700 px-2 py-0.5 rounded-full border border-violet-100">{e}</span>)}
-                        </div>
-                      )}
-                      <Separator />
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>{openClientTasks.length} open task{openClientTasks.length !== 1 ? "s" : ""}</span>
-                        <button onClick={() => { setTaskFilter(f => ({ ...f, clientId: String(c.id) })); setTab("tasks"); }} className="text-violet-600 hover:underline font-medium flex items-center gap-0.5">View tasks <ArrowUpRight className="w-3 h-3"/></button>
+                      {c.contactName && <p className="text-xs text-gray-500 flex items-center gap-1"><Phone className="w-3 h-3"/>{c.contactName}{c.contactPhone ? ` · ${c.contactPhone}` : ""}</p>}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={cn("text-xs px-2 py-0.5 rounded-full font-semibold", phaseColors[phase] ?? phaseColors.planning)}>⬤ {phaseLabels[phase] ?? phase}</span>
+                        {engs.slice(0, 2).map(e => <span key={e} className="text-xs bg-violet-50 text-violet-700 px-2 py-0.5 rounded-full border border-violet-100">{e}</span>)}
+                        {engs.length > 2 && <span className="text-xs text-gray-400">+{engs.length - 2}</span>}
                       </div>
+                      <Separator />
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div>
+                          <p className="text-base font-bold text-gray-700">{openTasks.length}</p>
+                          <p className="text-[10px] text-gray-400 leading-tight">Open tasks</p>
+                        </div>
+                        <div>
+                          <p className={cn("text-base font-bold", overdueTasks.length > 0 ? "text-red-600" : "text-gray-700")}>{overdueTasks.length}</p>
+                          <p className="text-[10px] text-gray-400 leading-tight">Overdue</p>
+                        </div>
+                        <div>
+                          <p className={cn("text-base font-bold", openFindings.length > 0 ? "text-orange-600" : "text-gray-700")}>{openFindings.length}</p>
+                          <p className="text-[10px] text-gray-400 leading-tight">Findings</p>
+                        </div>
+                      </div>
+                      <Link href={`/auditor/clients/${c.id}`} className="mt-auto">
+                        <Button size="sm" variant="outline" className="w-full rounded-xl text-violet-700 border-violet-200 hover:bg-violet-50 hover:border-violet-300 text-xs h-8">
+                          Open Client Workspace <ArrowUpRight className="w-3 h-3 ml-1"/>
+                        </Button>
+                      </Link>
                     </CardContent>
                   </Card>
                 );

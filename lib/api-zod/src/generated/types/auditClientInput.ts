@@ -17,6 +17,7 @@ export interface AuditClientInput {
   city?: string;
   state?: string;
   engagementTypes?: string[];
+  engagementPhase?: string;
   status?: string;
   notes?: string;
 }

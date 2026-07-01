@@ -1272,6 +1272,7 @@ export interface AuditClient {
   /** @nullable */
   state?: string | null;
   engagementTypes: string;
+  engagementPhase: string;
   status: string;
   /** @nullable */
   notes?: string | null;
@@ -1291,6 +1292,7 @@ export interface AuditClientInput {
   city?: string;
   state?: string;
   engagementTypes?: string[];
+  engagementPhase?: string;
   status?: string;
   notes?: string;
 }
@@ -1302,6 +1304,7 @@ export interface AuditTask {
   clientName?: string | null;
   title: string;
   taskType: string;
+  phase: string;
   /** @nullable */
   description?: string | null;
   /** @nullable */
@@ -1348,6 +1351,7 @@ export interface AuditTaskInput {
   clientId: number;
   title: string;
   taskType?: string;
+  phase?: string;
   description?: string;
   instructions?: string;
   status?: string;

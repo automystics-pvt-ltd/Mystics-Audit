@@ -3201,12 +3201,13 @@ components:
         city: { type: ["string", "null"] }
         state: { type: ["string", "null"] }
         engagementTypes: { type: string }
+        engagementPhase: { type: string }
         status: { type: string }
         notes: { type: ["string", "null"] }
         orgId: { type: integer }
         createdAt: { type: string }
         updatedAt: { type: string }
-      required: [id, name, engagementTypes, status, orgId, createdAt, updatedAt]
+      required: [id, name, engagementTypes, engagementPhase, status, orgId, createdAt, updatedAt]
 
     AuditClientInput:
       type: object
@@ -3221,6 +3222,7 @@ components:
         city: { type: string }
         state: { type: string }
         engagementTypes: { type: array, items: { type: string } }
+        engagementPhase: { type: string }
         status: { type: string }
         notes: { type: string }
       required: [name]
@@ -3233,6 +3235,7 @@ components:
         clientName: { type: ["string", "null"] }
         title: { type: string }
         taskType: { type: string }
+        phase: { type: string }
         description: { type: ["string", "null"] }
         instructions: { type: ["string", "null"] }
         status: { type: string }
@@ -3244,7 +3247,7 @@ components:
         orgId: { type: integer }
         createdAt: { type: string }
         updatedAt: { type: string }
-      required: [id, clientId, title, taskType, status, priority, checklist, createdBy, orgId, createdAt, updatedAt]
+      required: [id, clientId, title, taskType, phase, status, priority, checklist, createdBy, orgId, createdAt, updatedAt]
 
     AuditTaskDetail:
       allOf:
@@ -3287,6 +3290,7 @@ components:
         clientId: { type: integer }
         title: { type: string }
         taskType: { type: string }
+        phase: { type: string }
         description: { type: string }
         instructions: { type: string }
         status: { type: string }

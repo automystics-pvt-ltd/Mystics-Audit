@@ -26,6 +26,7 @@ export interface AuditClient {
   /** @nullable */
   state?: string | null;
   engagementTypes: string;
+  engagementPhase: string;
   status: string;
   /** @nullable */
   notes?: string | null;

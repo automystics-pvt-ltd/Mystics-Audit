@@ -36,12 +36,13 @@ router.get("/audit-clients", async (req, res) => {
 router.post("/audit-clients", async (req, res) => {
   try {
     const { name, pan, gstin, contactName, contactEmail, contactPhone,
-            address, city, state, engagementTypes, status, notes } = req.body;
+            address, city, state, engagementTypes, engagementPhase, status, notes } = req.body;
     if (!name) { res.status(400).json({ error: "name is required" }); return; }
     const [row] = await db.insert(auditClientsTable).values({
       name, pan, gstin, contactName, contactEmail, contactPhone,
       address, city, state,
       engagementTypes: Array.isArray(engagementTypes) ? JSON.stringify(engagementTypes) : (engagementTypes ?? "[]"),
+      engagementPhase: engagementPhase ?? "planning",
       status: status ?? "active", notes,
     }).returning();
     res.status(201).json(row);
@@ -64,12 +65,13 @@ router.get("/audit-clients/:id", async (req, res) => {
 router.put("/audit-clients/:id", async (req, res) => {
   try {
     const { name, pan, gstin, contactName, contactEmail, contactPhone,
-            address, city, state, engagementTypes, status, notes } = req.body;
+            address, city, state, engagementTypes, engagementPhase, status, notes } = req.body;
     const [row] = await db.update(auditClientsTable)
       .set({
         name, pan, gstin, contactName, contactEmail, contactPhone,
         address, city, state,
         engagementTypes: Array.isArray(engagementTypes) ? JSON.stringify(engagementTypes) : engagementTypes,
+        engagementPhase: engagementPhase ?? undefined,
         status, notes, updatedAt: new Date(),
       })
       .where(eq(auditClientsTable.id, Number(req.params.id)))
@@ -123,11 +125,13 @@ router.get("/audit-tasks", async (req, res) => {
 
 router.post("/audit-tasks", async (req, res) => {
   try {
-    const { clientId, title, taskType, description, instructions,
+    const { clientId, title, taskType, phase, description, instructions,
             status, priority, dueDate, assignee, checklist, createdBy } = req.body;
     if (!clientId || !title) { res.status(400).json({ error: "clientId and title are required" }); return; }
     const [row] = await db.insert(auditTasksTable).values({
-      clientId: Number(clientId), title, taskType: taskType ?? "document_request",
+      clientId: Number(clientId), title,
+      taskType: taskType ?? "document_request",
+      phase: phase ?? "planning",
       description, instructions,
       status: status ?? "created", priority: priority ?? "medium",
       dueDate, assignee,
@@ -160,11 +164,11 @@ router.get("/audit-tasks/:id", async (req, res) => {
 
 router.put("/audit-tasks/:id", async (req, res) => {
   try {
-    const { title, taskType, description, instructions,
+    const { title, taskType, phase, description, instructions,
             status, priority, dueDate, assignee, checklist } = req.body;
     const [row] = await db.update(auditTasksTable)
       .set({
-        title, taskType, description, instructions,
+        title, taskType, phase: phase ?? undefined, description, instructions,
         status, priority, dueDate, assignee,
         checklist: Array.isArray(checklist) ? JSON.stringify(checklist) : checklist,
         updatedAt: new Date(),

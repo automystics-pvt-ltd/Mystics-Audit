@@ -96,6 +96,7 @@ import GstDocuments from "@/pages/gst-documents/index";
 import Documents from "@/pages/documents/index";
 import FinanceOverview from "@/pages/finance/overview";
 import AuditorCollaboration from "@/pages/auditor/index";
+import AuditClientDetail from "@/pages/auditor/client-detail";
 import GstSalesRegister from "@/pages/reports/gst-sales-register";
 import GstPurchaseRegister from "@/pages/reports/gst-purchase-register";
 import ExpenseReport from "@/pages/reports/expense-report";
@@ -211,6 +212,7 @@ function Router() {
             <Route path="/documents" component={Documents} />
             <Route path="/finance/overview" component={FinanceOverview} />
             <Route path="/auditor" component={AuditorCollaboration} />
+            <Route path="/auditor/clients/:id" component={AuditClientDetail} />
             <Route path="/reports/gst-sales-register" component={GstSalesRegister} />
             <Route path="/reports/gst-purchase-register" component={GstPurchaseRegister} />
             <Route path="/reports/expense-report" component={ExpenseReport} />

@@ -11,6 +11,7 @@ export interface AuditTaskInput {
   clientId: number;
   title: string;
   taskType?: string;
+  phase?: string;
   description?: string;
   instructions?: string;
   status?: string;

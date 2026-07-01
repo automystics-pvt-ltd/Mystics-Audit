@@ -1392,6 +1392,52 @@ export interface ComplianceEventInput {
   isRecurring?: boolean;
 }
 
+export interface AuditFinding {
+  id: number;
+  clientId: number;
+  /** @nullable */
+  clientName?: string | null;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  category: string;
+  severity: string;
+  status: string;
+  /** @nullable */
+  recommendation?: string | null;
+  /** @nullable */
+  managementResponse?: string | null;
+  /** @nullable */
+  period?: string | null;
+  /** @nullable */
+  dueDate?: string | null;
+  /** @nullable */
+  resolvedDate?: string | null;
+  /** @nullable */
+  raisedBy?: string | null;
+  /** @nullable */
+  assignedTo?: string | null;
+  orgId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuditFindingInput {
+  clientId: number;
+  title: string;
+  description?: string;
+  category?: string;
+  severity?: string;
+  status?: string;
+  recommendation?: string;
+  managementResponse?: string;
+  period?: string;
+  dueDate?: string;
+  resolvedDate?: string;
+  raisedBy?: string;
+  assignedTo?: string;
+}
+
 export type GetDashboardSummaryParams = {
 /**
  * Financial year e.g. 2024-25
@@ -1574,5 +1620,12 @@ status?: string;
  */
 month?: string;
 eventType?: string;
+};
+
+export type ListAuditFindingsParams = {
+clientId?: number;
+status?: string;
+severity?: string;
+category?: string;
 };
 

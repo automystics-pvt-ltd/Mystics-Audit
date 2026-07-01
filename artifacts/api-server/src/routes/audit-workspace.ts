@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import {
   auditClientsTable, auditTasksTable,
   auditTaskCommentsTable, complianceEventsTable,
+  auditFindingsTable,
 } from "@workspace/db";
 import { eq, and, desc, ilike, lte, sql } from "drizzle-orm";
 
@@ -279,6 +280,84 @@ router.put("/compliance-events/:id", async (req, res) => {
 router.delete("/compliance-events/:id", async (req, res) => {
   try {
     await db.delete(complianceEventsTable).where(eq(complianceEventsTable.id, Number(req.params.id)));
+    res.status(204).send();
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+/* ════════════════════════════════════════
+   AUDIT FINDINGS
+════════════════════════════════════════ */
+
+router.get("/audit-findings", async (req, res) => {
+  try {
+    const { clientId, status, severity, category } = req.query as Record<string, string>;
+    let rows = await db.select().from(auditFindingsTable).orderBy(desc(auditFindingsTable.createdAt));
+    if (clientId) rows = rows.filter(r => r.clientId === Number(clientId));
+    if (status)   rows = rows.filter(r => r.status === status);
+    if (severity) rows = rows.filter(r => r.severity === severity);
+    if (category) rows = rows.filter(r => r.category === category);
+
+    // Join client names
+    const clients = await db.select({ id: auditClientsTable.id, name: auditClientsTable.name }).from(auditClientsTable);
+    const clientMap = Object.fromEntries(clients.map(c => [c.id, c.name]));
+
+    res.json(rows.map(r => ({ ...r, clientName: clientMap[r.clientId] ?? null })));
+  } catch (e: any) {
+    req.log?.error(e);
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+router.post("/audit-findings", async (req, res) => {
+  try {
+    const { clientId, title, description, category, severity, status,
+            recommendation, managementResponse, period, dueDate, raisedBy, assignedTo } = req.body;
+    if (!clientId || !title) { res.status(400).json({ error: "clientId and title are required" }); return; }
+    const [row] = await db.insert(auditFindingsTable).values({
+      clientId: Number(clientId), title, description, category: category ?? "compliance",
+      severity: severity ?? "medium", status: status ?? "open",
+      recommendation, managementResponse, period, dueDate, raisedBy, assignedTo,
+    }).returning();
+    res.status(201).json(row);
+  } catch (e: any) {
+    req.log?.error(e);
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+router.get("/audit-findings/:id", async (req, res) => {
+  try {
+    const [row] = await db.select().from(auditFindingsTable).where(eq(auditFindingsTable.id, Number(req.params.id)));
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
+    res.json(row);
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+router.put("/audit-findings/:id", async (req, res) => {
+  try {
+    const { title, description, category, severity, status,
+            recommendation, managementResponse, period, dueDate,
+            resolvedDate, raisedBy, assignedTo } = req.body;
+    const [row] = await db.update(auditFindingsTable)
+      .set({ title, description, category, severity, status,
+             recommendation, managementResponse, period, dueDate,
+             resolvedDate: status === "resolved" || status === "closed" ? (resolvedDate ?? new Date().toISOString().split("T")[0]) : resolvedDate,
+             raisedBy, assignedTo, updatedAt: new Date() })
+      .where(eq(auditFindingsTable.id, Number(req.params.id)))
+      .returning();
+    res.json(row);
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+router.delete("/audit-findings/:id", async (req, res) => {
+  try {
+    await db.delete(auditFindingsTable).where(eq(auditFindingsTable.id, Number(req.params.id)));
     res.status(204).send();
   } catch (e: any) {
     res.status(500).json({ error: e?.message });

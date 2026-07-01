@@ -3472,3 +3472,161 @@ export const DeleteComplianceEventParams = zod.object({
 export const DeleteComplianceEventResponse = zod.void()
 
 
+/**
+ * @summary List audit findings
+ */
+export const ListAuditFindingsQueryParams = zod.object({
+  "clientId": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional(),
+  "severity": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional()
+})
+
+export const ListAuditFindingsResponseItem = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string(),
+  "severity": zod.string(),
+  "status": zod.string(),
+  "recommendation": zod.string().nullish(),
+  "managementResponse": zod.string().nullish(),
+  "period": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "resolvedDate": zod.string().nullish(),
+  "raisedBy": zod.string().nullish(),
+  "assignedTo": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAuditFindingsResponse = zod.array(ListAuditFindingsResponseItem)
+
+
+/**
+ * @summary Create audit finding
+ */
+export const CreateAuditFindingBody = zod.object({
+  "clientId": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "category": zod.string().optional(),
+  "severity": zod.string().optional(),
+  "status": zod.string().optional(),
+  "recommendation": zod.string().optional(),
+  "managementResponse": zod.string().optional(),
+  "period": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "resolvedDate": zod.string().optional(),
+  "raisedBy": zod.string().optional(),
+  "assignedTo": zod.string().optional()
+})
+
+export const CreateAuditFindingResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string(),
+  "severity": zod.string(),
+  "status": zod.string(),
+  "recommendation": zod.string().nullish(),
+  "managementResponse": zod.string().nullish(),
+  "period": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "resolvedDate": zod.string().nullish(),
+  "raisedBy": zod.string().nullish(),
+  "assignedTo": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get audit finding
+ */
+export const GetAuditFindingParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAuditFindingResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string(),
+  "severity": zod.string(),
+  "status": zod.string(),
+  "recommendation": zod.string().nullish(),
+  "managementResponse": zod.string().nullish(),
+  "period": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "resolvedDate": zod.string().nullish(),
+  "raisedBy": zod.string().nullish(),
+  "assignedTo": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update audit finding
+ */
+export const UpdateAuditFindingParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAuditFindingBody = zod.object({
+  "clientId": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "category": zod.string().optional(),
+  "severity": zod.string().optional(),
+  "status": zod.string().optional(),
+  "recommendation": zod.string().optional(),
+  "managementResponse": zod.string().optional(),
+  "period": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "resolvedDate": zod.string().optional(),
+  "raisedBy": zod.string().optional(),
+  "assignedTo": zod.string().optional()
+})
+
+export const UpdateAuditFindingResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string(),
+  "severity": zod.string(),
+  "status": zod.string(),
+  "recommendation": zod.string().nullish(),
+  "managementResponse": zod.string().nullish(),
+  "period": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "resolvedDate": zod.string().nullish(),
+  "raisedBy": zod.string().nullish(),
+  "assignedTo": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete audit finding
+ */
+export const DeleteAuditFindingParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAuditFindingResponse = zod.void()
+
+

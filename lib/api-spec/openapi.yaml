@@ -1762,6 +1762,86 @@ paths:
         "204":
           description: Deleted
 
+  /audit-findings:
+    get:
+      operationId: listAuditFindings
+      tags: [audit-workspace]
+      summary: List audit findings
+      parameters:
+        - { name: clientId, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: severity, in: query, schema: { type: string } }
+        - { name: category, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: List of findings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditFinding"
+    post:
+      operationId: createAuditFinding
+      tags: [audit-workspace]
+      summary: Create audit finding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditFindingInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditFinding"
+
+  /audit-findings/{id}:
+    get:
+      operationId: getAuditFinding
+      tags: [audit-workspace]
+      summary: Get audit finding
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Finding
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditFinding"
+    put:
+      operationId: updateAuditFinding
+      tags: [audit-workspace]
+      summary: Update audit finding
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditFindingInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditFinding"
+    delete:
+      operationId: deleteAuditFinding
+      tags: [audit-workspace]
+      summary: Delete audit finding
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -3249,3 +3329,44 @@ components:
         notes: { type: string }
         isRecurring: { type: boolean }
       required: [title, dueDate]
+
+    AuditFinding:
+      type: object
+      properties:
+        id: { type: integer }
+        clientId: { type: integer }
+        clientName: { type: ["string", "null"] }
+        title: { type: string }
+        description: { type: ["string", "null"] }
+        category: { type: string }
+        severity: { type: string }
+        status: { type: string }
+        recommendation: { type: ["string", "null"] }
+        managementResponse: { type: ["string", "null"] }
+        period: { type: ["string", "null"] }
+        dueDate: { type: ["string", "null"] }
+        resolvedDate: { type: ["string", "null"] }
+        raisedBy: { type: ["string", "null"] }
+        assignedTo: { type: ["string", "null"] }
+        orgId: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+      required: [id, clientId, title, category, severity, status, orgId, createdAt, updatedAt]
+
+    AuditFindingInput:
+      type: object
+      properties:
+        clientId: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        category: { type: string }
+        severity: { type: string }
+        status: { type: string }
+        recommendation: { type: string }
+        managementResponse: { type: string }
+        period: { type: string }
+        dueDate: { type: string }
+        resolvedDate: { type: string }
+        raisedBy: { type: string }
+        assignedTo: { type: string }
+      required: [clientId, title]

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer, boolean, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -64,11 +64,33 @@ export const complianceEventsTable = pgTable("compliance_events", {
   updatedAt:   timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
+export const auditFindingsTable = pgTable("audit_findings", {
+  id:                 serial("id").primaryKey(),
+  clientId:           integer("client_id").notNull().references(() => auditClientsTable.id),
+  title:              text("title").notNull(),
+  description:        text("description"),
+  category:           text("category").notNull().default("compliance"),
+  severity:           text("severity").notNull().default("medium"),
+  status:             text("status").notNull().default("open"),
+  recommendation:     text("recommendation"),
+  managementResponse: text("management_response"),
+  period:             text("period"),
+  dueDate:            date("due_date", { mode: "string" }),
+  resolvedDate:       date("resolved_date", { mode: "string" }),
+  raisedBy:           text("raised_by"),
+  assignedTo:         text("assigned_to"),
+  orgId:              integer("org_id").notNull().default(1),
+  createdAt:          timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:          timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
 export const insertAuditClientSchema     = createInsertSchema(auditClientsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertAuditTaskSchema       = createInsertSchema(auditTasksTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertComplianceEventSchema = createInsertSchema(complianceEventsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAuditFindingSchema    = createInsertSchema(auditFindingsTable).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type AuditClient      = typeof auditClientsTable.$inferSelect;
 export type AuditTask        = typeof auditTasksTable.$inferSelect;
 export type AuditTaskComment = typeof auditTaskCommentsTable.$inferSelect;
 export type ComplianceEvent  = typeof complianceEventsTable.$inferSelect;
+export type AuditFinding     = typeof auditFindingsTable.$inferSelect;

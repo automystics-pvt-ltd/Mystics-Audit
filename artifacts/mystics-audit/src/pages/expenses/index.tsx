@@ -1,4 +1,4 @@
-import { useListExpenses } from "@workspace/api-client-react";
+import { useListExpenses, useApproveExpense } from "@workspace/api-client-react";
 import { useState } from "react";
 import { useFY } from "@/contexts/fy-context";
 import { Link } from "wouter";
@@ -8,19 +8,21 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { useToast } from "@/hooks/use-toast";
 import {
   Plus, AlertTriangle, Search, Filter, BarChart3,
   CheckCircle2, Clock, XCircle, Banknote, RefreshCw,
-  Building2, FolderOpen, MapPin, Users2, Briefcase,
+  Building2, FolderOpen, MapPin, Briefcase,
+  ThumbsUp, ThumbsDown, CreditCard, ChevronDown,
 } from "lucide-react";
 
 const STATUSES = [
   { value: "",            label: "All" },
-  { value: "submitted",   label: "Pending", color: "bg-amber-100 text-amber-700 border-amber-200" },
-  { value: "approved",    label: "Approved", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  { value: "rejected",    label: "Rejected", color: "bg-red-100 text-red-700 border-red-200" },
-  { value: "reimbursed",  label: "Reimbursed", color: "bg-violet-100 text-violet-700 border-violet-200" },
-  { value: "paid",        label: "Paid", color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  { value: "submitted",   label: "Pending" },
+  { value: "approved",    label: "Approved" },
+  { value: "rejected",    label: "Rejected" },
+  { value: "reimbursed",  label: "Reimbursed" },
+  { value: "paid",        label: "Paid" },
 ];
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
@@ -45,12 +47,14 @@ const PROJECTS    = ["Project Alpha", "Project Beta", "Infra Upgrade", "Client D
 
 export default function ExpensesList() {
   const { fy } = useFY();
-  const [status, setStatus] = useState("");
+  const { toast } = useToast();
+  const [status, setStatus]         = useState("");
   const [department, setDepartment] = useState("");
-  const [project, setProject] = useState("");
-  const [branch, setBranch] = useState("");
-  const [search, setSearch] = useState("");
+  const [project, setProject]       = useState("");
+  const [branch, setBranch]         = useState("");
+  const [search, setSearch]         = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   const params: Record<string, any> = { from: fy.from, to: fy.to };
   if (status)     params.status = status;
@@ -61,6 +65,8 @@ export default function ExpensesList() {
   const { data, isLoading, refetch } = useListExpenses(params);
   const allExpenses: any[] = data ?? [];
 
+  const approveMutation = useApproveExpense();
+
   const filtered = search
     ? allExpenses.filter(e =>
         e.employeeName?.toLowerCase().includes(search.toLowerCase()) ||
@@ -70,13 +76,27 @@ export default function ExpensesList() {
       )
     : allExpenses;
 
-  // Summary by status
-  const total      = allExpenses.reduce((s, e) => s + (e.totalAmount ?? 0), 0);
-  const pending    = allExpenses.filter(e => e.status === "submitted").reduce((s, e) => s + (e.totalAmount ?? 0), 0);
-  const approved   = allExpenses.filter(e => e.status === "approved").reduce((s, e) => s + (e.totalAmount ?? 0), 0);
-  const reimbursed = allExpenses.filter(e => e.status === "reimbursed").reduce((s, e) => s + (e.totalAmount ?? 0), 0);
+  const total      = allExpenses.reduce((s, e) => s + (Number(e.totalAmount) ?? 0), 0);
+  const pending    = allExpenses.filter(e => e.status === "submitted").reduce((s, e) => s + (Number(e.totalAmount) ?? 0), 0);
+  const approved   = allExpenses.filter(e => e.status === "approved").reduce((s, e) => s + (Number(e.totalAmount) ?? 0), 0);
+  const reimbursed = allExpenses.filter(e => ["reimbursed","paid"].includes(e.status)).reduce((s, e) => s + (Number(e.totalAmount) ?? 0), 0);
 
   const clearFilters = () => { setDepartment(""); setProject(""); setBranch(""); setSearch(""); };
+
+  function doAction(id: number, action: "approve" | "reject" | "reimburse") {
+    setActionLoading(id);
+    approveMutation.mutate(
+      { id, data: { action } as any },
+      {
+        onSuccess: () => {
+          toast({ title: action === "approve" ? "Approved" : action === "reject" ? "Rejected" : "Marked as reimbursed" });
+          refetch();
+        },
+        onError: () => toast({ title: "Action failed", variant: "destructive" }),
+        onSettled: () => setActionLoading(null),
+      }
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -96,10 +116,10 @@ export default function ExpensesList() {
       {/* KPI row */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: "Total Submitted", value: formatCurrency(total), sub: `${allExpenses.length} claims`, color: "text-gray-900" },
-          { label: "Pending Approval", value: formatCurrency(pending), sub: `${allExpenses.filter(e => e.status === "submitted").length} claims`, color: "text-amber-600" },
-          { label: "Approved", value: formatCurrency(approved), sub: `${allExpenses.filter(e => e.status === "approved").length} claims`, color: "text-blue-600" },
-          { label: "Reimbursed / Paid", value: formatCurrency(reimbursed), sub: `${allExpenses.filter(e => ["reimbursed","paid"].includes(e.status)).length} claims`, color: "text-emerald-600" },
+          { label: "Total Submitted",  value: formatCurrency(total),      sub: `${allExpenses.length} claims`,                                                     color: "text-gray-900" },
+          { label: "Pending Approval", value: formatCurrency(pending),    sub: `${allExpenses.filter(e => e.status === "submitted").length} claims`,                color: "text-amber-600" },
+          { label: "Approved",         value: formatCurrency(approved),   sub: `${allExpenses.filter(e => e.status === "approved").length} claims`,                 color: "text-blue-600" },
+          { label: "Reimbursed / Paid",value: formatCurrency(reimbursed), sub: `${allExpenses.filter(e => ["reimbursed","paid"].includes(e.status)).length} claims`, color: "text-emerald-600" },
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-100 px-5 py-4 shadow-sm">
             <p className="text-xs text-gray-400 font-medium mb-1">{label}</p>
@@ -133,7 +153,7 @@ export default function ExpensesList() {
 
       {/* Dimension filters */}
       {showFilters && (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4 text-gray-400" />
@@ -192,20 +212,21 @@ export default function ExpensesList() {
               <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Amount</TableHead>
               <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</TableHead>
               <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Violations</TableHead>
+              <TableHead className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               [...Array(4)].map((_, i) => (
                 <TableRow key={i}>
-                  {[...Array(7)].map((_, j) => (
+                  {[...Array(8)].map((_, j) => (
                     <TableCell key={j}><div className="h-4 bg-gray-100 rounded animate-pulse" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-16 text-gray-400">
+                <TableCell colSpan={8} className="text-center py-16 text-gray-400">
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
                       <Briefcase className="w-6 h-6 text-gray-300" />
@@ -215,62 +236,85 @@ export default function ExpensesList() {
                   </div>
                 </TableCell>
               </TableRow>
-            ) : filtered.map((e: any) => (
-              <TableRow key={e.id} className="hover:bg-gray-50/60 transition-colors">
-                <TableCell>
-                  <Link href={`/expenses/${e.id}`} className="font-mono text-indigo-600 hover:text-indigo-800 font-semibold text-sm">
-                    {e.claimNo}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700 shrink-0">
-                      {e.employeeName?.split(" ").map((n: string) => n[0]).join("").slice(0,2).toUpperCase()}
+            ) : filtered.map((e: any) => {
+              const isLoading = actionLoading === e.id;
+              return (
+                <TableRow key={e.id} className="hover:bg-gray-50/60 transition-colors">
+                  <TableCell>
+                    <Link href={`/expenses/${e.id}`} className="font-mono text-indigo-600 hover:text-indigo-800 font-semibold text-sm">
+                      {e.claimNo}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700 shrink-0">
+                        {e.employeeName?.split(" ").map((n: string) => n[0]).join("").slice(0,2).toUpperCase()}
+                      </div>
+                      <span className="font-medium text-sm text-gray-800">{e.employeeName}</span>
                     </div>
-                    <span className="font-medium text-sm text-gray-800">{e.employeeName}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-0.5">
-                    {e.department && (
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <Building2 className="w-3 h-3" />{e.department}
-                      </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-0.5">
+                      {e.department && <span className="flex items-center gap-1 text-xs text-gray-500"><Building2 className="w-3 h-3" />{e.department}</span>}
+                      {e.project    && <span className="flex items-center gap-1 text-xs text-gray-500"><FolderOpen className="w-3 h-3" />{e.project}</span>}
+                      {e.branch     && <span className="flex items-center gap-1 text-xs text-gray-500"><MapPin className="w-3 h-3" />{e.branch}</span>}
+                      {!e.department && !e.project && !e.branch && <span className="text-xs text-gray-300">—</span>}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-500">{formatDate(e.submittedDate)}</TableCell>
+                  <TableCell className="text-right">
+                    <span className="font-mono font-semibold text-gray-900">{formatCurrency(Number(e.totalAmount))}</span>
+                    {e.approvedAmount && e.approvedAmount !== e.totalAmount && (
+                      <p className="text-xs text-gray-400 font-mono">Approved: {formatCurrency(Number(e.approvedAmount))}</p>
                     )}
-                    {e.project && (
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <FolderOpen className="w-3 h-3" />{e.project}
-                      </span>
-                    )}
-                    {e.branch && (
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <MapPin className="w-3 h-3" />{e.branch}
-                      </span>
-                    )}
-                    {!e.department && !e.project && !e.branch && (
-                      <span className="text-xs text-gray-300">—</span>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm text-gray-500">{formatDate(e.submittedDate)}</TableCell>
-                <TableCell className="text-right">
-                  <span className="font-mono font-semibold text-gray-900">{formatCurrency(e.totalAmount)}</span>
-                  {e.approvedAmount && e.approvedAmount !== e.totalAmount && (
-                    <p className="text-xs text-gray-400 font-mono">Approved: {formatCurrency(e.approvedAmount)}</p>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLOR[e.status] ?? "bg-gray-100 text-gray-500"}`}>
-                    {STATUS_ICON[e.status]}{e.status.charAt(0).toUpperCase() + e.status.slice(1)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {e.policyViolations > 0
-                    ? <span className="flex items-center gap-1 text-amber-600 text-sm font-medium"><AlertTriangle className="w-3.5 h-3.5" />{e.policyViolations}</span>
-                    : <span className="text-gray-300 text-sm">—</span>}
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLOR[e.status] ?? "bg-gray-100 text-gray-500"}`}>
+                      {STATUS_ICON[e.status]}{e.status.charAt(0).toUpperCase() + e.status.slice(1)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {e.policyViolations > 0
+                      ? <span className="flex items-center gap-1 text-amber-600 text-sm font-medium"><AlertTriangle className="w-3.5 h-3.5" />{e.policyViolations}</span>
+                      : <span className="text-gray-300 text-sm">—</span>}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      {e.status === "submitted" && (
+                        <>
+                          <button
+                            disabled={isLoading}
+                            onClick={() => doAction(e.id, "approve")}
+                            className="h-7 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 flex items-center gap-1 disabled:opacity-50 transition-colors"
+                          >
+                            <ThumbsUp className="w-3 h-3" />Approve
+                          </button>
+                          <button
+                            disabled={isLoading}
+                            onClick={() => doAction(e.id, "reject")}
+                            className="h-7 px-2.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold border border-red-200 flex items-center gap-1 disabled:opacity-50 transition-colors"
+                          >
+                            <ThumbsDown className="w-3 h-3" />Reject
+                          </button>
+                        </>
+                      )}
+                      {e.status === "approved" && (
+                        <button
+                          disabled={isLoading}
+                          onClick={() => doAction(e.id, "reimburse")}
+                          className="h-7 px-2.5 rounded-lg bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-semibold border border-violet-200 flex items-center gap-1 disabled:opacity-50 transition-colors"
+                        >
+                          <CreditCard className="w-3 h-3" />Reimburse
+                        </button>
+                      )}
+                      {["reimbursed","paid","rejected"].includes(e.status) && (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

@@ -6,6 +6,7 @@ import {
   useListAuditTasks, useCreateAuditTask, useUpdateAuditTask, useDeleteAuditTask,
   useUpdateAuditTaskStatus, useAddAuditTaskComment,
   useListComplianceEvents, useCreateComplianceEvent, useUpdateComplianceEvent,
+  useListAuditFindings, useCreateAuditFinding, useUpdateAuditFinding, useDeleteAuditFinding,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,14 +101,37 @@ const CAT_COLORS: Record<string,string> = {
   supporting:"bg-gray-100 text-gray-800",
 };
 
-type Tab = "dashboard"|"clients"|"tasks"|"calendar"|"packages"|"trail";
+type Tab = "dashboard"|"clients"|"tasks"|"calendar"|"packages"|"trail"|"findings";
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "dashboard", label: "Dashboard",   icon: <Shield className="w-4 h-4" /> },
   { id: "clients",   label: "Clients",     icon: <Users className="w-4 h-4" /> },
   { id: "tasks",     label: "Tasks",       icon: <ClipboardList className="w-4 h-4" /> },
+  { id: "findings",  label: "Findings",    icon: <Flag className="w-4 h-4" /> },
   { id: "calendar",  label: "Compliance",  icon: <CalendarDays className="w-4 h-4" /> },
   { id: "packages",  label: "Doc Packages",icon: <Package className="w-4 h-4" /> },
   { id: "trail",     label: "Audit Trail", icon: <Activity className="w-4 h-4" /> },
+];
+
+/* ── findings helpers ── */
+const SEV_CFG: Record<string, { label: string; color: string }> = {
+  critical: { label: "Critical", color: "bg-red-100 text-red-700 border-red-200" },
+  high:     { label: "High",     color: "bg-orange-100 text-orange-700 border-orange-200" },
+  medium:   { label: "Medium",   color: "bg-amber-100 text-amber-700 border-amber-200" },
+  low:      { label: "Low",      color: "bg-green-100 text-green-700 border-green-200" },
+};
+const FINDING_STATUS_CFG: Record<string, { label: string; color: string }> = {
+  open:        { label: "Open",        color: "bg-red-50 text-red-600 border-red-200" },
+  in_progress: { label: "In Progress", color: "bg-amber-50 text-amber-600 border-amber-200" },
+  resolved:    { label: "Resolved",    color: "bg-green-50 text-green-700 border-green-200" },
+  closed:      { label: "Closed",      color: "bg-gray-100 text-gray-500 border-gray-200" },
+};
+const CATEGORIES = [
+  { value: "financial",    label: "Financial" },
+  { value: "compliance",   label: "Compliance" },
+  { value: "operational",  label: "Operational" },
+  { value: "it_security",  label: "IT Security" },
+  { value: "tax",          label: "Tax" },
+  { value: "other",        label: "Other" },
 ];
 
 function StatusBadge({ status }: { status: string }) {
@@ -132,9 +156,10 @@ export default function AuditorWorkspace() {
   const [tab, setTab] = useState<Tab>("dashboard");
 
   /* ── queries ── */
-  const { data: clients = [], refetch: refetchClients } = useListAuditClients({});
-  const { data: allTasks = [], refetch: refetchTasks }  = useListAuditTasks({});
-  const { data: events = [],   refetch: refetchEvents } = useListComplianceEvents({});
+  const { data: clients = [], refetch: refetchClients }   = useListAuditClients({});
+  const { data: allTasks = [], refetch: refetchTasks }    = useListAuditTasks({});
+  const { data: events = [],   refetch: refetchEvents }   = useListComplianceEvents({});
+  const { data: allFindings = [], refetch: refetchFindings } = useListAuditFindings({});
 
   /* ── mutations ── */
   const createClient  = useCreateAuditClient();
@@ -147,9 +172,47 @@ export default function AuditorWorkspace() {
   const addComment    = useAddAuditTaskComment();
   const createEvent   = useCreateComplianceEvent();
   const updateEvent   = useUpdateComplianceEvent();
+  const createFinding = useCreateAuditFinding();
+  const updateFinding = useUpdateAuditFinding();
+  const deleteFinding = useDeleteAuditFinding();
 
   function invalidate() {
-    refetchClients(); refetchTasks(); refetchEvents();
+    refetchClients(); refetchTasks(); refetchEvents(); refetchFindings();
+  }
+
+  /* ── findings dialog ── */
+  const emptyFinding = { clientId:"", title:"", description:"", category:"compliance", severity:"medium", status:"open", recommendation:"", managementResponse:"", period:"", dueDate:"", raisedBy:"", assignedTo:"" };
+  const [findingDlg, setFindingDlg] = useState<{ open: boolean; edit?: any; form: typeof emptyFinding }>({ open: false, form: emptyFinding });
+  const [findingFilter, setFindingFilter] = useState({ clientId:"", status:"", severity:"", category:"" });
+  const [findingSearch, setFindingSearch] = useState("");
+  const [expandedFinding, setExpandedFinding] = useState<number|null>(null);
+
+  function openNewFinding() { setFindingDlg({ open: true, form: emptyFinding }); }
+  function openEditFinding(f: any) {
+    setFindingDlg({ open: true, edit: f, form: {
+      clientId: String(f.clientId), title: f.title, description: f.description ?? "",
+      category: f.category, severity: f.severity, status: f.status,
+      recommendation: f.recommendation ?? "", managementResponse: f.managementResponse ?? "",
+      period: f.period ?? "", dueDate: f.dueDate ?? "", raisedBy: f.raisedBy ?? "", assignedTo: f.assignedTo ?? "",
+    }});
+  }
+  function saveFinding() {
+    const { form, edit } = findingDlg;
+    if (!form.clientId || !form.title.trim()) { toast({ title: "Client and title required", variant: "destructive" }); return; }
+    const data: any = { ...form, clientId: Number(form.clientId) };
+    if (edit) {
+      updateFinding.mutate({ id: edit.id, data } as any, {
+        onSuccess: () => { toast({ title: "Finding updated" }); setFindingDlg(d => ({ ...d, open: false })); refetchFindings(); },
+      });
+    } else {
+      createFinding.mutate({ data } as any, {
+        onSuccess: () => { toast({ title: "Finding created" }); setFindingDlg(d => ({ ...d, open: false })); refetchFindings(); },
+      });
+    }
+  }
+  function removeFinding(id: number) {
+    if (!confirm("Delete this finding?")) return;
+    deleteFinding.mutate({ id } as any, { onSuccess: () => { toast({ title: "Finding deleted" }); refetchFindings(); } });
   }
 
   /* ── computed ── */
@@ -329,9 +392,9 @@ export default function AuditorWorkspace() {
           </h1>
           <p className="text-sm text-muted-foreground">Manage audit clients, tasks, compliance calendar and document packages</p>
         </div>
-        <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700" onClick={() => { if (tab === "clients") openNewClient(); else if (tab === "tasks") openNewTask(); else if (tab === "calendar") setEventDlg({ open: true, form: emptyEvent }); }}>
+        <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700" onClick={() => { if (tab === "clients") openNewClient(); else if (tab === "tasks") openNewTask(); else if (tab === "calendar") setEventDlg({ open: true, form: emptyEvent }); else if (tab === "findings") openNewFinding(); }}>
           <Plus className="w-3.5 h-3.5 mr-1.5" />
-          {tab === "clients" ? "New Client" : tab === "tasks" ? "New Task" : tab === "calendar" ? "Add Event" : "New"}
+          {tab === "clients" ? "New Client" : tab === "tasks" ? "New Task" : tab === "calendar" ? "Add Event" : tab === "findings" ? "Add Finding" : "New"}
         </Button>
       </div>
 
@@ -795,6 +858,159 @@ export default function AuditorWorkspace() {
         </div>
       )}
 
+      {/* ── FINDINGS TAB ── */}
+      {tab === "findings" && (() => {
+        const findings: any[] = allFindings as any[];
+        const filtered = findings.filter(f =>
+          (!findingFilter.clientId || String(f.clientId) === findingFilter.clientId) &&
+          (!findingFilter.status   || f.status === findingFilter.status) &&
+          (!findingFilter.severity || f.severity === findingFilter.severity) &&
+          (!findingFilter.category || f.category === findingFilter.category) &&
+          (!findingSearch || f.title.toLowerCase().includes(findingSearch.toLowerCase()) || (f.description ?? "").toLowerCase().includes(findingSearch.toLowerCase()))
+        );
+        const openCount     = findings.filter(f => f.status === "open").length;
+        const criticalCount = findings.filter(f => f.severity === "critical").length;
+        const highCount     = findings.filter(f => f.severity === "high").length;
+        const resolvedCount = findings.filter(f => ["resolved","closed"].includes(f.status)).length;
+
+        return (
+          <div className="space-y-5">
+            {/* KPI row */}
+            <div className="grid grid-cols-4 gap-4">
+              {[
+                { label: "Total Findings", value: findings.length, sub: "all time", color: "text-gray-800", bg: "bg-gray-50 border-gray-100" },
+                { label: "Open",           value: openCount,       sub: "need attention", color: "text-red-600", bg: "bg-red-50 border-red-100" },
+                { label: "Critical / High",value: `${criticalCount} / ${highCount}`, sub: "by severity", color: "text-orange-600", bg: "bg-orange-50 border-orange-100" },
+                { label: "Resolved",       value: resolvedCount,   sub: "closed out", color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" },
+              ].map(k => (
+                <div key={k.label} className={`rounded-xl border px-5 py-4 ${k.bg}`}>
+                  <p className="text-xs text-gray-500 font-medium mb-1">{k.label}</p>
+                  <p className={`text-2xl font-bold ${k.color}`}>{k.value}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{k.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Filters bar */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-1.5 flex-1 max-w-xs shadow-sm">
+                <Search className="w-4 h-4 text-gray-400 shrink-0" />
+                <input value={findingSearch} onChange={e => setFindingSearch(e.target.value)}
+                  placeholder="Search findings…"
+                  className="flex-1 text-sm text-gray-700 placeholder-gray-400 outline-none bg-transparent" />
+              </div>
+              <Select value={findingFilter.clientId} onValueChange={v => setFindingFilter(f => ({ ...f, clientId: v }))}>
+                <SelectTrigger className="w-44 h-9 text-sm rounded-xl"><SelectValue placeholder="All Clients" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Clients</SelectItem>
+                  {clients.map((c:any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={findingFilter.status} onValueChange={v => setFindingFilter(f => ({ ...f, status: v }))}>
+                <SelectTrigger className="w-36 h-9 text-sm rounded-xl"><SelectValue placeholder="All Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Status</SelectItem>
+                  {Object.entries(FINDING_STATUS_CFG).map(([v, c]) => <SelectItem key={v} value={v}>{c.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={findingFilter.severity} onValueChange={v => setFindingFilter(f => ({ ...f, severity: v }))}>
+                <SelectTrigger className="w-36 h-9 text-sm rounded-xl"><SelectValue placeholder="All Severity" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Severity</SelectItem>
+                  {Object.entries(SEV_CFG).map(([v, c]) => <SelectItem key={v} value={v}>{c.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={findingFilter.category} onValueChange={v => setFindingFilter(f => ({ ...f, category: v }))}>
+                <SelectTrigger className="w-40 h-9 text-sm rounded-xl"><SelectValue placeholder="All Categories" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Categories</SelectItem>
+                  {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Findings list */}
+            {filtered.length === 0 ? (
+              <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 py-20 text-center">
+                <Flag className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="font-semibold text-gray-500 mb-1">No findings yet</p>
+                <p className="text-sm text-gray-400 mb-4">Record audit findings and observations here</p>
+                <Button className="rounded-xl bg-violet-600 hover:bg-violet-700" onClick={openNewFinding}><Plus className="w-4 h-4 mr-1.5"/>Add First Finding</Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filtered.map((f: any) => {
+                  const sev     = SEV_CFG[f.severity] ?? SEV_CFG.medium;
+                  const st      = FINDING_STATUS_CFG[f.status] ?? FINDING_STATUS_CFG.open;
+                  const isOpen  = expandedFinding === f.id;
+                  const cat     = CATEGORIES.find(c => c.value === f.category)?.label ?? f.category;
+                  return (
+                    <div key={f.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${f.severity === "critical" ? "border-red-200" : f.severity === "high" ? "border-orange-200" : "border-gray-100"}`}>
+                      {/* Header row */}
+                      <div className="flex items-start gap-3 p-4 cursor-pointer" onClick={() => setExpandedFinding(isOpen ? null : f.id)}>
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${sev.color}`}>{sev.label}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-800">{f.title}</p>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            {f.clientName && <span className="text-xs text-gray-500 flex items-center gap-1"><Users className="w-3 h-3"/>{f.clientName}</span>}
+                            <span className="text-xs text-gray-400">{cat}</span>
+                            {f.period && <span className="text-xs text-gray-400">· {f.period}</span>}
+                            {f.dueDate && <span className="text-xs text-gray-400">· Due: {fmtDate(f.dueDate)}</span>}
+                            {f.assignedTo && <span className="text-xs text-gray-500 flex items-center gap-1"><Eye className="w-3 h-3"/>{f.assignedTo}</span>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${st.color}`}>{st.label}</span>
+                          <button onClick={e => { e.stopPropagation(); openEditFinding(f); }}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={e => { e.stopPropagation(); removeFinding(f.id); }}
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Expanded detail */}
+                      {isOpen && (
+                        <div className="px-4 pb-4 pt-0 border-t border-gray-100 bg-gray-50/30 space-y-3">
+                          {f.description && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-500 mb-1">Description</p>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">{f.description}</p>
+                            </div>
+                          )}
+                          {f.recommendation && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-500 mb-1">Recommendation</p>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">{f.recommendation}</p>
+                            </div>
+                          )}
+                          {f.managementResponse && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-500 mb-1">Management Response</p>
+                              <p className="text-sm text-gray-700 italic whitespace-pre-wrap">{f.managementResponse}</p>
+                            </div>
+                          )}
+                          <div className="flex gap-6 flex-wrap text-xs text-gray-400">
+                            {f.raisedBy && <span>Raised by: <b className="text-gray-600">{f.raisedBy}</b></span>}
+                            {f.resolvedDate && <span>Resolved: <b className="text-gray-600">{fmtDate(f.resolvedDate)}</b></span>}
+                            <span>Created: <b className="text-gray-600">{fmtDate(f.createdAt)}</b></span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* ── AUDIT TRAIL TAB ── */}
       {tab === "trail" && (
         <Card className="rounded-2xl border-gray-200">
@@ -923,6 +1139,91 @@ export default function AuditorWorkspace() {
           <DialogFooter>
             <Button variant="outline" className="rounded-xl" onClick={()=>setEventDlg(d=>({...d,open:false}))}>Cancel</Button>
             <Button className="rounded-xl bg-violet-600 hover:bg-violet-700" onClick={saveEvent} disabled={createEvent.isPending||updateEvent.isPending}>{eventDlg.edit?"Save Changes":"Add Event"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Findings dialog */}
+      <Dialog open={findingDlg.open} onOpenChange={o => setFindingDlg(d => ({ ...d, open: o }))}>
+        <DialogContent className="max-w-2xl rounded-2xl">
+          <DialogHeader><DialogTitle>{findingDlg.edit ? "Edit Finding" : "Add Audit Finding"}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-3 py-2">
+            <div className="col-span-2 space-y-1">
+              <Label className="text-xs font-semibold">Client *</Label>
+              <Select value={findingDlg.form.clientId} onValueChange={v => setFindingDlg(d => ({ ...d, form: { ...d.form, clientId: v } }))}>
+                <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select client" /></SelectTrigger>
+                <SelectContent>{(clients as any[]).map((c:any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-1">
+              <Label className="text-xs font-semibold">Title *</Label>
+              <Input value={findingDlg.form.title} onChange={e => setFindingDlg(d => ({ ...d, form: { ...d.form, title: e.target.value } }))} placeholder="e.g. GST Input Tax Credit mismatch in Q3" className="rounded-xl" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Category</Label>
+              <Select value={findingDlg.form.category} onValueChange={v => setFindingDlg(d => ({ ...d, form: { ...d.form, category: v } }))}>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>{CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Severity</Label>
+              <Select value={findingDlg.form.severity} onValueChange={v => setFindingDlg(d => ({ ...d, form: { ...d.form, severity: v } }))}>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Status</Label>
+              <Select value={findingDlg.form.status} onValueChange={v => setFindingDlg(d => ({ ...d, form: { ...d.form, status: v } }))}>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Period (FY / Quarter)</Label>
+              <Input value={findingDlg.form.period} onChange={e => setFindingDlg(d => ({ ...d, form: { ...d.form, period: e.target.value } }))} placeholder="e.g. 2025-26 Q3" className="rounded-xl" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Due Date</Label>
+              <Input type="date" value={findingDlg.form.dueDate} onChange={e => setFindingDlg(d => ({ ...d, form: { ...d.form, dueDate: e.target.value } }))} className="rounded-xl" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Raised By</Label>
+              <Input value={findingDlg.form.raisedBy} onChange={e => setFindingDlg(d => ({ ...d, form: { ...d.form, raisedBy: e.target.value } }))} placeholder="Auditor name" className="rounded-xl" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Assigned To</Label>
+              <Input value={findingDlg.form.assignedTo} onChange={e => setFindingDlg(d => ({ ...d, form: { ...d.form, assignedTo: e.target.value } }))} placeholder="Team member" className="rounded-xl" />
+            </div>
+            <div className="col-span-2 space-y-1">
+              <Label className="text-xs font-semibold">Description</Label>
+              <Textarea value={findingDlg.form.description} onChange={e => setFindingDlg(d => ({ ...d, form: { ...d.form, description: e.target.value } }))} placeholder="Detailed description of the finding…" rows={3} className="rounded-xl resize-none text-sm" />
+            </div>
+            <div className="col-span-2 space-y-1">
+              <Label className="text-xs font-semibold">Recommendation</Label>
+              <Textarea value={findingDlg.form.recommendation} onChange={e => setFindingDlg(d => ({ ...d, form: { ...d.form, recommendation: e.target.value } }))} placeholder="Recommended corrective action…" rows={2} className="rounded-xl resize-none text-sm" />
+            </div>
+            <div className="col-span-2 space-y-1">
+              <Label className="text-xs font-semibold">Management Response</Label>
+              <Textarea value={findingDlg.form.managementResponse} onChange={e => setFindingDlg(d => ({ ...d, form: { ...d.form, managementResponse: e.target.value } }))} placeholder="Management's response to this finding…" rows={2} className="rounded-xl resize-none text-sm" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setFindingDlg(d => ({ ...d, open: false }))}>Cancel</Button>
+            <Button className="rounded-xl bg-violet-600 hover:bg-violet-700" onClick={saveFinding} disabled={createFinding.isPending || updateFinding.isPending}>
+              {findingDlg.edit ? "Save Changes" : "Add Finding"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

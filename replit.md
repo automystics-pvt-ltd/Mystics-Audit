@@ -1,6 +1,8 @@
 # Mystics Audit
 
-A full-stack enterprise cloud SaaS accounting platform for Indian businesses — covering 15 modules from GST to inventory to financial statements.
+A **multi-tenant enterprise cloud SaaS** platform for **IT services, software development, SaaS product, and software consulting businesses** in India. Covers finance, compliance (GST/TDS), operations, and a practice audit workspace — optimised for service-oriented companies, not retail or manufacturing.
+
+**Primary verticals:** Software development · IT consulting · SaaS companies · AMC/support · Software licensing · Cloud/hosting services
 
 ## Run & Operate
 
@@ -52,8 +54,8 @@ A full-stack enterprise cloud SaaS accounting platform for Indian businesses —
 6. **AP (Accounts Payable)** — Vendor list, bill entry with MSME/TDS, AP Aging
 7. **Bank & Cash** — Bank accounts, transactions, reconciliation
 8. **Expense Management** — Claims, policy enforcement, approval workflow
-9. **Purchase Management** — Purchase orders, GRN (goods receipt notes)
-10. **Inventory** — Item master, stock tracking, valuation (FIFO/WA/LIFO), low stock alerts
+9. **Purchase Management** — Software licenses, SaaS subscriptions, cloud services, IT tools, API services (NOT physical goods)
+10. **Inventory** — Digital asset / license tracking (software seats, domains, SSL certs) — not physical stock
 11. **Financial Reports** — P&L, Balance Sheet, Cash Flow, Day Book
 12. **Audit Trail** — Tamper-evident log of all actions with entityType/actionType filters
 13. **Budget Management** — Budget creation with account lines, vs-actual with bar charts
@@ -67,6 +69,23 @@ A full-stack enterprise cloud SaaS accounting platform for Indian businesses —
 - All hooks must be imported from `@workspace/api-client-react`, not from `@workspace/api-client`.
 - Do NOT pass `{ query: { enabled: !!id } }` to Orval hooks — the TQ v5 `UseQueryOptions` type requires `queryKey` which causes TS2741. Just call the hook unconditionally on detail pages.
 - When using `useForm`, include all fields in `defaultValues` or the form type won't allow `setValue` for fields not in defaults. Alternatively, use uncontrolled state (`useState`) for forms with many dynamic fields.
+
+## Business Scope (from product direction doc)
+
+Target customer: IT services / software / SaaS / consulting companies — NOT retail, manufacturing, or physical goods.
+
+**In scope for procurement:** Software licenses · SaaS subscriptions · Cloud services · Dev tools · API services · Hosting & infrastructure · IT consulting · Digital assets · Security software
+**Out of scope:** Physical products, hardware, shipping, retail inventory
+
+**Future modules (not yet built):**
+- Project Management & SDLC tracking
+- CRM — Leads, Opportunities, Proposals, Contracts
+- Resource & Employee Management
+- Time Tracking & Timesheets
+- Support & Helpdesk
+- SaaS Subscription Management (multi-tenant billing)
+
+All UI labels, workflows, and terminology must reflect IT/service operations. Architecture must support multi-tenancy and future vertical expansion without major rewrites.
 
 ## User preferences
 

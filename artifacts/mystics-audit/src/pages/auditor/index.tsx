@@ -7,6 +7,7 @@ import {
   useUpdateAuditTaskStatus, useAddAuditTaskComment,
   useListComplianceEvents, useCreateComplianceEvent, useUpdateComplianceEvent,
   useListAuditFindings, useCreateAuditFinding, useUpdateAuditFinding, useDeleteAuditFinding,
+  useListCustomers, useListVendors,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -160,6 +161,8 @@ export default function AuditorWorkspace() {
   const { data: allTasks = [], refetch: refetchTasks }    = useListAuditTasks({});
   const { data: events = [],   refetch: refetchEvents }   = useListComplianceEvents({});
   const { data: allFindings = [], refetch: refetchFindings } = useListAuditFindings({});
+  const { data: allCustomers = [] } = useListCustomers({});
+  const { data: allVendors = [] }   = useListVendors({});
 
   /* ── mutations ── */
   const createClient  = useCreateAuditClient();
@@ -777,8 +780,24 @@ export default function AuditorWorkspace() {
                 <div><Label className="text-xs text-gray-500">GST Period</Label>
                   <Select value={period} onValueChange={setPeriod}><SelectTrigger className="mt-1 h-8 rounded-lg"><SelectValue placeholder="All periods"/></SelectTrigger>
                     <SelectContent><SelectItem value="">All periods</SelectItem>{Object.entries(MONTHS).map(([k,v])=><SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
-                <div><Label className="text-xs text-gray-500">Customer</Label><Input className="mt-1 h-8 text-sm rounded-lg" placeholder="Customer name" value={customer} onChange={e=>setCust(e.target.value)}/></div>
-                <div><Label className="text-xs text-gray-500">Vendor</Label><Input className="mt-1 h-8 text-sm rounded-lg" placeholder="Vendor name" value={vendor} onChange={e=>setVendor(e.target.value)}/></div>
+                <div><Label className="text-xs text-gray-500">Customer</Label>
+                  <Select value={customer} onValueChange={setCust}>
+                    <SelectTrigger className="mt-1 h-8 rounded-lg"><SelectValue placeholder="All customers"/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All customers</SelectItem>
+                      {(allCustomers as any[]).map((c: any) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label className="text-xs text-gray-500">Vendor</Label>
+                  <Select value={vendor} onValueChange={setVendor}>
+                    <SelectTrigger className="mt-1 h-8 rounded-lg"><SelectValue placeholder="All vendors"/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All vendors</SelectItem>
+                      {(allVendors as any[]).map((v: any) => <SelectItem key={v.id} value={v.name}>{v.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button className="w-full rounded-xl" size="sm" onClick={()=>{ setApplied(true); refetchPkg(); }}><Search className="w-3.5 h-3.5 mr-1.5"/>Build Package</Button>
                 {applied && <Button variant="ghost" size="sm" className="w-full text-gray-400 rounded-xl" onClick={()=>{ setApplied(false); setFy("2025-26"); setPeriod(""); setCust(""); setVendor(""); setSelDocs(new Set()); setSelInv(new Set()); setSelBill(new Set()); }}>Clear Filters</Button>}
               </div>

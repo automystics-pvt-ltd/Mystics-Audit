@@ -30,6 +30,7 @@ import emailSettingsRouter from "./email-settings";
 import paymentGatewayRouter from "./payment-gateway";
 import auditWorkspaceRouter from "./audit-workspace";
 import automationRouter from "./automation";
+import collaborationRouter from "./collaboration";
 
 const router: IRouter = Router();
 
@@ -64,5 +65,6 @@ router.use(emailSettingsRouter);
 router.use(paymentGatewayRouter);
 router.use(auditWorkspaceRouter);
 router.use(automationRouter);
+router.use(collaborationRouter);
 
 export default router;

@@ -173,3 +173,42 @@ export const automationRulesTable = pgTable("automation_rules", {
 
 export type Notification    = typeof notificationsTable.$inferSelect;
 export type AutomationRule  = typeof automationRulesTable.$inferSelect;
+
+/* ── Auditor-Client Collaboration ───────────────────────────── */
+
+export const collaborationRequestsTable = pgTable("collaboration_requests", {
+  id:          serial("id").primaryKey(),
+  clientId:    integer("client_id").notNull().references(() => auditClientsTable.id),
+  title:       text("title").notNull(),
+  description: text("description"),
+  requestType: text("request_type").notNull().default("document"),
+  priority:    text("priority").notNull().default("medium"),
+  dueDate:     text("due_date"),
+  status:      text("status").notNull().default("pending"),
+  assignedTo:  text("assigned_to"),
+  createdBy:   text("created_by"),
+  tags:        text("tags"),
+  orgId:       integer("org_id").notNull().default(1),
+  createdAt:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:   timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const collaborationMessagesTable = pgTable("collaboration_messages", {
+  id:          serial("id").primaryKey(),
+  requestId:   integer("request_id").notNull().references(() => collaborationRequestsTable.id),
+  senderRole:  text("sender_role").notNull().default("auditor"),
+  senderName:  text("sender_name"),
+  message:     text("message"),
+  messageType: text("message_type").notNull().default("message"),
+  fromStatus:  text("from_status"),
+  toStatus:    text("to_status"),
+  attachments: text("attachments").notNull().default("[]"),
+  orgId:       integer("org_id").notNull().default(1),
+  createdAt:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const insertCollaborationRequestSchema = createInsertSchema(collaborationRequestsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertCollaborationMessageSchema  = createInsertSchema(collaborationMessagesTable).omit({ id: true, createdAt: true });
+
+export type CollaborationRequest = typeof collaborationRequestsTable.$inferSelect;
+export type CollaborationMessage = typeof collaborationMessagesTable.$inferSelect;

@@ -1591,6 +1591,89 @@ export interface AutomationRuleInput {
   clientId?: number;
 }
 
+export interface CollaborationRequest {
+  id: number;
+  clientId: number;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  requestType: string;
+  priority: string;
+  /** @nullable */
+  dueDate?: string | null;
+  status: string;
+  /** @nullable */
+  assignedTo?: string | null;
+  /** @nullable */
+  createdBy?: string | null;
+  /** @nullable */
+  tags?: string | null;
+  orgId: number;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  clientName?: string | null;
+  /** @nullable */
+  messageCount?: number | null;
+}
+
+export interface CollaborationRequestInput {
+  clientId: number;
+  title: string;
+  description?: string;
+  requestType?: string;
+  priority?: string;
+  dueDate?: string;
+  status?: string;
+  assignedTo?: string;
+  createdBy?: string;
+  tags?: string;
+}
+
+export interface CollaborationMessage {
+  id: number;
+  requestId: number;
+  senderRole: string;
+  /** @nullable */
+  senderName?: string | null;
+  /** @nullable */
+  message?: string | null;
+  messageType: string;
+  /** @nullable */
+  fromStatus?: string | null;
+  /** @nullable */
+  toStatus?: string | null;
+  attachments: string;
+  orgId: number;
+  createdAt: string;
+}
+
+export interface CollaborationMessageInput {
+  senderRole: string;
+  senderName?: string;
+  message?: string;
+  messageType?: string;
+  fromStatus?: string;
+  toStatus?: string;
+  attachments?: string;
+}
+
+export interface CollaborationRequestDetail {
+  request: CollaborationRequest;
+  messages: CollaborationMessage[];
+}
+
+export interface CollaborationSummary {
+  total: number;
+  pending: number;
+  inProgress: number;
+  submitted: number;
+  underReview: number;
+  completed: number;
+  overdue: number;
+  cancelled: number;
+}
+
 export type GetDashboardSummaryParams = {
 /**
  * Financial year e.g. 2024-25
@@ -1815,5 +1898,12 @@ export type RunAutomation200Types = {[key: string]: number};
 export type RunAutomation200 = {
   created: number;
   types: RunAutomation200Types;
+};
+
+export type ListCollaborationRequestsParams = {
+clientId?: number;
+status?: string;
+requestType?: string;
+search?: string;
 };
 

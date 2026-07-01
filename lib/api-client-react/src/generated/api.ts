@@ -58,6 +58,12 @@ import type {
   BudgetVsActual,
   CashFlowStatement,
   CashflowSummary,
+  CollaborationMessage,
+  CollaborationMessageInput,
+  CollaborationRequest,
+  CollaborationRequestDetail,
+  CollaborationRequestInput,
+  CollaborationSummary,
   Company,
   CompanyInput,
   CompanyUpdate,
@@ -116,6 +122,7 @@ import type {
   ListAutomationRulesParams,
   ListBillsParams,
   ListBudgetsParams,
+  ListCollaborationRequestsParams,
   ListComplianceEventsParams,
   ListCustomersParams,
   ListExpensesParams,
@@ -9793,4 +9800,601 @@ export const useRunAutomation = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getRunAutomationMutationOptions(options));
     }
+
+export const getListCollaborationRequestsUrl = (params?: ListCollaborationRequestsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/api/collaboration/requests?${stringifiedParams}` : `/api/api/collaboration/requests`
+}
+
+/**
+ * @summary List collaboration requests
+ */
+export const listCollaborationRequests = async (params?: ListCollaborationRequestsParams, options?: RequestInit): Promise<CollaborationRequest[]> => {
+
+  return customFetch<CollaborationRequest[]>(getListCollaborationRequestsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCollaborationRequestsQueryKey = (params?: ListCollaborationRequestsParams,) => {
+    return [
+    `/api/api/collaboration/requests`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListCollaborationRequestsQueryOptions = <TData = Awaited<ReturnType<typeof listCollaborationRequests>>, TError = ErrorType<unknown>>(params?: ListCollaborationRequestsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCollaborationRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCollaborationRequestsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCollaborationRequests>>> = ({ signal }) => listCollaborationRequests(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCollaborationRequests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCollaborationRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof listCollaborationRequests>>>
+export type ListCollaborationRequestsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List collaboration requests
+ */
+
+export function useListCollaborationRequests<TData = Awaited<ReturnType<typeof listCollaborationRequests>>, TError = ErrorType<unknown>>(
+ params?: ListCollaborationRequestsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCollaborationRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCollaborationRequestsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateCollaborationRequestUrl = () => {
+
+
+
+
+  return `/api/api/collaboration/requests`
+}
+
+/**
+ * @summary Create collaboration request
+ */
+export const createCollaborationRequest = async (collaborationRequestInput: CollaborationRequestInput, options?: RequestInit): Promise<CollaborationRequest> => {
+
+  return customFetch<CollaborationRequest>(getCreateCollaborationRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(collaborationRequestInput)
+  }
+);}
+
+
+
+
+export const getCreateCollaborationRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCollaborationRequest>>, TError,{data: BodyType<CollaborationRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCollaborationRequest>>, TError,{data: BodyType<CollaborationRequestInput>}, TContext> => {
+
+const mutationKey = ['createCollaborationRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCollaborationRequest>>, {data: BodyType<CollaborationRequestInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCollaborationRequest(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCollaborationRequestMutationResult = NonNullable<Awaited<ReturnType<typeof createCollaborationRequest>>>
+    export type CreateCollaborationRequestMutationBody = BodyType<CollaborationRequestInput>
+    export type CreateCollaborationRequestMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create collaboration request
+ */
+export const useCreateCollaborationRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCollaborationRequest>>, TError,{data: BodyType<CollaborationRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCollaborationRequest>>,
+        TError,
+        {data: BodyType<CollaborationRequestInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCollaborationRequestMutationOptions(options));
+    }
+
+export const getGetCollaborationRequestUrl = (id: number,) => {
+
+
+
+
+  return `/api/api/collaboration/requests/${id}`
+}
+
+/**
+ * @summary Get collaboration request with messages
+ */
+export const getCollaborationRequest = async (id: number, options?: RequestInit): Promise<CollaborationRequestDetail> => {
+
+  return customFetch<CollaborationRequestDetail>(getGetCollaborationRequestUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCollaborationRequestQueryKey = (id: number,) => {
+    return [
+    `/api/api/collaboration/requests/${id}`
+    ] as const;
+    }
+
+
+export const getGetCollaborationRequestQueryOptions = <TData = Awaited<ReturnType<typeof getCollaborationRequest>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCollaborationRequest>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCollaborationRequestQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCollaborationRequest>>> = ({ signal }) => getCollaborationRequest(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCollaborationRequest>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCollaborationRequestQueryResult = NonNullable<Awaited<ReturnType<typeof getCollaborationRequest>>>
+export type GetCollaborationRequestQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get collaboration request with messages
+ */
+
+export function useGetCollaborationRequest<TData = Awaited<ReturnType<typeof getCollaborationRequest>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCollaborationRequest>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCollaborationRequestQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateCollaborationRequestUrl = (id: number,) => {
+
+
+
+
+  return `/api/api/collaboration/requests/${id}`
+}
+
+/**
+ * @summary Update collaboration request
+ */
+export const updateCollaborationRequest = async (id: number,
+    collaborationRequestInput: CollaborationRequestInput, options?: RequestInit): Promise<CollaborationRequest> => {
+
+  return customFetch<CollaborationRequest>(getUpdateCollaborationRequestUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(collaborationRequestInput)
+  }
+);}
+
+
+
+
+export const getUpdateCollaborationRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCollaborationRequest>>, TError,{id: number;data: BodyType<CollaborationRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCollaborationRequest>>, TError,{id: number;data: BodyType<CollaborationRequestInput>}, TContext> => {
+
+const mutationKey = ['updateCollaborationRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCollaborationRequest>>, {id: number;data: BodyType<CollaborationRequestInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateCollaborationRequest(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCollaborationRequestMutationResult = NonNullable<Awaited<ReturnType<typeof updateCollaborationRequest>>>
+    export type UpdateCollaborationRequestMutationBody = BodyType<CollaborationRequestInput>
+    export type UpdateCollaborationRequestMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update collaboration request
+ */
+export const useUpdateCollaborationRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCollaborationRequest>>, TError,{id: number;data: BodyType<CollaborationRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCollaborationRequest>>,
+        TError,
+        {id: number;data: BodyType<CollaborationRequestInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateCollaborationRequestMutationOptions(options));
+    }
+
+export const getDeleteCollaborationRequestUrl = (id: number,) => {
+
+
+
+
+  return `/api/api/collaboration/requests/${id}`
+}
+
+/**
+ * @summary Delete collaboration request
+ */
+export const deleteCollaborationRequest = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteCollaborationRequestUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteCollaborationRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCollaborationRequest>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCollaborationRequest>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteCollaborationRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCollaborationRequest>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteCollaborationRequest(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCollaborationRequestMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCollaborationRequest>>>
+
+    export type DeleteCollaborationRequestMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete collaboration request
+ */
+export const useDeleteCollaborationRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCollaborationRequest>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCollaborationRequest>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteCollaborationRequestMutationOptions(options));
+    }
+
+export const getListCollaborationMessagesUrl = (id: number,) => {
+
+
+
+
+  return `/api/api/collaboration/requests/${id}/messages`
+}
+
+/**
+ * @summary Get messages/timeline for a request
+ */
+export const listCollaborationMessages = async (id: number, options?: RequestInit): Promise<CollaborationMessage[]> => {
+
+  return customFetch<CollaborationMessage[]>(getListCollaborationMessagesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCollaborationMessagesQueryKey = (id: number,) => {
+    return [
+    `/api/api/collaboration/requests/${id}/messages`
+    ] as const;
+    }
+
+
+export const getListCollaborationMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listCollaborationMessages>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCollaborationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCollaborationMessagesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCollaborationMessages>>> = ({ signal }) => listCollaborationMessages(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCollaborationMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCollaborationMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof listCollaborationMessages>>>
+export type ListCollaborationMessagesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get messages/timeline for a request
+ */
+
+export function useListCollaborationMessages<TData = Awaited<ReturnType<typeof listCollaborationMessages>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCollaborationMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCollaborationMessagesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateCollaborationMessageUrl = (id: number,) => {
+
+
+
+
+  return `/api/api/collaboration/requests/${id}/messages`
+}
+
+/**
+ * @summary Add message to collaboration request
+ */
+export const createCollaborationMessage = async (id: number,
+    collaborationMessageInput: CollaborationMessageInput, options?: RequestInit): Promise<CollaborationMessage> => {
+
+  return customFetch<CollaborationMessage>(getCreateCollaborationMessageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(collaborationMessageInput)
+  }
+);}
+
+
+
+
+export const getCreateCollaborationMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCollaborationMessage>>, TError,{id: number;data: BodyType<CollaborationMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCollaborationMessage>>, TError,{id: number;data: BodyType<CollaborationMessageInput>}, TContext> => {
+
+const mutationKey = ['createCollaborationMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCollaborationMessage>>, {id: number;data: BodyType<CollaborationMessageInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createCollaborationMessage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCollaborationMessageMutationResult = NonNullable<Awaited<ReturnType<typeof createCollaborationMessage>>>
+    export type CreateCollaborationMessageMutationBody = BodyType<CollaborationMessageInput>
+    export type CreateCollaborationMessageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add message to collaboration request
+ */
+export const useCreateCollaborationMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCollaborationMessage>>, TError,{id: number;data: BodyType<CollaborationMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCollaborationMessage>>,
+        TError,
+        {id: number;data: BodyType<CollaborationMessageInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCollaborationMessageMutationOptions(options));
+    }
+
+export const getGetCollaborationSummaryUrl = () => {
+
+
+
+
+  return `/api/api/collaboration/summary`
+}
+
+/**
+ * @summary Get collaboration summary counts
+ */
+export const getCollaborationSummary = async ( options?: RequestInit): Promise<CollaborationSummary> => {
+
+  return customFetch<CollaborationSummary>(getGetCollaborationSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCollaborationSummaryQueryKey = () => {
+    return [
+    `/api/api/collaboration/summary`
+    ] as const;
+    }
+
+
+export const getGetCollaborationSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getCollaborationSummary>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCollaborationSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCollaborationSummaryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCollaborationSummary>>> = ({ signal }) => getCollaborationSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCollaborationSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCollaborationSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getCollaborationSummary>>>
+export type GetCollaborationSummaryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get collaboration summary counts
+ */
+
+export function useGetCollaborationSummary<TData = Awaited<ReturnType<typeof getCollaborationSummary>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCollaborationSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCollaborationSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

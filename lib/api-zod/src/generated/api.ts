@@ -4164,3 +4164,232 @@ export const RunAutomationResponse = zod.object({
 })
 
 
+/**
+ * @summary List collaboration requests
+ */
+export const ListCollaborationRequestsQueryParams = zod.object({
+  "clientId": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional(),
+  "requestType": zod.coerce.string().optional(),
+  "search": zod.coerce.string().optional()
+})
+
+export const ListCollaborationRequestsResponseItem = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "requestType": zod.string(),
+  "priority": zod.string(),
+  "dueDate": zod.string().nullish(),
+  "status": zod.string(),
+  "assignedTo": zod.string().nullish(),
+  "createdBy": zod.string().nullish(),
+  "tags": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "clientName": zod.string().nullish(),
+  "messageCount": zod.number().nullish()
+})
+export const ListCollaborationRequestsResponse = zod.array(ListCollaborationRequestsResponseItem)
+
+
+/**
+ * @summary Create collaboration request
+ */
+export const CreateCollaborationRequestBody = zod.object({
+  "clientId": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "requestType": zod.string().optional(),
+  "priority": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "assignedTo": zod.string().optional(),
+  "createdBy": zod.string().optional(),
+  "tags": zod.string().optional()
+})
+
+export const CreateCollaborationRequestResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "requestType": zod.string(),
+  "priority": zod.string(),
+  "dueDate": zod.string().nullish(),
+  "status": zod.string(),
+  "assignedTo": zod.string().nullish(),
+  "createdBy": zod.string().nullish(),
+  "tags": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "clientName": zod.string().nullish(),
+  "messageCount": zod.number().nullish()
+})
+
+
+/**
+ * @summary Get collaboration request with messages
+ */
+export const GetCollaborationRequestParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetCollaborationRequestResponse = zod.object({
+  "request": zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "requestType": zod.string(),
+  "priority": zod.string(),
+  "dueDate": zod.string().nullish(),
+  "status": zod.string(),
+  "assignedTo": zod.string().nullish(),
+  "createdBy": zod.string().nullish(),
+  "tags": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "clientName": zod.string().nullish(),
+  "messageCount": zod.number().nullish()
+}),
+  "messages": zod.array(zod.object({
+  "id": zod.number(),
+  "requestId": zod.number(),
+  "senderRole": zod.string(),
+  "senderName": zod.string().nullish(),
+  "message": zod.string().nullish(),
+  "messageType": zod.string(),
+  "fromStatus": zod.string().nullish(),
+  "toStatus": zod.string().nullish(),
+  "attachments": zod.string(),
+  "orgId": zod.number(),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Update collaboration request
+ */
+export const UpdateCollaborationRequestParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateCollaborationRequestBody = zod.object({
+  "clientId": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "requestType": zod.string().optional(),
+  "priority": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "status": zod.string().optional(),
+  "assignedTo": zod.string().optional(),
+  "createdBy": zod.string().optional(),
+  "tags": zod.string().optional()
+})
+
+export const UpdateCollaborationRequestResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "requestType": zod.string(),
+  "priority": zod.string(),
+  "dueDate": zod.string().nullish(),
+  "status": zod.string(),
+  "assignedTo": zod.string().nullish(),
+  "createdBy": zod.string().nullish(),
+  "tags": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "clientName": zod.string().nullish(),
+  "messageCount": zod.number().nullish()
+})
+
+
+/**
+ * @summary Delete collaboration request
+ */
+export const DeleteCollaborationRequestParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteCollaborationRequestResponse = zod.void()
+
+
+/**
+ * @summary Get messages/timeline for a request
+ */
+export const ListCollaborationMessagesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListCollaborationMessagesResponseItem = zod.object({
+  "id": zod.number(),
+  "requestId": zod.number(),
+  "senderRole": zod.string(),
+  "senderName": zod.string().nullish(),
+  "message": zod.string().nullish(),
+  "messageType": zod.string(),
+  "fromStatus": zod.string().nullish(),
+  "toStatus": zod.string().nullish(),
+  "attachments": zod.string(),
+  "orgId": zod.number(),
+  "createdAt": zod.string()
+})
+export const ListCollaborationMessagesResponse = zod.array(ListCollaborationMessagesResponseItem)
+
+
+/**
+ * @summary Add message to collaboration request
+ */
+export const CreateCollaborationMessageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateCollaborationMessageBody = zod.object({
+  "senderRole": zod.string(),
+  "senderName": zod.string().optional(),
+  "message": zod.string().optional(),
+  "messageType": zod.string().optional(),
+  "fromStatus": zod.string().optional(),
+  "toStatus": zod.string().optional(),
+  "attachments": zod.string().optional()
+})
+
+export const CreateCollaborationMessageResponse = zod.object({
+  "id": zod.number(),
+  "requestId": zod.number(),
+  "senderRole": zod.string(),
+  "senderName": zod.string().nullish(),
+  "message": zod.string().nullish(),
+  "messageType": zod.string(),
+  "fromStatus": zod.string().nullish(),
+  "toStatus": zod.string().nullish(),
+  "attachments": zod.string(),
+  "orgId": zod.number(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Get collaboration summary counts
+ */
+export const GetCollaborationSummaryResponse = zod.object({
+  "total": zod.number(),
+  "pending": zod.number(),
+  "inProgress": zod.number(),
+  "submitted": zod.number(),
+  "underReview": zod.number(),
+  "completed": zod.number(),
+  "overdue": zod.number(),
+  "cancelled": zod.number()
+})
+
+

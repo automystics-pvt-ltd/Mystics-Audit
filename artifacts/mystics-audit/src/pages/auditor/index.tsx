@@ -12,6 +12,9 @@ import {
   useMarkAllNotificationsRead, useMarkNotificationRead, useDismissNotification,
   useListAutomationRules, useCreateAutomationRule, useUpdateAutomationRule, useDeleteAutomationRule,
   useRunAutomation,
+  useListCollaborationRequests, useCreateCollaborationRequest, useUpdateCollaborationRequest,
+  useDeleteCollaborationRequest, useGetCollaborationRequest, useGetCollaborationSummary,
+  useCreateCollaborationMessage,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +35,8 @@ import {
   AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight,
   ArrowUpRight, MessageSquare, Flag, MoreHorizontal, Eye, BarChart3,
   Zap, Bell, BellOff, Play, ToggleLeft, ToggleRight, XCircle,
+  Link2, FileUp, MessageCircle, ChevronDown, ChevronUp, Inbox,
+  CheckCheck, HelpCircle, ThumbsUp, Paperclip, FilePlus2,
 } from "lucide-react";
 
 /* ── helpers ── */
@@ -107,7 +112,7 @@ const CAT_COLORS: Record<string,string> = {
   supporting:"bg-gray-100 text-gray-800",
 };
 
-type Tab = "dashboard"|"clients"|"tasks"|"calendar"|"packages"|"trail"|"findings"|"workload"|"automation";
+type Tab = "dashboard"|"clients"|"tasks"|"calendar"|"packages"|"trail"|"findings"|"workload"|"automation"|"collaboration";
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "dashboard", label: "Dashboard",   icon: <Shield className="w-4 h-4" /> },
   { id: "clients",   label: "Clients",     icon: <Users className="w-4 h-4" /> },
@@ -116,8 +121,9 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "calendar",  label: "Compliance",  icon: <CalendarDays className="w-4 h-4" /> },
   { id: "packages",  label: "Doc Packages",icon: <Package className="w-4 h-4" /> },
   { id: "workload",  label: "Team Workload",  icon: <BarChart3 className="w-4 h-4" /> },
-  { id: "automation",label: "Automation Hub", icon: <Zap className="w-4 h-4" /> },
-  { id: "trail",     label: "Audit Trail",   icon: <Activity className="w-4 h-4" /> },
+  { id: "collaboration", label: "Collaboration", icon: <MessageCircle className="w-4 h-4" /> },
+  { id: "automation",   label: "Automation Hub", icon: <Zap className="w-4 h-4" /> },
+  { id: "trail",        label: "Audit Trail",   icon: <Activity className="w-4 h-4" /> },
 ];
 
 /* ── findings helpers ── */
@@ -152,6 +158,550 @@ function PriorityBadge({ priority }: { priority: string }) {
     <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full flex items-center gap-1", c.color)}>
       <span className={cn("w-1.5 h-1.5 rounded-full", c.dot)} />{c.label}
     </span>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   COLLABORATION HUB COMPONENT
+══════════════════════════════════════════════════════ */
+const REQ_TYPE_CFG: Record<string, { label: string; icon: typeof FileText; color: string }> = {
+  document:    { label: "Document Request",  icon: FileText,   color: "#7c3aed" },
+  information: { label: "Information",       icon: HelpCircle, color: "#2563eb" },
+  clarification:{ label: "Clarification",   icon: MessageSquare, color: "#0891b2" },
+  approval:    { label: "Approval",          icon: ThumbsUp,   color: "#059669" },
+};
+const COLLAB_STATUS_CFG: Record<string, { label: string; badge: string; dot: string }> = {
+  pending:      { label: "Pending",      badge: "bg-gray-100 text-gray-600",    dot: "bg-gray-400" },
+  in_progress:  { label: "In Progress",  badge: "bg-blue-100 text-blue-700",    dot: "bg-blue-500" },
+  submitted:    { label: "Submitted",    badge: "bg-violet-100 text-violet-700", dot: "bg-violet-500" },
+  under_review: { label: "Under Review", badge: "bg-amber-100 text-amber-700",  dot: "bg-amber-500" },
+  completed:    { label: "Completed",    badge: "bg-emerald-100 text-emerald-700", dot: "bg-emerald-500" },
+  overdue:      { label: "Overdue",      badge: "bg-red-100 text-red-700",      dot: "bg-red-500" },
+  cancelled:    { label: "Cancelled",    badge: "bg-gray-100 text-gray-400",    dot: "bg-gray-300" },
+};
+const PRIORITY_BADGE: Record<string, string> = {
+  critical: "bg-red-100 text-red-700",
+  high:     "bg-orange-100 text-orange-700",
+  medium:   "bg-amber-100 text-amber-700",
+  low:      "bg-gray-100 text-gray-500",
+};
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  pending:      ["in_progress", "cancelled"],
+  in_progress:  ["submitted", "cancelled"],
+  submitted:    ["under_review", "completed", "in_progress"],
+  under_review: ["completed", "in_progress"],
+  overdue:      ["in_progress", "completed", "cancelled"],
+};
+
+function timeAgoCollab(ts: string | Date) {
+  const diff = Date.now() - new Date(ts).getTime();
+  const h = Math.floor(diff / 3_600_000);
+  if (h < 1) return `${Math.floor(diff / 60_000)}m ago`;
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+function CollaborationHub({ clients }: { clients: any[] }) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterType,   setFilterType]   = useState<string>("all");
+  const [filterClient, setFilterClient] = useState<string>("all");
+  const [search,       setSearch]       = useState("");
+  const [selectedId,   setSelectedId]   = useState<number | null>(null);
+  const [showNew,      setShowNew]      = useState(false);
+  const [newMsg,       setNewMsg]       = useState("");
+  const [msgRole,      setMsgRole]      = useState<"auditor"|"client">("auditor");
+  const [attachUrl,    setAttachUrl]    = useState("");
+  const [attachName,   setAttachName]   = useState("");
+
+  /* ── New request form state ── */
+  const [nf, setNf] = useState({
+    clientId: "", title: "", description: "", requestType: "document",
+    priority: "medium", dueDate: "", createdBy: "Auditor",
+  });
+
+  /* ── Queries ── */
+  const listParams: any = {};
+  if (filterStatus !== "all") listParams.status = filterStatus;
+  if (filterType   !== "all") listParams.requestType = filterType;
+  if (filterClient !== "all") listParams.clientId = Number(filterClient);
+  if (search) listParams.search = search;
+
+  const { data: reqData, refetch: refetchReqs } = useListCollaborationRequests(listParams);
+  const { data: summaryData } = useGetCollaborationSummary();
+  const { data: detailData, refetch: refetchDetail } = useGetCollaborationRequest(selectedId ?? 0);
+
+  const createReq  = useCreateCollaborationRequest();
+  const updateReq  = useUpdateCollaborationRequest();
+  const deleteReq  = useDeleteCollaborationRequest();
+  const createMsg  = useCreateCollaborationMessage();
+
+  const requests: any[] = (reqData as any) ?? [];
+  const summary: any    = summaryData ?? {};
+  const detail: any     = (detailData as any) ?? null;
+  const messages: any[] = detail?.messages ?? [];
+
+  function handleCreate() {
+    if (!nf.clientId || !nf.title.trim()) {
+      toast({ title: "Client and title are required", variant: "destructive" }); return;
+    }
+    createReq.mutate({ data: { ...nf, clientId: Number(nf.clientId) } } as any, {
+      onSuccess: (r: any) => {
+        toast({ title: "Request created" });
+        setShowNew(false);
+        setNf({ clientId: "", title: "", description: "", requestType: "document", priority: "medium", dueDate: "", createdBy: "Auditor" });
+        setSelectedId(r.id);
+        refetchReqs();
+      },
+    });
+  }
+
+  function handleStatusChange(id: number, newStatus: string, currentData: any) {
+    updateReq.mutate({ id, data: { ...currentData, status: newStatus, updatedBy: "Auditor" } } as any, {
+      onSuccess: () => {
+        toast({ title: `Status → ${COLLAB_STATUS_CFG[newStatus]?.label ?? newStatus}` });
+        refetchReqs(); if (selectedId === id) refetchDetail();
+      },
+    });
+  }
+
+  function handleSendMessage() {
+    if (!selectedId || (!newMsg.trim() && !attachUrl.trim())) return;
+    const attachments: any[] = [];
+    if (attachUrl.trim()) attachments.push({ name: attachName.trim() || attachUrl, url: attachUrl.trim(), uploadedAt: new Date().toISOString() });
+
+    createMsg.mutate({
+      id: selectedId,
+      data: {
+        senderRole:  msgRole,
+        senderName:  msgRole === "auditor" ? "Auditor" : "Client",
+        message:     newMsg.trim() || null,
+        messageType: "message",
+        attachments: JSON.stringify(attachments),
+      },
+    } as any, {
+      onSuccess: () => {
+        setNewMsg(""); setAttachUrl(""); setAttachName("");
+        refetchDetail(); refetchReqs();
+        toast({ title: "Message sent" });
+      },
+    });
+  }
+
+  function handleDelete(id: number) {
+    deleteReq.mutate({ id } as any, {
+      onSuccess: () => {
+        toast({ title: "Request deleted" });
+        if (selectedId === id) setSelectedId(null);
+        refetchReqs();
+      },
+    });
+  }
+
+  const selectedReq = detail?.request ?? requests.find(r => r.id === selectedId);
+
+  return (
+    <div className="space-y-4">
+      {/* Summary bar */}
+      <div className="grid grid-cols-3 sm:grid-cols-7 gap-2">
+        {[
+          { key: "all",         label: "All",          count: summary.total ?? requests.length },
+          { key: "pending",     label: "Pending",      count: summary.pending     ?? 0 },
+          { key: "in_progress", label: "In Progress",  count: summary.inProgress  ?? 0 },
+          { key: "submitted",   label: "Submitted",    count: summary.submitted   ?? 0 },
+          { key: "under_review",label: "Review",       count: summary.underReview ?? 0 },
+          { key: "completed",   label: "Completed",    count: summary.completed   ?? 0 },
+          { key: "overdue",     label: "Overdue",      count: summary.overdue     ?? 0 },
+        ].map(item => (
+          <button key={item.key} onClick={() => setFilterStatus(item.key)}
+            className={cn(
+              "rounded-xl border px-3 py-2 text-left transition-colors",
+              filterStatus === item.key
+                ? item.key === "overdue" ? "border-red-300 bg-red-50" : "border-violet-300 bg-violet-50"
+                : "border-gray-200 bg-white hover:border-violet-200"
+            )}>
+            <p className={cn("text-lg font-bold",
+              item.key === "overdue" && item.count > 0 ? "text-red-600" :
+              filterStatus === item.key ? "text-violet-700" : "text-gray-700"
+            )}>{item.count}</p>
+            <p className="text-[10px] text-gray-400 leading-tight">{item.label}</p>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex gap-4 h-[calc(100vh-300px)] min-h-[500px]">
+        {/* ── LEFT: Request list ── */}
+        <div className="w-80 shrink-0 flex flex-col gap-2">
+          {/* Filters */}
+          <div className="flex gap-2">
+            <Input placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)}
+              className="h-8 rounded-xl text-xs flex-1" />
+            <Button size="sm" className="h-8 rounded-xl bg-violet-600 hover:bg-violet-700 shrink-0 text-xs px-3"
+              onClick={() => setShowNew(true)}>
+              <Plus className="w-3.5 h-3.5 mr-1" />New
+            </Button>
+          </div>
+          <div className="flex gap-1.5">
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="h-7 rounded-xl text-xs flex-1">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All types</SelectItem>
+                {Object.entries(REQ_TYPE_CFG).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterClient} onValueChange={setFilterClient}>
+              <SelectTrigger className="h-7 rounded-xl text-xs flex-1">
+                <SelectValue placeholder="Client" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All clients</SelectItem>
+                {clients.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Request cards */}
+          <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+            {requests.length === 0 ? (
+              <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl">
+                <Inbox className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm font-semibold text-gray-500">No requests yet</p>
+                <p className="text-xs text-gray-400 mt-1">Create one to start collaborating</p>
+              </div>
+            ) : requests.map((req: any) => {
+              const sc = COLLAB_STATUS_CFG[req.status] ?? COLLAB_STATUS_CFG.pending;
+              const tc = REQ_TYPE_CFG[req.requestType] ?? REQ_TYPE_CFG.document;
+              const Icon = tc.icon;
+              const isSelected = req.id === selectedId;
+              return (
+                <div key={req.id} onClick={() => setSelectedId(req.id)}
+                  className={cn(
+                    "border rounded-xl px-3 py-2.5 cursor-pointer transition-all group",
+                    isSelected ? "border-violet-300 bg-violet-50 shadow-sm" : "border-gray-200 bg-white hover:border-violet-200"
+                  )}>
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                      style={{ background: `${tc.color}18` }}>
+                      <Icon className="w-3.5 h-3.5" style={{ color: tc.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-800 line-clamp-1">{req.title}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{req.clientName ?? `Client #${req.clientId}`}</p>
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); handleDelete(req.id); }}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 text-gray-300 hover:text-red-500 transition-opacity shrink-0">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                    <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5", sc.badge)}>
+                      <span className={cn("w-1 h-1 rounded-full", sc.dot)} />{sc.label}
+                    </span>
+                    {req.priority !== "medium" && (
+                      <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", PRIORITY_BADGE[req.priority] ?? PRIORITY_BADGE.medium)}>
+                        {req.priority}
+                      </span>
+                    )}
+                    {req.dueDate && (
+                      <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full",
+                        req.dueDate < today ? "bg-red-100 text-red-600 font-semibold" : "bg-gray-100 text-gray-500"
+                      )}>
+                        Due {req.dueDate}
+                      </span>
+                    )}
+                    {req.messageCount > 0 && (
+                      <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+                        <MessageSquare className="w-2.5 h-2.5" />{req.messageCount}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── RIGHT: Detail / timeline ── */}
+        <div className="flex-1 flex flex-col border border-gray-200 rounded-2xl overflow-hidden bg-white">
+          {!selectedId ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+              <MessageCircle className="w-12 h-12 text-gray-200 mb-3" />
+              <p className="text-sm font-semibold text-gray-500">Select a request</p>
+              <p className="text-xs text-gray-400 mt-1">Choose a request from the list or create a new one</p>
+            </div>
+          ) : !detail ? (
+            <div className="flex-1 flex items-center justify-center">
+              <RefreshCw className="w-6 h-6 text-gray-300 animate-spin" />
+            </div>
+          ) : (
+            <>
+              {/* Detail header */}
+              <div className="px-5 py-4 border-b border-gray-100 shrink-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      {(() => {
+                        const tc = REQ_TYPE_CFG[selectedReq?.requestType] ?? REQ_TYPE_CFG.document;
+                        const Icon = tc.icon;
+                        return (
+                          <div className="flex items-center gap-1.5">
+                            <Icon className="w-4 h-4" style={{ color: tc.color }} />
+                            <span className="text-[11px] font-semibold" style={{ color: tc.color }}>{tc.label}</span>
+                          </div>
+                        );
+                      })()}
+                      {(() => {
+                        const sc = COLLAB_STATUS_CFG[selectedReq?.status] ?? COLLAB_STATUS_CFG.pending;
+                        return (
+                          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1", sc.badge)}>
+                            <span className={cn("w-1.5 h-1.5 rounded-full", sc.dot)} />{sc.label}
+                          </span>
+                        );
+                      })()}
+                      {selectedReq?.priority !== "medium" && (
+                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", PRIORITY_BADGE[selectedReq?.priority] ?? "")}>
+                          {selectedReq?.priority}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-sm font-bold text-gray-800">{selectedReq?.title}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {selectedReq?.clientName} ·{" "}
+                      Created {selectedReq?.createdAt ? timeAgoCollab(selectedReq.createdAt) : "—"}
+                      {selectedReq?.dueDate && ` · Due ${selectedReq.dueDate}`}
+                    </p>
+                  </div>
+                  {/* Status action buttons */}
+                  <div className="flex gap-1.5 shrink-0 flex-wrap">
+                    {(STATUS_TRANSITIONS[selectedReq?.status ?? "pending"] ?? []).map((s: string) => (
+                      <button key={s} onClick={() => handleStatusChange(selectedReq.id, s, selectedReq)}
+                        className={cn(
+                          "text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-colors",
+                          s === "completed"  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" :
+                          s === "cancelled"  ? "bg-gray-100 text-gray-500 border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200" :
+                          "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100"
+                        )}>
+                        → {COLLAB_STATUS_CFG[s]?.label ?? s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {selectedReq?.description && (
+                  <p className="text-xs text-gray-500 mt-2 bg-gray-50 rounded-lg px-3 py-2">{selectedReq.description}</p>
+                )}
+              </div>
+
+              {/* Message timeline */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+                {messages.length === 0 && (
+                  <div className="text-center py-6 text-xs text-gray-400">No messages yet</div>
+                )}
+                {messages.map((msg: any) => {
+                  const isAuditor   = msg.senderRole === "auditor";
+                  const isSystem    = msg.messageType === "status_change" || msg.messageType === "system";
+                  const attachs: any[] = (() => { try { return JSON.parse(msg.attachments || "[]"); } catch { return []; } })();
+
+                  if (isSystem && msg.messageType === "status_change") {
+                    return (
+                      <div key={msg.id} className="flex items-center gap-2 py-1">
+                        <div className="flex-1 h-px bg-gray-100" />
+                        <div className="flex items-center gap-1.5 text-[10px] text-gray-400 px-2 py-1 bg-gray-50 rounded-full shrink-0">
+                          <CheckCheck className="w-3 h-3" />
+                          <span className="font-semibold">{msg.senderName ?? "Auditor"}</span>
+                          changed status:
+                          <span className={cn("px-1.5 rounded-full", COLLAB_STATUS_CFG[msg.fromStatus]?.badge)}>{COLLAB_STATUS_CFG[msg.fromStatus]?.label ?? msg.fromStatus}</span>
+                          →
+                          <span className={cn("px-1.5 rounded-full", COLLAB_STATUS_CFG[msg.toStatus]?.badge)}>{COLLAB_STATUS_CFG[msg.toStatus]?.label ?? msg.toStatus}</span>
+                          <span className="text-gray-300">· {timeAgoCollab(msg.createdAt)}</span>
+                        </div>
+                        <div className="flex-1 h-px bg-gray-100" />
+                      </div>
+                    );
+                  }
+
+                  if (isSystem) {
+                    return (
+                      <div key={msg.id} className="flex items-center gap-2 py-1">
+                        <div className="flex-1 h-px bg-gray-100" />
+                        <div className="text-[10px] text-gray-400 px-2 py-1 bg-violet-50 text-violet-500 rounded-full shrink-0 flex items-center gap-1">
+                          <FilePlus2 className="w-3 h-3" />Request opened · {timeAgoCollab(msg.createdAt)}
+                        </div>
+                        <div className="flex-1 h-px bg-gray-100" />
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={msg.id} className={cn("flex gap-2.5", isAuditor ? "flex-row-reverse" : "flex-row")}>
+                      <div className={cn(
+                        "w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 mt-0.5",
+                        isAuditor ? "bg-violet-500" : "bg-blue-500"
+                      )}>
+                        {isAuditor ? "A" : "C"}
+                      </div>
+                      <div className={cn("max-w-[70%] space-y-1", isAuditor ? "items-end" : "items-start")}>
+                        <div className={cn(
+                          "rounded-2xl px-4 py-2.5 text-sm",
+                          isAuditor
+                            ? "bg-violet-600 text-white rounded-tr-sm"
+                            : "bg-gray-100 text-gray-800 rounded-tl-sm"
+                        )}>
+                          {msg.message && <p className="leading-relaxed">{msg.message}</p>}
+                          {attachs.map((a: any, i: number) => (
+                            <a key={i} href={a.url} target="_blank" rel="noopener noreferrer"
+                              className={cn(
+                                "flex items-center gap-1.5 mt-1.5 text-xs underline rounded-lg px-2 py-1",
+                                isAuditor ? "bg-violet-500 text-violet-100" : "bg-white text-violet-600"
+                              )}>
+                              <Paperclip className="w-3 h-3 shrink-0" />
+                              <span className="truncate max-w-[200px]">{a.name || a.url}</span>
+                              <ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                            </a>
+                          ))}
+                        </div>
+                        <div className={cn("flex items-center gap-1 text-[10px] text-gray-400", isAuditor ? "flex-row-reverse" : "")}>
+                          <span className="font-medium">{msg.senderName ?? (isAuditor ? "Auditor" : "Client")}</span>
+                          <span>·</span>
+                          <span>{timeAgoCollab(msg.createdAt)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Message compose bar */}
+              <div className="px-4 py-3 border-t border-gray-100 bg-gray-50 shrink-0 space-y-2">
+                {/* Role toggle */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-gray-500 font-medium">Sending as:</span>
+                  <div className="flex gap-1">
+                    {(["auditor", "client"] as const).map(role => (
+                      <button key={role} onClick={() => setMsgRole(role)}
+                        className={cn(
+                          "text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-colors capitalize",
+                          msgRole === role
+                            ? role === "auditor" ? "bg-violet-600 text-white border-violet-600" : "bg-blue-500 text-white border-blue-500"
+                            : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                        )}>
+                        {role}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <textarea
+                  rows={2}
+                  value={newMsg}
+                  onChange={e => setNewMsg(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSendMessage(); }}
+                  placeholder="Type a message… (Ctrl+Enter to send)"
+                  className="w-full text-sm rounded-xl border border-gray-200 bg-white px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-violet-400"
+                />
+                <div className="flex items-center gap-2">
+                  <Input value={attachUrl} onChange={e => setAttachUrl(e.target.value)}
+                    placeholder="Attachment URL (Google Drive, SharePoint…)"
+                    className="h-7 text-xs rounded-xl flex-1" />
+                  {attachUrl && (
+                    <Input value={attachName} onChange={e => setAttachName(e.target.value)}
+                      placeholder="Display name" className="h-7 text-xs rounded-xl w-36" />
+                  )}
+                  <Button size="sm"
+                    onClick={handleSendMessage}
+                    disabled={createMsg.isPending || (!newMsg.trim() && !attachUrl.trim())}
+                    className="h-7 rounded-xl bg-violet-600 hover:bg-violet-700 text-xs px-3 shrink-0">
+                    <Send className="w-3.5 h-3.5 mr-1" />Send
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── New Request Modal ── */}
+      {showNew && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm" onClick={() => setShowNew(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                  <FilePlus2 className="w-5 h-5 text-violet-500" />New Collaboration Request
+                </h3>
+                <button onClick={() => setShowNew(false)} className="text-gray-400 hover:text-gray-600"><XCircle className="w-5 h-5" /></button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Client *</label>
+                  <Select value={nf.clientId} onValueChange={v => setNf(f => ({ ...f, clientId: v }))}>
+                    <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select client…" /></SelectTrigger>
+                    <SelectContent>
+                      {clients.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Title *</label>
+                  <Input value={nf.title} onChange={e => setNf(f => ({ ...f, title: e.target.value }))}
+                    placeholder="e.g. Bank statements for Q4 FY2025" className="rounded-xl" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 mb-1 block">Type</label>
+                    <Select value={nf.requestType} onValueChange={v => setNf(f => ({ ...f, requestType: v }))}>
+                      <SelectTrigger className="rounded-xl h-9 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(REQ_TYPE_CFG).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 mb-1 block">Priority</label>
+                    <Select value={nf.priority} onValueChange={v => setNf(f => ({ ...f, priority: v }))}>
+                      <SelectTrigger className="rounded-xl h-9 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {["critical", "high", "medium", "low"].map(p => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Due Date</label>
+                  <Input type="date" value={nf.dueDate} onChange={e => setNf(f => ({ ...f, dueDate: e.target.value }))}
+                    className="rounded-xl" />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 mb-1 block">Description / Instructions</label>
+                  <textarea rows={3} value={nf.description}
+                    onChange={e => setNf(f => ({ ...f, description: e.target.value }))}
+                    placeholder="What exactly do you need from the client?"
+                    className="w-full text-sm rounded-xl border border-gray-200 px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-violet-400" />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowNew(false)}>Cancel</Button>
+                <Button className="flex-1 rounded-xl bg-violet-600 hover:bg-violet-700"
+                  onClick={handleCreate} disabled={createReq.isPending}>
+                  {createReq.isPending ? "Creating…" : "Create Request"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -1471,6 +2021,9 @@ export default function AuditorWorkspace() {
           </div>
         );
       })()}
+
+      {/* ── COLLABORATION HUB TAB ── */}
+      {tab === "collaboration" && <CollaborationHub clients={clients as any[]} />}
 
       {/* ── AUTOMATION HUB TAB ── */}
       {tab === "automation" && <AutomationHub />}

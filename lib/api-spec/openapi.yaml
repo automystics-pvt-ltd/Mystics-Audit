@@ -2174,6 +2174,125 @@ paths:
                     additionalProperties: { type: integer }
                 required: [created, types]
 
+  /api/collaboration/requests:
+    get:
+      operationId: listCollaborationRequests
+      tags: [collaboration]
+      summary: List collaboration requests
+      parameters:
+        - { name: clientId,     in: query, schema: { type: integer } }
+        - { name: status,       in: query, schema: { type: string } }
+        - { name: requestType,  in: query, schema: { type: string } }
+        - { name: search,       in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CollaborationRequest" }
+    post:
+      operationId: createCollaborationRequest
+      tags: [collaboration]
+      summary: Create collaboration request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CollaborationRequestInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CollaborationRequest" }
+
+  /api/collaboration/requests/{id}:
+    get:
+      operationId: getCollaborationRequest
+      tags: [collaboration]
+      summary: Get collaboration request with messages
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CollaborationRequestDetail" }
+    put:
+      operationId: updateCollaborationRequest
+      tags: [collaboration]
+      summary: Update collaboration request
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CollaborationRequestInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CollaborationRequest" }
+    delete:
+      operationId: deleteCollaborationRequest
+      tags: [collaboration]
+      summary: Delete collaboration request
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204":
+          description: Deleted
+
+  /api/collaboration/requests/{id}/messages:
+    get:
+      operationId: listCollaborationMessages
+      tags: [collaboration]
+      summary: Get messages/timeline for a request
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CollaborationMessage" }
+    post:
+      operationId: createCollaborationMessage
+      tags: [collaboration]
+      summary: Add message to collaboration request
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CollaborationMessageInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CollaborationMessage" }
+
+  /api/collaboration/summary:
+    get:
+      operationId: getCollaborationSummary
+      tags: [collaboration]
+      summary: Get collaboration summary counts
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CollaborationSummary" }
+
 components:
   schemas:
     HealthStatus:
@@ -3843,3 +3962,89 @@ components:
         isActive:    { type: boolean }
         clientId:    { type: integer }
       required: [name]
+
+    CollaborationRequest:
+      type: object
+      properties:
+        id:          { type: integer }
+        clientId:    { type: integer }
+        title:       { type: string }
+        description: { type: ["string", "null"] }
+        requestType: { type: string }
+        priority:    { type: string }
+        dueDate:     { type: ["string", "null"] }
+        status:      { type: string }
+        assignedTo:  { type: ["string", "null"] }
+        createdBy:   { type: ["string", "null"] }
+        tags:        { type: ["string", "null"] }
+        orgId:       { type: integer }
+        createdAt:   { type: string }
+        updatedAt:   { type: string }
+        clientName:  { type: ["string", "null"] }
+        messageCount: { type: ["integer", "null"] }
+      required: [id, clientId, title, requestType, priority, status, orgId, createdAt, updatedAt]
+
+    CollaborationRequestInput:
+      type: object
+      properties:
+        clientId:    { type: integer }
+        title:       { type: string }
+        description: { type: string }
+        requestType: { type: string }
+        priority:    { type: string }
+        dueDate:     { type: string }
+        status:      { type: string }
+        assignedTo:  { type: string }
+        createdBy:   { type: string }
+        tags:        { type: string }
+      required: [clientId, title]
+
+    CollaborationMessage:
+      type: object
+      properties:
+        id:          { type: integer }
+        requestId:   { type: integer }
+        senderRole:  { type: string }
+        senderName:  { type: ["string", "null"] }
+        message:     { type: ["string", "null"] }
+        messageType: { type: string }
+        fromStatus:  { type: ["string", "null"] }
+        toStatus:    { type: ["string", "null"] }
+        attachments: { type: string }
+        orgId:       { type: integer }
+        createdAt:   { type: string }
+      required: [id, requestId, senderRole, messageType, attachments, orgId, createdAt]
+
+    CollaborationMessageInput:
+      type: object
+      properties:
+        senderRole:  { type: string }
+        senderName:  { type: string }
+        message:     { type: string }
+        messageType: { type: string }
+        fromStatus:  { type: string }
+        toStatus:    { type: string }
+        attachments: { type: string }
+      required: [senderRole]
+
+    CollaborationRequestDetail:
+      type: object
+      properties:
+        request:  { $ref: "#/components/schemas/CollaborationRequest" }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/CollaborationMessage" }
+      required: [request, messages]
+
+    CollaborationSummary:
+      type: object
+      properties:
+        total:        { type: integer }
+        pending:      { type: integer }
+        inProgress:   { type: integer }
+        submitted:    { type: integer }
+        underReview:  { type: integer }
+        completed:    { type: integer }
+        overdue:      { type: integer }
+        cancelled:    { type: integer }
+      required: [total, pending, inProgress, submitted, underReview, completed, overdue, cancelled]

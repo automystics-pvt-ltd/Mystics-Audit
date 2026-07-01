@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import {
-  CheckCircle, AlertTriangle, Clock, CreditCard, Smartphone,
-  Globe, Wallet, ChevronDown, ChevronUp, Shield, Zap, Users,
-  Package, FileText, ArrowUpRight, Loader2, X, RefreshCw,
+  CheckCircle, AlertTriangle, Clock,
+  ChevronDown, ChevronUp, Zap, Users,
+  Package, FileText, ArrowUpRight, Loader2, X, RefreshCw, ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+/* ── Razorpay helpers ─────────────────────────────────── */
+function loadRazorpayScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).Razorpay) { resolve(); return; }
+    const s = document.createElement("script");
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("Could not load Razorpay checkout"));
+    document.body.appendChild(s);
+  });
+}
 
 /* ── helpers ───────────────────────────────────────────── */
 const fmt = (n: number) => "₹" + Math.round(n).toLocaleString("en-IN");
@@ -46,157 +58,6 @@ const PLANS = [
   },
 ];
 
-const PAYMENT_METHODS = [
-  {
-    id: "upi",
-    label: "UPI",
-    icon: <Smartphone className="w-5 h-5" />,
-    options: ["PhonePe", "Google Pay", "Paytm", "BHIM", "Amazon Pay"],
-  },
-  {
-    id: "card",
-    label: "Credit / Debit Card",
-    icon: <CreditCard className="w-5 h-5" />,
-    options: [],
-  },
-  {
-    id: "netbanking",
-    label: "Net Banking",
-    icon: <Globe className="w-5 h-5" />,
-    options: ["SBI", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak Bank", "Yes Bank", "Punjab National Bank"],
-  },
-  {
-    id: "wallet",
-    label: "Wallet",
-    icon: <Wallet className="w-5 h-5" />,
-    options: ["PhonePe Wallet", "Paytm Wallet", "Amazon Pay", "Mobikwik"],
-  },
-];
-
-/* ── UPI form ──────────────────────────────────────────── */
-function UpiForm({ onPay, paying }: { onPay: (detail: string) => void; paying: boolean }) {
-  const [app, setApp] = useState("PhonePe");
-  const [upiId, setUpiId] = useState("");
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="text-xs font-medium text-gray-600 block mb-2">Select UPI App</label>
-        <div className="flex flex-wrap gap-2">
-          {["PhonePe","Google Pay","Paytm","BHIM","Amazon Pay"].map(a => (
-            <button key={a} onClick={() => setApp(a)}
-              className={cn("px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", app === a ? "bg-violet-600 border-violet-600 text-white" : "border-gray-200 text-gray-600 hover:border-violet-300")}>
-              {a}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <label className="text-xs font-medium text-gray-600 block mb-1.5">UPI ID</label>
-        <input value={upiId} onChange={e => setUpiId(e.target.value)}
-          placeholder="yourname@okicici"
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100" />
-        <p className="text-xs text-gray-400 mt-1">You'll receive a payment request on your {app} app</p>
-      </div>
-      <button onClick={() => onPay(`${app} UPI`)} disabled={!upiId || paying}
-        className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-violet-200">
-        {paying ? <span className="flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Processing…</span> : "Pay via UPI"}
-      </button>
-    </div>
-  );
-}
-
-/* ── Card form ─────────────────────────────────────────── */
-function CardForm({ onPay, paying }: { onPay: (detail: string) => void; paying: boolean }) {
-  const [num, setNum] = useState(""); const [exp, setExp] = useState(""); const [cvv, setCvv] = useState(""); const [name, setName] = useState("");
-  const fmtCard = (v: string) => v.replace(/\D/g,"").slice(0,16).replace(/(.{4})/g,"$1 ").trim();
-  const fmtExp  = (v: string) => { const d = v.replace(/\D/g,"").slice(0,4); return d.length > 2 ? d.slice(0,2)+"/"+d.slice(2) : d; };
-  const brand = num.startsWith("4") ? "Visa" : num.startsWith("5") ? "Mastercard" : num.startsWith("6") ? "RuPay" : "Card";
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="text-xs font-medium text-gray-600 block mb-1.5">Card Number</label>
-        <div className="relative">
-          <input value={fmtCard(num)} onChange={e => setNum(e.target.value.replace(/\s/g,""))}
-            placeholder="1234 5678 9012 3456" maxLength={19}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100" />
-          {brand !== "Card" && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-violet-600">{brand}</span>}
-        </div>
-      </div>
-      <div>
-        <label className="text-xs font-medium text-gray-600 block mb-1.5">Name on Card</label>
-        <input value={name} onChange={e => setName(e.target.value)} placeholder="JOHN DOE"
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100" />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs font-medium text-gray-600 block mb-1.5">Expiry</label>
-          <input value={fmtExp(exp)} onChange={e => setExp(e.target.value)} placeholder="MM/YY" maxLength={5}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100" />
-        </div>
-        <div>
-          <label className="text-xs font-medium text-gray-600 block mb-1.5">CVV</label>
-          <input value={cvv} onChange={e => setCvv(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="•••" maxLength={4} type="password"
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100" />
-        </div>
-      </div>
-      <button onClick={() => onPay(`${brand} Card ending ${num.slice(-4)}`)} disabled={num.length < 16 || !exp || !cvv || !name || paying}
-        className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-violet-200">
-        {paying ? <span className="flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Processing…</span> : "Pay Securely"}
-      </button>
-      <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1.5">
-        <Shield className="w-3 h-3" /> 256-bit SSL secured · PCI DSS compliant
-      </p>
-    </div>
-  );
-}
-
-/* ── Net Banking form ──────────────────────────────────── */
-function NetBankingForm({ onPay, paying }: { onPay: (detail: string) => void; paying: boolean }) {
-  const [bank, setBank] = useState("");
-  const BANKS = ["SBI","HDFC Bank","ICICI Bank","Axis Bank","Kotak Bank","Yes Bank","Punjab National Bank","Bank of Baroda","Canara Bank","Union Bank"];
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="text-xs font-medium text-gray-600 block mb-2">Select Bank</label>
-        <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
-          {BANKS.map(b => (
-            <button key={b} onClick={() => setBank(b)}
-              className={cn("px-3 py-2.5 rounded-xl border text-sm font-medium transition-all text-left", bank === b ? "bg-violet-50 border-violet-400 text-violet-700" : "border-gray-200 text-gray-600 hover:border-violet-200 hover:bg-violet-50/50")}>
-              {b}
-            </button>
-          ))}
-        </div>
-      </div>
-      <button onClick={() => onPay(`${bank} Net Banking`)} disabled={!bank || paying}
-        className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3 rounded-xl font-semibold text-sm disabled:opacity-50">
-        {paying ? <span className="flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Processing…</span> : "Continue to Bank"}
-      </button>
-    </div>
-  );
-}
-
-/* ── Wallet form ───────────────────────────────────────── */
-function WalletForm({ onPay, paying }: { onPay: (detail: string) => void; paying: boolean }) {
-  const [wallet, setWallet] = useState("");
-  const WALLETS = ["PhonePe Wallet","Paytm Wallet","Amazon Pay","Mobikwik","Ola Money","JioMoney"];
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2">
-        {WALLETS.map(w => (
-          <button key={w} onClick={() => setWallet(w)}
-            className={cn("px-3 py-3 rounded-xl border text-sm font-medium transition-all text-left", wallet === w ? "bg-violet-50 border-violet-400 text-violet-700" : "border-gray-200 text-gray-600 hover:border-violet-200")}>
-            {w}
-          </button>
-        ))}
-      </div>
-      <button onClick={() => onPay(wallet)} disabled={!wallet || paying}
-        className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3 rounded-xl font-semibold text-sm disabled:opacity-50">
-        {paying ? <span className="flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Processing…</span> : "Pay via Wallet"}
-      </button>
-    </div>
-  );
-}
-
 /* ── Main Billing Page ─────────────────────────────────── */
 export default function BillingPage() {
   const { user } = useAuth();
@@ -205,10 +66,9 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
-  const [payMethod, setPayMethod] = useState("upi");
   const [paying, setPaying] = useState(false);
-  const [showPayModal, setShowPayModal] = useState(false);
   const [paySuccess, setPaySuccess] = useState<any | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
 
   const load = () => {
@@ -232,22 +92,64 @@ export default function BillingPage() {
   const chosenTax   = Math.round(chosenPrice * 0.18);
   const chosenTotal = chosenPrice + chosenTax;
 
-  const handlePay = async (methodDetail: string) => {
+  const handleRazorpayCheckout = async () => {
     setPaying(true);
+    setPayError(null);
     try {
-      const r = await fetch("/api/billing/pay", {
+      const planSlug = selectedPlan ?? sub?.planSlug ?? "starter";
+      const plan = PLANS.find(p => p.slug === planSlug) ?? PLANS[0];
+      const amount = billingCycle === "annual" ? plan.annualPrice : plan.monthlyPrice;
+
+      // 1. Create order on server
+      const orderRes = await fetch("/api/billing/razorpay/create-order", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orgId, method: payMethod, methodDetail,
-          planSlug: selectedPlan ?? sub?.planSlug ?? "starter",
-          billingCycle,
-        }),
+        body: JSON.stringify({ amount, currency: "INR", planSlug, billingCycle, orgId }),
+      }).then(r => r.json());
+
+      if (orderRes.error) { setPayError(orderRes.error); setPaying(false); return; }
+
+      // 2. Load checkout script
+      await loadRazorpayScript();
+
+      // 3. Open Razorpay modal
+      const options = {
+        key: orderRes.keyId,
+        amount: orderRes.amount,
+        currency: orderRes.currency,
+        name: "Mystics Audit",
+        description: `${plan.label} — ${billingCycle}`,
+        order_id: orderRes.orderId,
+        handler: async (response: any) => {
+          // 4. Verify on server
+          const verify = await fetch("/api/billing/razorpay/verify", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_order_id:    response.razorpay_order_id,
+              razorpay_payment_id:  response.razorpay_payment_id,
+              razorpay_signature:   response.razorpay_signature,
+              orgId, planSlug, billingCycle, amount,
+            }),
+          }).then(r => r.json());
+          if (verify.ok) { setPaySuccess(verify); load(); }
+          else { setPayError(verify.error ?? "Payment verification failed"); }
+          setPaying(false);
+        },
+        prefill: { name: org?.contactName ?? "", email: org?.contactEmail ?? "" },
+        notes: { orgId: String(orgId), planSlug, billingCycle },
+        theme: { color: "#7c3aed" },
+        modal: { ondismiss: () => setPaying(false) },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on("payment.failed", (resp: any) => {
+        setPayError(resp.error?.description ?? "Payment failed");
+        setPaying(false);
       });
-      const result = await r.json();
-      setPaySuccess(result);
-      setShowPayModal(false);
-      load();
-    } catch { } finally { setPaying(false); }
+      rzp.open();
+    } catch (e: any) {
+      setPayError(e.message ?? "Something went wrong");
+      setPaying(false);
+    }
   };
 
   if (loading) {
@@ -377,17 +279,27 @@ export default function BillingPage() {
 
           {/* CTA to pay */}
           {selectedPlan && selectedPlan !== sub?.planSlug && (
-            <div className="bg-violet-50 border border-violet-200 rounded-2xl p-5 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-violet-800">Upgrade to {chosenPlan.label}</p>
-                <p className="text-sm text-violet-600 mt-0.5">
-                  {fmt(chosenPrice)} + {fmt(chosenTax)} GST = <strong>{fmt(chosenTotal)}</strong> / {billingCycle === "annual" ? "year" : "month"}
-                </p>
+            <div className="bg-violet-50 border border-violet-200 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="font-semibold text-violet-800">Upgrade to {chosenPlan.label}</p>
+                  <p className="text-sm text-violet-600 mt-0.5">
+                    {fmt(chosenPrice)} + {fmt(chosenTax)} GST = <strong>{fmt(chosenTotal)}</strong> / {billingCycle === "annual" ? "year" : "month"}
+                  </p>
+                </div>
+                <button onClick={handleRazorpayCheckout} disabled={paying}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-60 text-white font-semibold rounded-xl text-sm transition-colors">
+                  {paying ? <><Loader2 className="w-4 h-4 animate-spin" />Processing…</> : <>Pay via Razorpay <ArrowUpRight className="w-4 h-4" /></>}
+                </button>
               </div>
-              <button onClick={() => setShowPayModal(true)}
-                className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl text-sm transition-colors">
-                Pay Now <ArrowUpRight className="w-4 h-4" />
-              </button>
+              <p className="text-xs text-violet-500 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" /> Secured by Razorpay · UPI, Cards, Netbanking & Wallets accepted
+              </p>
+              {payError && (
+                <div className="mt-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />{payError}
+                </div>
+              )}
             </div>
           )}
 
@@ -489,54 +401,16 @@ export default function BillingPage() {
                   ? "Upgrade to a paid plan to keep your data and continue uninterrupted."
                   : "Your payment failed. Please update your payment method to restore access."}
               </p>
-              <button onClick={() => { setSelectedPlan("starter"); setShowPayModal(true); }}
-                className="w-full bg-white text-violet-700 font-semibold py-2.5 rounded-xl text-sm hover:bg-violet-50 transition-colors">
-                Upgrade Now
+              <button onClick={() => { setSelectedPlan("starter"); handleRazorpayCheckout(); }}
+                disabled={paying}
+                className="w-full bg-white text-violet-700 font-semibold py-2.5 rounded-xl text-sm hover:bg-violet-50 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+                {paying ? <><Loader2 className="w-4 h-4 animate-spin" />Processing…</> : "Upgrade Now via Razorpay"}
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Payment modal */}
-      {showPayModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowPayModal(false)} />
-          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
-            {/* Modal header */}
-            <div className="bg-gradient-to-br from-violet-600 to-purple-700 px-6 py-5 text-white">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-bold text-lg">Complete Payment</h2>
-                <button onClick={() => setShowPayModal(false)}><X className="w-5 h-5 text-white/70 hover:text-white" /></button>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold">{fmt(chosenTotal)}</span>
-                <span className="text-white/70 text-sm">incl. 18% GST</span>
-              </div>
-              <p className="text-white/70 text-sm mt-1">{chosenPlan.label} plan · {billingCycle}</p>
-            </div>
-
-            <div className="p-6">
-              {/* Payment method tabs */}
-              <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-6">
-                {PAYMENT_METHODS.map(m => (
-                  <button key={m.id} onClick={() => setPayMethod(m.id)}
-                    className={cn("flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all", payMethod === m.id ? "bg-white shadow text-violet-700" : "text-gray-500 hover:text-gray-700")}>
-                    {m.icon}
-                    <span className="hidden sm:inline">{m.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Method-specific form */}
-              {payMethod === "upi"        && <UpiForm onPay={d => handlePay(d)} paying={paying} />}
-              {payMethod === "card"       && <CardForm onPay={d => handlePay(d)} paying={paying} />}
-              {payMethod === "netbanking" && <NetBankingForm onPay={d => handlePay(d)} paying={paying} />}
-              {payMethod === "wallet"     && <WalletForm onPay={d => handlePay(d)} paying={paying} />}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

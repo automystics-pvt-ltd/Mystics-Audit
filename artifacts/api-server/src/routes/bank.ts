@@ -65,15 +65,21 @@ router.get("/bank/accounts", async (req, res) => {
 /* ── POST /bank/accounts ── auto-creates a linked GL account ── */
 router.post("/bank/accounts", async (req, res) => {
   try {
-    const { openingBalance, accountId: providedAccountId, ...rest } = req.body;
+    const {
+      openingBalance, accountId: providedAccountId,
+      accountName, bankName, accountNumber, accountNo,
+      ifscCode, ifsc, accountType, branch, ...rest
+    } = req.body;
     let linkedAccountId: number | null = providedAccountId ?? null;
+    const resolvedAccountNo = accountNo || accountNumber;
+    const resolvedIfsc     = ifsc || ifscCode;
 
     if (!linkedAccountId) {
       const existingAccounts = await db.select({ code: accountsTable.code }).from(accountsTable);
       const code = nextAccountCode("10", existingAccounts.map(a => a.code));
       const [glAccount] = await db.insert(accountsTable).values({
         code,
-        name: rest.accountName,
+        name: accountName,
         type: "Asset",
         group: "Current Assets",
         normalBalance: "debit",
@@ -81,13 +87,18 @@ router.post("/bank/accounts", async (req, res) => {
         isCash: false,
         isParty: false,
         openingBalance: String(openingBalance || 0),
-        description: `Bank GL account — ${rest.bankName}`,
+        description: `Bank GL account — ${bankName}`,
       }).returning();
       linkedAccountId = glAccount.id;
     }
 
     const [row] = await db.insert(bankAccountsTable).values({
-      ...rest,
+      accountName,
+      bankName,
+      accountNo: resolvedAccountNo,
+      ifsc: resolvedIfsc,
+      accountType: accountType || "Current",
+      branch: branch || null,
       accountId: linkedAccountId,
       balance: String(openingBalance || 0),
     }).returning();

@@ -324,7 +324,11 @@ router.get("/reports/customer-collections", async (req, res) => {
 /* ─── GET /reports/budget-variance ─── */
 router.get("/reports/budget-variance", async (req, res) => {
   try {
-    const fiscalYear = (req.query.fy as string) || "2025-26";
+    const now = new Date();
+    const currentFY = now.getMonth() >= 3
+      ? `${now.getFullYear()}-${String(now.getFullYear() + 1).slice(2)}`
+      : `${now.getFullYear() - 1}-${String(now.getFullYear()).slice(2)}`;
+    const fiscalYear = (req.query.fy as string) || currentFY;
 
     const budgets = await db
       .select()

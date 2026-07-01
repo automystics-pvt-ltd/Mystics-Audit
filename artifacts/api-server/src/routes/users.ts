@@ -53,8 +53,11 @@ router.patch("/users/:id", async (req, res) => {
     const roleLevel: Record<string, number> = {
       "Super Admin": 1, "Admin": 2, "Manager": 3, "Accountant": 4, "Staff": 5, "Viewer": 6,
     };
-    const update: any = { ...req.body, updatedAt: new Date() };
+    const { status, ...bodyRest } = req.body;
+    const update: any = { ...bodyRest, updatedAt: new Date() };
     if (req.body.role) update.roleLevel = roleLevel[req.body.role] || 5;
+    if (status === "active")    update.isActive = true;
+    if (status === "suspended" || status === "inactive") update.isActive = false;
     const [row] = await db
       .update(usersTable)
       .set(update)

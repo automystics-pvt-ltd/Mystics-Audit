@@ -176,7 +176,7 @@ router.post("/purchases/grn", async (req, res) => {
             poLineId: l.poLineId,
             description: poLine?.description || "Item",
             quantityOrdered: String(poLine?.quantity || 0),
-            quantityReceived: String(l.quantityReceived),
+            quantityReceived: String(l.quantityReceived ?? l.receivedQty ?? 0),
             unit: poLine?.unit || "Nos",
             rate: String(poLine?.rate || 0),
           };

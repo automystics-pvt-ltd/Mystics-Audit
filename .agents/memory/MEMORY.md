@@ -1,3 +1,5 @@
 - [Mystics Audit orval hooks](mystics-audit-hooks.md) — hook naming, param types, and TS pitfalls with Orval + TQ v5 in this project
 - [Mystics Audit API field mismatches](mystics-audit-api-fields.md) — frontend ↔ API field name differences that caused display bugs across multiple modules
 - [Mystics Audit accounting engine](mystics-audit-accounting.md) — double-entry journal wiring, GL account codes, and normalBalance case fix
+- [Mystics Audit schema NOT NULL pitfalls](mystics-audit-schema-notnull.md) — hsnSac and originalName NOT NULL in DB; routes must default them or callers crash with 500
+- [Mystics Audit trial balance note](mystics-audit-trial-balance.md) — trial balance imbalance is expected: seed opening balances on accountsTable not entered as double-entry journals; transaction journals all balanced (0 unbalanced)

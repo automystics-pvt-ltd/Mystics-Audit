@@ -102,6 +102,9 @@ router.post("/invoices", async (req, res) => {
   try {
     const { type, date, dueDate, customerId, placeOfSupply, poReference, notes, lines } = req.body;
 
+    if (!customerId) { res.status(400).json({ error: "customerId is required" }); return; }
+    if (!lines || lines.length === 0) { res.status(400).json({ error: "Invoice must have at least one line item" }); return; }
+
     const companyState = await getCompanyState();
     const isInterState = !!placeOfSupply && placeOfSupply.toLowerCase() !== companyState.toLowerCase();
 
@@ -122,7 +125,7 @@ router.post("/invoices", async (req, res) => {
       igst  += igstAmt;
       totalAmount += lineTotal;
       return {
-        description: l.description, hsnSac: l.hsnSac,
+        description: l.description, hsnSac: l.hsnSac || "",
         quantity: String(qty), unit: l.unit || "Nos",
         rate: String(rate), discountPct: String(discPct), gstRate: String(gstRate),
         taxableValue: String(round2(taxableValue)),

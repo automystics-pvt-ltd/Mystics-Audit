@@ -85,9 +85,15 @@ router.get("/journals", async (req, res) => {
 router.post("/journals", async (req, res) => {
   try {
     const { voucherType, date, narration, lines } = req.body;
+    if (!lines || lines.length < 2) {
+      res.status(400).json({ error: "Journal must have at least two lines" }); return;
+    }
     const totalDebit = lines.reduce((s: number, l: any) => s + Number(l.debit || 0), 0);
     const totalCredit = lines.reduce((s: number, l: any) => s + Number(l.credit || 0), 0);
     const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
+    if (!isBalanced) {
+      res.status(400).json({ error: `Journal is not balanced: debit ${totalDebit.toFixed(2)} ≠ credit ${totalCredit.toFixed(2)}` }); return;
+    }
 
     const [entry] = await db.insert(journalEntriesTable).values({
       voucherNo: await nextVoucherNo(voucherType),

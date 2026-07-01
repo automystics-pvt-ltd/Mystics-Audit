@@ -117,7 +117,7 @@ router.post("/bills", async (req, res) => {
       igst  += igstAmt;
       totalAmount += lineTotal;
       return {
-        description: l.description, hsnSac: l.hsnSac,
+        description: l.description, hsnSac: l.hsnSac || "",
         quantity: String(qty), unit: l.unit || "Nos",
         rate: String(rate), gstRate: String(gstRate),
         taxableValue: String(round2(taxableValue)),

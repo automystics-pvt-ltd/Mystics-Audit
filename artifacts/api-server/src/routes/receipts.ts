@@ -160,6 +160,10 @@ router.post("/receipts", async (req, res) => {
         const [inv] = await db.select().from(invoicesTable)
           .where(eq(invoicesTable.id, alloc.invoiceId));
         if (!inv) continue;
+        const outstanding = round2(Number(inv.totalAmount) - Number(inv.paidAmount));
+        if (allocated > outstanding + 0.01) {
+          res.status(400).json({ error: `Allocated amount ${allocated} exceeds outstanding balance ${outstanding} for invoice ${alloc.invoiceId}` }); return;
+        }
         const newPaid = round2(Number(inv.paidAmount) + allocated);
         const newStatus = newPaid >= round2(Number(inv.totalAmount)) ? "paid" : "partial";
         await db.update(invoicesTable)

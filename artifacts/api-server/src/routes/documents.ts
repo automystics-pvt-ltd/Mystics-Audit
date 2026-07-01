@@ -171,8 +171,8 @@ router.post("/documents", async (req, res) => {
   try {
     const b = req.body;
     const [doc] = await db.insert(documentsTable).values({
-      name:             b.name || b.originalName,
-      originalName:     b.originalName,
+      name:             b.name || b.originalName || "Untitled",
+      originalName:     b.originalName || b.name || "Untitled",
       fileType:         b.fileType || "pdf",
       mimeType:         b.mimeType || "application/pdf",
       sizeBytes:        b.sizeBytes || 0,

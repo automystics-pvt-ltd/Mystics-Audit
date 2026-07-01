@@ -1,8 +1,10 @@
 import { useState, useCallback } from "react";
 import { useLocation, Link } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useCreateInvoice, useListCustomers, useListItems,
 } from "@workspace/api-client-react";
+import { QuickAddItemDialog } from "@/components/QuickAddItemDialog";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
@@ -95,7 +97,9 @@ export default function NewInvoice() {
   const [lines, setLines]                 = useState<LineItem[]>([emptyLine()]);
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [errors, setErrors]               = useState<Record<string, string>>({});
+  const [quickAdd, setQuickAdd]           = useState<{ lineIdx: number; name: string } | null>(null);
 
+  const qc = useQueryClient();
   const createMutation = useCreateInvoice();
 
   const selectedCustomer = customers?.find((c: any) => String(c.id) === customerId);
@@ -298,80 +302,85 @@ export default function NewInvoice() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b border-gray-100">
                     <tr>
-                      <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 w-32">Item</th>
-                      <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500">Description</th>
-                      {settings.showHsn && <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-24">HSN/SAC</th>}
-                      <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-16 text-right">Qty</th>
-                      <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-20">Unit</th>
-                      <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-28 text-right">Rate (₹)</th>
-                      {settings.showDiscount && <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-16 text-right">Disc%</th>}
-                      <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-20 text-right">GST%</th>
-                      <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-28 text-right">Total</th>
-                      <th className="px-3 py-2.5 w-12"></th>
+                      <th className="px-3 py-3 text-center text-xs font-bold text-gray-400 w-8">#</th>
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 w-40">Item</th>
+                      <th className="px-3 py-3 text-left text-xs font-bold text-gray-500">Description</th>
+                      {settings.showHsn && <th className="px-3 py-3 text-xs font-bold text-gray-500 w-24">HSN/SAC</th>}
+                      <th className="px-3 py-3 text-xs font-bold text-gray-500 w-16 text-right">Qty</th>
+                      <th className="px-3 py-3 text-xs font-bold text-gray-500 w-20">Unit</th>
+                      <th className="px-3 py-3 text-xs font-bold text-gray-500 w-28 text-right">Rate (₹)</th>
+                      {settings.showDiscount && <th className="px-3 py-3 text-xs font-bold text-gray-500 w-16 text-right">Disc%</th>}
+                      <th className="px-3 py-3 text-xs font-bold text-gray-500 w-20 text-right">GST%</th>
+                      <th className="px-3 py-3 text-xs font-bold text-gray-500 w-28 text-right">Total</th>
+                      <th className="px-3 py-3 w-16"></th>
                     </tr>
                   </thead>
                   <tbody>
                     {lines.map((line, i) => {
                       const c = calcLine(line);
                       return (
-                        <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/60 group">
-                          <td className="px-2 py-1.5">
+                        <tr key={i} className={cn("border-b border-gray-100 hover:bg-blue-50/20 group", i % 2 === 1 && "bg-gray-50/40")}>
+                          <td className="px-2 py-2.5 text-center text-xs text-gray-400 font-medium select-none">{i + 1}</td>
+                          <td className="px-2 py-2.5">
                             <ItemCombobox
                               items={items}
                               selectedId={line.itemId}
                               onSelect={item => fillFromItem(i, item)}
                               onClear={() => clearItem(i)}
                               rateMode="selling"
+                              onCreateNew={name => setQuickAdd({ lineIdx: i, name })}
                             />
                           </td>
-                          <td className="px-2 py-1.5">
-                            <Input className="h-8 text-sm rounded-lg" value={line.description}
+                          <td className="px-2 py-2.5">
+                            <Input className="h-9 text-sm rounded-lg" value={line.description}
                               onChange={e => updateLine(i, "description", e.target.value)} placeholder="Description…" />
                           </td>
                           {settings.showHsn && (
-                            <td className="px-2 py-1.5">
-                              <Input className="h-8 text-xs rounded-lg font-mono" value={line.hsnSac}
+                            <td className="px-2 py-2.5">
+                              <Input className="h-9 text-xs rounded-lg font-mono" value={line.hsnSac}
                                 onChange={e => updateLine(i, "hsnSac", e.target.value)} placeholder="998313" />
                             </td>
                           )}
-                          <td className="px-2 py-1.5">
-                            <Input className="h-8 text-sm rounded-lg text-right" type="number" min={0}
+                          <td className="px-2 py-2.5">
+                            <Input className="h-9 text-sm rounded-lg text-right" type="number" min={0}
                               value={line.quantity} onChange={e => updateLine(i, "quantity", Number(e.target.value))} />
                           </td>
-                          <td className="px-2 py-1.5">
+                          <td className="px-2 py-2.5">
                             <Select value={line.unit} onValueChange={v => updateLine(i, "unit", v)}>
-                              <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                              <SelectTrigger className="h-9 text-xs rounded-lg"><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </td>
-                          <td className="px-2 py-1.5">
-                            <Input className="h-8 text-sm rounded-lg text-right" type="number" min={0} step="0.01"
+                          <td className="px-2 py-2.5">
+                            <Input className="h-9 text-sm rounded-lg text-right" type="number" min={0} step="0.01"
                               value={line.rate} onChange={e => updateLine(i, "rate", Number(e.target.value))} />
                           </td>
                           {settings.showDiscount && (
-                            <td className="px-2 py-1.5">
-                              <Input className="h-8 text-sm rounded-lg text-right" type="number" min={0} max={100}
+                            <td className="px-2 py-2.5">
+                              <Input className="h-9 text-sm rounded-lg text-right" type="number" min={0} max={100}
                                 value={line.discountPct} onChange={e => updateLine(i, "discountPct", Number(e.target.value))} />
                             </td>
                           )}
-                          <td className="px-2 py-1.5">
+                          <td className="px-2 py-2.5">
                             <Select value={String(line.gstRate)} onValueChange={v => updateLine(i, "gstRate", Number(v))}>
-                              <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                              <SelectTrigger className="h-9 text-xs rounded-lg"><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 {GST_RATES.map(r => <SelectItem key={r} value={String(r)}>{r}%</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </td>
-                          <td className="px-3 py-1.5 text-right font-semibold text-gray-800 text-sm">{formatCurrency(c.total)}</td>
-                          <td className="px-2 py-1.5">
-                            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => duplicateLine(i)} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600" title="Duplicate">
-                                <Copy className="w-3 h-3" />
+                          <td className="px-3 py-2.5 text-right font-semibold text-gray-800 text-sm whitespace-nowrap">{formatCurrency(c.total)}</td>
+                          <td className="px-2 py-2.5">
+                            <div className="flex items-center gap-0.5">
+                              <button onClick={() => duplicateLine(i)} title="Duplicate line"
+                                className="p-1.5 rounded hover:bg-gray-100 text-transparent group-hover:text-gray-400 hover:!text-gray-600 transition-colors">
+                                <Copy className="w-3.5 h-3.5" />
                               </button>
-                              <button onClick={() => removeLine(i)} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500" title="Remove">
-                                <Trash2 className="w-3 h-3" />
+                              <button onClick={() => removeLine(i)} title="Remove line"
+                                className="p-1.5 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors">
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </td>
@@ -526,6 +535,16 @@ export default function NewInvoice() {
           onClose={() => setShowCustomizer(false)}
         />
       )}
+
+      <QuickAddItemDialog
+        open={quickAdd !== null}
+        initialName={quickAdd?.name ?? ""}
+        onClose={() => setQuickAdd(null)}
+        onCreated={item => {
+          if (quickAdd !== null) fillFromItem(quickAdd.lineIdx, item);
+          setQuickAdd(null);
+        }}
+      />
     </>
   );
 }

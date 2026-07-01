@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown, Search, X, Package, AlertTriangle } from "lucide-react";
+import { Check, ChevronsUpDown, Search, X, Package, AlertTriangle, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
@@ -27,6 +27,7 @@ interface Props {
   selectedId?: number | null;
   onSelect: (item: ItemOption) => void;
   onClear?: () => void;
+  onCreateNew?: (name: string) => void;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -38,6 +39,7 @@ export function ItemCombobox({
   selectedId,
   onSelect,
   onClear,
+  onCreateNew,
   placeholder = "Search item…",
   className,
   disabled,
@@ -58,6 +60,12 @@ export function ItemCombobox({
     );
   });
 
+  function handleCreateNew() {
+    onCreateNew?.(search.trim());
+    setOpen(false);
+    setSearch("");
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -67,7 +75,7 @@ export function ItemCombobox({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "h-8 w-full justify-between text-xs rounded-lg font-normal border-gray-200",
+            "h-9 w-full justify-between text-xs rounded-lg font-normal border-gray-200",
             !selected && "text-muted-foreground",
             className,
           )}
@@ -103,9 +111,20 @@ export function ItemCombobox({
             />
           </div>
           <CommandList className="max-h-64 overflow-y-auto">
-            <CommandEmpty className="py-6 text-center text-xs text-muted-foreground">
+            <CommandEmpty className="py-5 text-center">
               <Package className="w-6 h-6 mx-auto mb-2 text-gray-300" />
-              No items found
+              <p className="text-xs text-muted-foreground mb-3">
+                {search.trim() ? `No items match "${search}"` : "No items in catalog"}
+              </p>
+              {onCreateNew && (
+                <button
+                  onClick={handleCreateNew}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700 bg-violet-50 hover:bg-violet-100 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  {search.trim() ? `Add "${search}" to catalog` : "Add new item to catalog"}
+                </button>
+              )}
             </CommandEmpty>
             <CommandGroup>
               {filtered.map(item => {
@@ -155,6 +174,19 @@ export function ItemCombobox({
                 );
               })}
             </CommandGroup>
+
+            {/* Create new option at bottom when search has text and items found */}
+            {onCreateNew && search.trim() && filtered.length > 0 && (
+              <div className="border-t border-gray-100 p-2">
+                <button
+                  onClick={handleCreateNew}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-violet-600 hover:text-violet-700 hover:bg-violet-50 rounded-lg transition-colors font-semibold"
+                >
+                  <PlusCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  Add "{search}" as a new item
+                </button>
+              </div>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

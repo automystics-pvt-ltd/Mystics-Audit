@@ -28,6 +28,9 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
   filed:       { color: "bg-green-100 text-green-700 border-green-200",       label: "Filed",       icon: CheckCircle2 },
   unfiled:     { color: "bg-gray-100 text-gray-500 border-gray-200",          label: "Unfiled" },
   received:    { color: "bg-green-100 text-green-700 border-green-200",       label: "Received",    icon: CheckCircle2 },
+  closed:      { color: "bg-slate-100 text-slate-600 border-slate-200",        label: "Closed" },
+  partial_paid:{ color: "bg-violet-100 text-violet-700 border-violet-200",    label: "Partial Paid", icon: Receipt },
+  locked:      { color: "bg-red-100 text-red-700 border-red-200",             label: "Locked",      icon: AlertCircle },
 };
 
 interface StatusBadgeProps {

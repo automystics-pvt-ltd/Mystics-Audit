@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { GSTIN_REGEX, PAN_REGEX, PHONE_REGEX } from "@/lib/india-data";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ function FieldError({ msg }: { msg?: string }) {
 export default function NewCustomer() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
+  const { toast } = useToast();
   const mutation = useCreateCustomer();
   const {
     register, handleSubmit, setValue, watch,
@@ -41,6 +43,7 @@ export default function NewCustomer() {
   const onSubmit = (data: FormData) => {
     mutation.mutate({ data: { ...data, creditLimit: data.creditLimit, openingBalance: "0" } } as any, {
       onSuccess: () => { qc.invalidateQueries({ queryKey: getListCustomersQueryKey() }); navigate("/customers"); },
+      onError: () => toast({ title: "Failed to create customer", variant: "destructive" }),
     });
   };
 

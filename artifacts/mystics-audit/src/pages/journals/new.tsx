@@ -1,6 +1,7 @@
 import { useCreateJournal, useListAccounts, getListJournalsQueryKey } from "@workspace/api-client-react";
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ const VOUCHER_TYPES = [
 export default function NewJournal() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
+  const { toast } = useToast();
   const { data: accountsData } = useListAccounts({});
   const accounts: any[] = accountsData ?? [];
   const mutation = useCreateJournal();
@@ -79,6 +81,7 @@ export default function NewJournal() {
           qc.invalidateQueries({ queryKey: getListJournalsQueryKey() });
           navigate("/journals");
         },
+        onError: () => toast({ title: "Failed to save journal entry", variant: "destructive" }),
       },
     );
   };

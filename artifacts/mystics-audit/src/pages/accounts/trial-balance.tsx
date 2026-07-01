@@ -7,15 +7,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/format";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function TrialBalance() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const { data } = useGetTrialBalance({ date });
+  const { data, isLoading } = useGetTrialBalance({ date });
 
   const totalDebit = data?.totalDebit ?? 0;
   const totalCredit = data?.totalCredit ?? 0;
   const isBalanced = data?.isBalanced ?? false;
   const lines: any[] = (data as any)?.lines ?? [];
+
+  if (isLoading) return (
+    <div className="space-y-6">
+      <Skeleton className="h-8 w-48" />
+      <div className="flex gap-4"><Skeleton className="h-24 flex-1" /><Skeleton className="h-24 flex-1" /><Skeleton className="h-24 flex-1" /></div>
+      <Skeleton className="h-96 w-full" />
+    </div>
+  );
 
   return (
     <div className="space-y-6">

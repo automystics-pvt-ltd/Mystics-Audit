@@ -10,12 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, DollarSign, CheckCircle } from "lucide-react";
 
 export default function BillDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
-  const { data: bill } = useGetBill(Number(id));
+  const { data: bill, isLoading } = useGetBill(Number(id));
   const payMutation  = usePayBill();
   const postMutation = usePostBill();
   const [payAmount, setPayAmount] = useState("");
@@ -39,7 +40,14 @@ export default function BillDetail() {
     });
   };
 
-  if (!b) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
+  if (isLoading) return (
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-64" />
+      <div className="grid grid-cols-3 gap-4"><Skeleton className="h-32" /><Skeleton className="h-32" /><Skeleton className="h-32" /></div>
+      <Skeleton className="h-64 w-full" />
+    </div>
+  );
+  if (!b) return <div className="p-8 text-center text-muted-foreground">Bill not found</div>;
 
   const STATUS_COLORS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
     posted: "default", draft: "secondary", paid: "outline", partial: "default",

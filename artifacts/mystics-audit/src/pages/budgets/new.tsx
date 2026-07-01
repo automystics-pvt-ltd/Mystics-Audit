@@ -1,6 +1,7 @@
 import { useCreateBudget, useListAccounts, getListBudgetsQueryKey } from "@workspace/api-client-react";
 import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ type BudgetLine = { accountId: string; annualBudget: string };
 export default function NewBudget() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
+  const { toast } = useToast();
   const { data: accountsData } = useListAccounts({});
   const accounts: any[] = (accountsData ?? []).filter((a: any) => a.type === "Expense" || a.type === "Income");
   const mutation = useCreateBudget();
@@ -29,9 +31,13 @@ export default function NewBudget() {
   const update = (i: number, field: keyof BudgetLine, value: string) => setLines(prev => prev.map((l, idx) => idx === i ? { ...l, [field]: value } : l));
 
   const handleSubmit = () => {
+    if (!name.trim()) { toast({ title: "Budget name is required", variant: "destructive" }); return; }
+    if (!fiscalYear.match(/^\d{4}(-\d{2})?$/)) { toast({ title: "Invalid fiscal year", description: "Use format like 2026 or 2026-27", variant: "destructive" }); return; }
     const validLines = lines.filter(l => l.accountId && parseFloat(l.annualBudget) > 0);
+    if (validLines.length === 0) { toast({ title: "Add at least one account with a budget amount", variant: "destructive" }); return; }
     mutation.mutate({ data: { name, fiscalYear, department, lines: validLines.map(l => ({ accountId: parseInt(l.accountId), annualBudget: parseFloat(l.annualBudget) })) } } as any, {
       onSuccess: () => { qc.invalidateQueries({ queryKey: getListBudgetsQueryKey() }); navigate("/budgets"); },
+      onError: () => toast({ title: "Failed to create budget", description: "Please try again.", variant: "destructive" }),
     });
   };
 

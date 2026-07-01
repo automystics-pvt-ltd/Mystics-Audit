@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, CheckCircle, RotateCcw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -14,6 +15,7 @@ export default function JournalDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
   const { data: journal } = useGetJournal(Number(id));
+  const { toast } = useToast();
   const postMutation = usePostJournal();
   const reverseMutation = useReverseJournal();
   const [confirm, setConfirm] = useState<"post" | "reverse" | null>(null);
@@ -25,17 +27,19 @@ export default function JournalDetail() {
 
   const doPost = () => {
     postMutation.mutate({ id: Number(id) } as any, {
-      onSuccess: () => { setConfirm(null); qc.invalidateQueries({ queryKey: getGetJournalQueryKey(Number(id)) }); qc.invalidateQueries({ queryKey: getListJournalsQueryKey() }); },
+      onSuccess: () => { setConfirm(null); qc.invalidateQueries({ queryKey: getGetJournalQueryKey(Number(id)) }); qc.invalidateQueries({ queryKey: getListJournalsQueryKey() }); toast({ title: "Journal posted" }); },
+      onError: () => toast({ title: "Failed to post journal", variant: "destructive" }),
     });
   };
 
   const doReverse = () => {
     reverseMutation.mutate({ id: Number(id) } as any, {
-      onSuccess: () => { setConfirm(null); qc.invalidateQueries({ queryKey: getListJournalsQueryKey() }); },
+      onSuccess: () => { setConfirm(null); qc.invalidateQueries({ queryKey: getListJournalsQueryKey() }); toast({ title: "Journal reversed" }); },
+      onError: () => toast({ title: "Failed to reverse journal", variant: "destructive" }),
     });
   };
 
-  if (!j) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
+  if (!j) return <div className="p-8 text-center text-muted-foreground">Journal not found</div>;
 
   return (
     <div className="space-y-6">

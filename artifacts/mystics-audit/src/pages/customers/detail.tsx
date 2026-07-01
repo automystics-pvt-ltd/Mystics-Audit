@@ -3,6 +3,7 @@ import { useParams, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/format";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Building2, CreditCard, TrendingUp, AlertTriangle, User2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +24,7 @@ function AgingBar({ label, value, total, color }: { label: string; value: number
 
 export default function CustomerDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data: customer, isError } = useGetCustomer(Number(id));
+  const { data: customer, isLoading, isError } = useGetCustomer(Number(id));
   const { data: aging } = useGetCustomerAging(Number(id));
 
   const c = customer as any;
@@ -37,7 +38,14 @@ export default function CustomerDetail() {
     </div>
   );
 
-  if (!c) return <div className="p-8 text-center text-gray-400">Loading…</div>;
+  if (isLoading) return (
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-64" />
+      <div className="grid grid-cols-3 gap-4"><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" /></div>
+      <Skeleton className="h-48 w-full" />
+    </div>
+  );
+  if (!c) return <div className="p-8 text-center text-gray-400">Customer not found</div>;
 
   const totalAging = a?.total ?? 0;
   const creditUsed = c.creditLimit > 0 ? Math.min(((c.currentBalance ?? 0) / c.creditLimit) * 100, 100) : 0;

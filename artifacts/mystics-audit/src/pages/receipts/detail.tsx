@@ -10,6 +10,7 @@ import {
   CheckCircle2, Building2, Smartphone, Banknote, CreditCard,
 } from "lucide-react";
 import { useDocSettings, DocCustomizerPanel } from "@/components/doc-customizer";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { printReportPage } from "@/lib/print-utils";
 
@@ -20,16 +21,19 @@ const MODE_ICONS: Record<string, React.FC<{ className?: string }>> = {
 
 export default function ReceiptDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data: receipt } = useGetReceipt(Number(id));
+  const { data: receipt, isLoading } = useGetReceipt(Number(id));
   const [showCustomizer, setShowCustomizer] = useState(false);
   const { settings, update: updateSettings, reset: resetSettings } = useDocSettings("receipt");
   const r = receipt as any;
 
-  if (!r) return (
-    <div className="flex items-center justify-center h-48 text-muted-foreground">
-      Loading receipt…
+  if (isLoading) return (
+    <div className="space-y-6 p-2">
+      <Skeleton className="h-10 w-56" />
+      <div className="grid grid-cols-3 gap-4"><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" /></div>
+      <Skeleton className="h-40 w-full" />
     </div>
   );
+  if (!r) return <div className="flex items-center justify-center h-48 text-muted-foreground">Receipt not found</div>;
 
   const ModeIcon = MODE_ICONS[r.paymentMode] ?? Building2;
   const paidPct = r.grossAmount > 0 ? 100 : 0;

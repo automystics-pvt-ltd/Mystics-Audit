@@ -76,7 +76,7 @@ export default function Gstr1() {
           <Select value={year} onValueChange={setYear}>
             <SelectTrigger className="w-24 rounded-xl border-gray-200"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {["2024", "2025", "2026"].map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+              {Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() - 2 + i)).map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
             </SelectContent>
           </Select>
           <Button size="sm" variant="outline" onClick={() => refetch()} className="rounded-xl">

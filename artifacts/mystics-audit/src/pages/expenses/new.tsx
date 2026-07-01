@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/EntityCombobox";
 import { formatCurrency } from "@/lib/format";
+import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, ArrowLeft, Receipt, Building2, FolderOpen, MapPin, Users2, Briefcase, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +58,9 @@ const blankLine = (): ExpLine => ({
 export default function NewExpense() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
+  const { toast } = useToast();
   const mutation = useCreateExpense();
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: vendorsData } = useListVendors({});
   const vendors: any[] = vendorsData ?? [];
@@ -126,13 +129,23 @@ export default function NewExpense() {
   const violations = lines.filter(l => l.policyViolation).length;
 
   const handleSubmit = () => {
+    const errs: Record<string, string> = {};
+    if (!employeeName.trim()) errs.employeeName = "Employee name is required";
+    const validLines = lines.filter(l => l.category && parseFloat(l.amount) > 0);
+    if (validLines.length === 0) errs.lines = "Add at least one expense line with a category and amount";
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      toast({ title: "Incomplete form", description: Object.values(errs)[0], variant: "destructive" });
+      return;
+    }
+    setErrors({});
     mutation.mutate({
       data: {
         employeeName, submittedDate, notes,
         department: department || undefined, project: project || undefined,
         branch: branch || undefined, costCenter: costCenter || undefined,
         clientName: clientName || undefined,
-        lines: lines.map(l => ({
+        lines: validLines.map(l => ({
           date: l.date, category: l.category || "Miscellaneous",
           subCategory: l.subCategory || undefined,
           amount: parseFloat(l.amount) || 0,
@@ -150,6 +163,7 @@ export default function NewExpense() {
       }
     } as any, {
       onSuccess: () => { qc.invalidateQueries({ queryKey: getListExpensesQueryKey() }); navigate("/expenses"); },
+      onError: () => toast({ title: "Failed to submit expense", description: "Please try again.", variant: "destructive" }),
     });
   };
 
@@ -174,7 +188,13 @@ export default function NewExpense() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-gray-500">Employee Name *</Label>
-                <Input value={employeeName} onChange={e => setEmployeeName(e.target.value)} placeholder="Your full name" />
+                <Input
+                  value={employeeName}
+                  onChange={e => { setEmployeeName(e.target.value); if (errors.employeeName) setErrors(p => ({ ...p, employeeName: "" })); }}
+                  placeholder="Your full name"
+                  className={errors.employeeName ? "border-red-400" : ""}
+                />
+                {errors.employeeName && <p className="text-xs text-red-500">{errors.employeeName}</p>}
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-gray-500">Submission Date *</Label>

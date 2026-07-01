@@ -294,20 +294,20 @@ export default function NewBill() {
               </div>
             )}
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm" style={{ minWidth: 900 }}>
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
                     <th className="px-3 py-3 text-center text-xs font-bold text-gray-400 w-8">#</th>
-                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 w-40">Item</th>
-                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500">Description</th>
+                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 w-44">Item</th>
+                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-500 min-w-[130px]">Description</th>
                     <th className="px-3 py-3 text-xs font-bold text-gray-500 w-24">HSN/SAC</th>
-                    <th className="px-3 py-3 text-xs font-bold text-gray-500 w-16 text-right">Qty</th>
-                    <th className="px-3 py-3 text-xs font-bold text-gray-500 w-20">Unit</th>
+                    <th className="px-3 py-3 text-xs font-bold text-gray-500 w-20 text-right">Qty</th>
+                    <th className="px-3 py-3 text-xs font-bold text-gray-500 w-24">Unit</th>
                     <th className="px-3 py-3 text-xs font-bold text-gray-500 w-28 text-right">Rate (₹)</th>
                     <th className="px-3 py-3 text-xs font-bold text-gray-500 w-16 text-right">Disc%</th>
-                    <th className="px-3 py-3 text-xs font-bold text-gray-500 w-20 text-right">GST%</th>
+                    <th className="px-3 py-3 text-xs font-bold text-gray-500 w-24 text-right">GST%</th>
                     <th className="px-3 py-3 text-xs font-bold text-gray-500 w-28 text-right">Amount</th>
-                    <th className="px-3 py-3 w-16"></th>
+                    <th className="px-3 py-3 w-14 sticky right-0 bg-gray-50 shadow-[-1px_0_0_0_#e5e7eb]"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -385,14 +385,14 @@ export default function NewBill() {
                         <td className="px-3 py-2.5 text-right font-semibold text-sm text-gray-800 whitespace-nowrap">
                           {formatCurrency(c.total)}
                         </td>
-                        <td className="px-2 py-2.5">
+                        <td className={cn("px-2 py-2.5 sticky right-0 shadow-[-1px_0_0_0_#e5e7eb] z-10", i % 2 === 1 ? "bg-gray-50" : "bg-white")}>
                           <div className="flex items-center gap-0.5">
                             <button onClick={() => duplicateLine(i)} title="Duplicate line"
                               className="p-1.5 rounded hover:bg-gray-100 text-transparent group-hover:text-gray-400 hover:!text-gray-600 transition-colors">
                               <Copy className="w-3.5 h-3.5" />
                             </button>
                             <button onClick={() => removeLine(i)} title="Remove line"
-                              className="p-1.5 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors">
+                              className="p-1.5 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>

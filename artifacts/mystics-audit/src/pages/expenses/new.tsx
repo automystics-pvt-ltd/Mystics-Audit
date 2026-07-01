@@ -86,13 +86,11 @@ export default function NewExpense() {
           updated.violationReason = "";
         }
       }
-      // Auto GST calculation
+      // Auto GST calculation — always recalculate (including when rate=0)
       if (field === "amount" || field === "gstRate") {
         const amt = Number(field === "amount" ? value : l.amount);
         const rate = Number(field === "gstRate" ? value : l.gstRate);
-        if (amt > 0 && rate > 0) {
-          updated.gstAmount = ((amt * rate) / 100).toFixed(2);
-        }
+        updated.gstAmount = amt > 0 && rate > 0 ? ((amt * rate) / 100).toFixed(2) : "";
       }
       return updated;
     }));
@@ -271,13 +269,17 @@ export default function NewExpense() {
                       <Label className="text-xs text-gray-400 whitespace-nowrap">GST Rate &amp; Amount (₹)</Label>
                       <div className="flex items-center gap-2">
                         <Select value={l.gstRate} onValueChange={v => updateLine(i, "gstRate", v)}>
-                          <SelectTrigger className="text-sm w-24 shrink-0"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="text-sm w-20 shrink-0"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {GST_RATES.map(r => <SelectItem key={r} value={r}>{r}%</SelectItem>)}
                           </SelectContent>
                         </Select>
-                        <Input className="text-sm text-right font-mono bg-gray-50 flex-1 min-w-0" readOnly value={l.gstAmount ? Number(l.gstAmount).toFixed(2) : ""} placeholder="Auto" />
-                        <label className="flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0">
+                        {l.gstRate !== "0" && l.gstAmount ? (
+                          <span className="text-xs font-mono text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-2 py-1.5 flex-1 text-right min-w-0 truncate">
+                            {Number(l.gstAmount).toFixed(2)}
+                          </span>
+                        ) : null}
+                        <label className="flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0 ml-auto">
                           <input type="checkbox" checked={l.billable} onChange={e => updateLine(i, "billable", e.target.checked)} className="rounded accent-indigo-600" />
                           <span className="text-xs text-gray-500">Billable</span>
                         </label>

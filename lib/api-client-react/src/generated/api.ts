@@ -56,6 +56,7 @@ import type {
   Budget,
   BudgetInput,
   BudgetVsActual,
+  BulkTasksInput,
   CashFlowStatement,
   CashflowSummary,
   CollaborationMessage,
@@ -144,6 +145,8 @@ import type {
   ReceiptInput,
   ReconcileInput,
   RunAutomation200,
+  SeedComplianceInput,
+  SeedComplianceResult,
   TrialBalance,
   User,
   UserInput,
@@ -7070,6 +7073,77 @@ export const useDeleteAuditClient = <TError = ErrorType<unknown>,
       return useMutation(getDeleteAuditClientMutationOptions(options));
     }
 
+export const getSeedClientComplianceUrl = (id: number,) => {
+
+
+
+
+  return `/api/audit-clients/${id}/seed-compliance`
+}
+
+/**
+ * @summary Auto-generate full-year compliance calendar for a client
+ */
+export const seedClientCompliance = async (id: number,
+    seedComplianceInput: SeedComplianceInput, options?: RequestInit): Promise<SeedComplianceResult> => {
+
+  return customFetch<SeedComplianceResult>(getSeedClientComplianceUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(seedComplianceInput)
+  }
+);}
+
+
+
+
+export const getSeedClientComplianceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof seedClientCompliance>>, TError,{id: number;data: BodyType<SeedComplianceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof seedClientCompliance>>, TError,{id: number;data: BodyType<SeedComplianceInput>}, TContext> => {
+
+const mutationKey = ['seedClientCompliance'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof seedClientCompliance>>, {id: number;data: BodyType<SeedComplianceInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  seedClientCompliance(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SeedClientComplianceMutationResult = NonNullable<Awaited<ReturnType<typeof seedClientCompliance>>>
+    export type SeedClientComplianceMutationBody = BodyType<SeedComplianceInput>
+    export type SeedClientComplianceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Auto-generate full-year compliance calendar for a client
+ */
+export const useSeedClientCompliance = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof seedClientCompliance>>, TError,{id: number;data: BodyType<SeedComplianceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof seedClientCompliance>>,
+        TError,
+        {id: number;data: BodyType<SeedComplianceInput>},
+        TContext
+      > => {
+      return useMutation(getSeedClientComplianceMutationOptions(options));
+    }
+
 export const getListAuditTasksUrl = (params?: ListAuditTasksParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -7222,6 +7296,76 @@ export const useCreateAuditTask = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateAuditTaskMutationOptions(options));
+    }
+
+export const getBulkCreateAuditTasksUrl = () => {
+
+
+
+
+  return `/api/audit-tasks/bulk`
+}
+
+/**
+ * @summary Bulk-create tasks from an engagement template
+ */
+export const bulkCreateAuditTasks = async (bulkTasksInput: BulkTasksInput, options?: RequestInit): Promise<AuditTask[]> => {
+
+  return customFetch<AuditTask[]>(getBulkCreateAuditTasksUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(bulkTasksInput)
+  }
+);}
+
+
+
+
+export const getBulkCreateAuditTasksMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkCreateAuditTasks>>, TError,{data: BodyType<BulkTasksInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof bulkCreateAuditTasks>>, TError,{data: BodyType<BulkTasksInput>}, TContext> => {
+
+const mutationKey = ['bulkCreateAuditTasks'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkCreateAuditTasks>>, {data: BodyType<BulkTasksInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  bulkCreateAuditTasks(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkCreateAuditTasksMutationResult = NonNullable<Awaited<ReturnType<typeof bulkCreateAuditTasks>>>
+    export type BulkCreateAuditTasksMutationBody = BodyType<BulkTasksInput>
+    export type BulkCreateAuditTasksMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Bulk-create tasks from an engagement template
+ */
+export const useBulkCreateAuditTasks = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkCreateAuditTasks>>, TError,{data: BodyType<BulkTasksInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof bulkCreateAuditTasks>>,
+        TError,
+        {data: BodyType<BulkTasksInput>},
+        TContext
+      > => {
+      return useMutation(getBulkCreateAuditTasksMutationOptions(options));
     }
 
 export const getGetAuditTaskUrl = (id: number,) => {

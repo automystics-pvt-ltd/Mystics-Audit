@@ -1281,6 +1281,71 @@ export interface AuditClient {
   updatedAt: string;
 }
 
+export type SeedComplianceInputCategoriesItem = typeof SeedComplianceInputCategoriesItem[keyof typeof SeedComplianceInputCategoriesItem];
+
+
+export const SeedComplianceInputCategoriesItem = {
+  gst: 'gst',
+  tds: 'tds',
+  income_tax: 'income_tax',
+  roc: 'roc',
+  pf_esi: 'pf_esi',
+} as const;
+
+export interface SeedComplianceInput {
+  /** Financial year e.g. "2025-26" */
+  fy?: string;
+  categories?: SeedComplianceInputCategoriesItem[];
+}
+
+export interface ComplianceEvent {
+  id: number;
+  /** @nullable */
+  clientId?: number | null;
+  /** @nullable */
+  clientName?: string | null;
+  eventType: string;
+  title: string;
+  /** @nullable */
+  period?: string | null;
+  dueDate: string;
+  status: string;
+  /** @nullable */
+  filedDate?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  isRecurring: boolean;
+  orgId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SeedComplianceResult {
+  created?: number;
+  events?: ComplianceEvent[];
+}
+
+export type AuditTaskInputChecklistItem = { [key: string]: unknown };
+
+export interface AuditTaskInput {
+  clientId: number;
+  title: string;
+  taskType?: string;
+  phase?: string;
+  description?: string;
+  instructions?: string;
+  status?: string;
+  priority?: string;
+  dueDate?: string;
+  assignee?: string;
+  checklist?: AuditTaskInputChecklistItem[];
+  createdBy?: string;
+}
+
+export interface BulkTasksInput {
+  tasks: AuditTaskInput[];
+}
+
 export interface AuditClientInput {
   name: string;
   pan?: string;
@@ -1343,45 +1408,6 @@ export interface AuditCommentInput {
 
 export interface AuditTaskStatusPatch {
   status: string;
-}
-
-export type AuditTaskInputChecklistItem = { [key: string]: unknown };
-
-export interface AuditTaskInput {
-  clientId: number;
-  title: string;
-  taskType?: string;
-  phase?: string;
-  description?: string;
-  instructions?: string;
-  status?: string;
-  priority?: string;
-  dueDate?: string;
-  assignee?: string;
-  checklist?: AuditTaskInputChecklistItem[];
-  createdBy?: string;
-}
-
-export interface ComplianceEvent {
-  id: number;
-  /** @nullable */
-  clientId?: number | null;
-  /** @nullable */
-  clientName?: string | null;
-  eventType: string;
-  title: string;
-  /** @nullable */
-  period?: string | null;
-  dueDate: string;
-  status: string;
-  /** @nullable */
-  filedDate?: string | null;
-  /** @nullable */
-  notes?: string | null;
-  isRecurring: boolean;
-  orgId: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface ComplianceEventInput {

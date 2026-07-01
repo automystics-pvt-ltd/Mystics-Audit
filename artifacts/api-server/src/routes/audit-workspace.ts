@@ -501,3 +501,145 @@ router.delete("/audit-working-papers/:id", async (req, res) => {
     res.status(204).send();
   } catch (e: any) { res.status(500).json({ error: e?.message }); }
 });
+
+/* ════════════════════════════════════════
+   COMPLIANCE CALENDAR SEEDING
+════════════════════════════════════════ */
+
+router.post("/audit-clients/:id/seed-compliance", async (req, res) => {
+  try {
+    const clientId = Number(req.params.id);
+    const { fy = "2025-26", categories = ["gst", "tds", "income_tax", "roc"] } = req.body as {
+      fy?: string; categories?: string[];
+    };
+
+    const fyYear   = parseInt(fy.split("-")[0]); // e.g. 2025 from "2025-26"
+    const startY   = fyYear;
+    const endY     = fyYear + 1;
+
+    const dt = (y: number, m: number, d: number) =>
+      `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+
+    const events: (typeof complianceEventsTable.$inferInsert)[] = [];
+
+    /* ── GST ── */
+    if (categories.includes("gst")) {
+      const months: [number, number][] = [
+        [startY,4],[startY,5],[startY,6],[startY,7],[startY,8],[startY,9],
+        [startY,10],[startY,11],[startY,12],[endY,1],[endY,2],[endY,3],
+      ];
+      for (const [y, m] of months) {
+        const [ny, nm] = m === 12 ? [y+1, 1] : [y, m+1];
+        const period = `${y}-${String(m).padStart(2,"0")}`;
+        events.push({ clientId, eventType:"gst_return", period, status:"pending",
+          title: `GSTR-1 — ${period}`, dueDate: dt(ny, nm, 11) });
+        events.push({ clientId, eventType:"gst_return", period, status:"pending",
+          title: `GSTR-3B — ${period}`, dueDate: dt(ny, nm, 20) });
+      }
+    }
+
+    /* ── TDS ── */
+    if (categories.includes("tds")) {
+      // Monthly TDS payment (7th of following month)
+      const months: [number, number][] = [
+        [startY,4],[startY,5],[startY,6],[startY,7],[startY,8],[startY,9],
+        [startY,10],[startY,11],[startY,12],[endY,1],[endY,2],[endY,3],
+      ];
+      for (const [y, m] of months) {
+        const [ny, nm] = m === 12 ? [y+1, 1] : [y, m+1];
+        const period = `${y}-${String(m).padStart(2,"0")}`;
+        events.push({ clientId, eventType:"tds_return", period, status:"pending",
+          title: `TDS Payment — ${period}`, dueDate: dt(ny, nm, 7) });
+      }
+      // Quarterly TDS returns
+      events.push({ clientId, eventType:"tds_return", period:`${startY}-Q1`, status:"pending",
+        title:`TDS Return Q1 (Apr–Jun ${startY})`, dueDate: dt(startY,7,31) });
+      events.push({ clientId, eventType:"tds_return", period:`${startY}-Q2`, status:"pending",
+        title:`TDS Return Q2 (Jul–Sep ${startY})`, dueDate: dt(startY,10,31) });
+      events.push({ clientId, eventType:"tds_return", period:`${startY}-Q3`, status:"pending",
+        title:`TDS Return Q3 (Oct–Dec ${startY})`, dueDate: dt(endY,1,31) });
+      events.push({ clientId, eventType:"tds_return", period:`${startY}-Q4`, status:"pending",
+        title:`TDS Return Q4 (Jan–Mar ${endY})`, dueDate: dt(endY,5,31) });
+    }
+
+    /* ── Income Tax & Advance Tax ── */
+    if (categories.includes("income_tax")) {
+      events.push({ clientId, eventType:"income_tax", period:`FY ${fy}`, status:"pending",
+        title:`Advance Tax Q1 (${startY})`, dueDate: dt(startY,6,15) });
+      events.push({ clientId, eventType:"income_tax", period:`FY ${fy}`, status:"pending",
+        title:`Advance Tax Q2 (${startY})`, dueDate: dt(startY,9,15) });
+      events.push({ clientId, eventType:"income_tax", period:`FY ${fy}`, status:"pending",
+        title:`Advance Tax Q3 (${startY})`, dueDate: dt(startY,12,15) });
+      events.push({ clientId, eventType:"income_tax", period:`FY ${fy}`, status:"pending",
+        title:`Advance Tax Q4 (${endY})`, dueDate: dt(endY,3,15) });
+      events.push({ clientId, eventType:"audit_report", period:`FY ${fy}`, status:"pending",
+        title:`Tax Audit Report (Sec 44AB) — FY ${fy}`, dueDate: dt(endY,9,30) });
+      events.push({ clientId, eventType:"income_tax", period:`FY ${fy}`, status:"pending",
+        title:`Income Tax Return — FY ${fy}`, dueDate: dt(endY,10,31) });
+    }
+
+    /* ── ROC / MCA ── */
+    if (categories.includes("roc")) {
+      events.push({ clientId, eventType:"audit_report", period:`FY ${fy}`, status:"pending",
+        title:`Statutory Audit Report — FY ${fy}`, dueDate: dt(endY,9,29) });
+      events.push({ clientId, eventType:"roc_filing", period:`FY ${fy}`, status:"pending",
+        title:`AGM — FY ${fy}`, dueDate: dt(endY,9,30) });
+      events.push({ clientId, eventType:"roc_filing", period:`FY ${fy}`, status:"pending",
+        title:`AOC-4 (Financial Statements) — FY ${fy}`, dueDate: dt(endY,10,29) });
+      events.push({ clientId, eventType:"roc_filing", period:`FY ${fy}`, status:"pending",
+        title:`MGT-7 (Annual Return) — FY ${fy}`, dueDate: dt(endY,11,29) });
+    }
+
+    /* ── PF / ESI ── */
+    if (categories.includes("pf_esi")) {
+      const months: [number, number][] = [
+        [startY,4],[startY,5],[startY,6],[startY,7],[startY,8],[startY,9],
+        [startY,10],[startY,11],[startY,12],[endY,1],[endY,2],[endY,3],
+      ];
+      for (const [y, m] of months) {
+        const [ny, nm] = m === 12 ? [y+1, 1] : [y, m+1];
+        const period = `${y}-${String(m).padStart(2,"0")}`;
+        events.push({ clientId, eventType:"pt_return", period, status:"pending",
+          title:`PF/ESI Payment — ${period}`, dueDate: dt(ny, nm, 15) });
+      }
+    }
+
+    const created = await db.insert(complianceEventsTable).values(events).returning();
+    res.status(201).json({ created: created.length, events: created });
+  } catch (e: any) {
+    req.log?.error(e);
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+/* ════════════════════════════════════════
+   BULK TASK CREATION (Engagement Templates)
+════════════════════════════════════════ */
+
+router.post("/audit-tasks/bulk", async (req, res) => {
+  try {
+    const { tasks } = req.body as { tasks: any[] };
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+      res.status(400).json({ error: "tasks array required" }); return;
+    }
+    const created = await db.insert(auditTasksTable).values(
+      tasks.map((t: any) => ({
+        clientId:     Number(t.clientId),
+        title:        t.title,
+        taskType:     t.taskType     ?? "document_request",
+        description:  t.description  ?? null,
+        instructions: t.instructions ?? null,
+        priority:     t.priority     ?? "medium",
+        phase:        t.phase        ?? "planning",
+        dueDate:      t.dueDate      ?? null,
+        assignee:     t.assignee     ?? null,
+        status:       "created",
+        checklist:    t.checklist    ?? null,
+      }))
+    ).returning();
+    res.status(201).json(created);
+  } catch (e: any) {
+    req.log?.error(e);
+    res.status(500).json({ error: e?.message });
+  }
+});

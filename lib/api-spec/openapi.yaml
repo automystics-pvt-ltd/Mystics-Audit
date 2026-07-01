@@ -1570,6 +1570,27 @@ paths:
         "204":
           description: Deleted
 
+  /audit-clients/{id}/seed-compliance:
+    post:
+      operationId: seedClientCompliance
+      tags: [audit-workspace]
+      summary: Auto-generate full-year compliance calendar for a client
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeedComplianceInput"
+      responses:
+        "201":
+          description: Compliance events seeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeedComplianceResult"
+
   # AUDIT WORKSPACE — Tasks
   /audit-tasks:
     get:
@@ -1608,6 +1629,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuditTask"
+
+  /audit-tasks/bulk:
+    post:
+      operationId: bulkCreateAuditTasks
+      tags: [audit-workspace]
+      summary: Bulk-create tasks from an engagement template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkTasksInput"
+      responses:
+        "201":
+          description: Created tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditTask"
 
   /audit-tasks/{id}:
     get:
@@ -3659,6 +3701,38 @@ components:
         createdAt: { type: string }
         updatedAt: { type: string }
       required: [id, name, engagementTypes, engagementPhase, status, orgId, createdAt, updatedAt]
+
+    SeedComplianceInput:
+      type: object
+      properties:
+        fy:
+          type: string
+          description: Financial year e.g. "2025-26"
+          example: "2025-26"
+        categories:
+          type: array
+          items:
+            type: string
+            enum: [gst, tds, income_tax, roc, pf_esi]
+
+    SeedComplianceResult:
+      type: object
+      properties:
+        created:
+          type: integer
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComplianceEvent"
+
+    BulkTasksInput:
+      type: object
+      required: [tasks]
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditTaskInput"
 
     AuditClientInput:
       type: object

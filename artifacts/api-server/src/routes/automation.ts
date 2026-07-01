@@ -5,7 +5,8 @@ import {
   auditTasksTable, complianceEventsTable, auditQueriesTable,
   auditClientsTable, collaborationRequestsTable,
 } from "@workspace/db";
-import { eq, desc, and, lte, or, lt, notInArray } from "drizzle-orm";
+import { eq, desc, and, lte, or, lt, notInArray, gte } from "drizzle-orm";
+import { auditFindingsTable } from "@workspace/db";
 
 const router = Router();
 const today = () => new Date().toISOString().split("T")[0];
@@ -351,6 +352,59 @@ export async function runAutomationChecks(): Promise<{ created: number; types: R
       clientId: r.clientId ?? undefined, clientName: c?.name ?? undefined,
       actionUrl: "/auditor?tab=collaboration",
     });
+  }
+
+  /* ── 7. Upcoming task deadlines (3–7 days ahead, advance warning) ── */
+  const upcomingTasks = await db
+    .select({ t: auditTasksTable, c: auditClientsTable })
+    .from(auditTasksTable)
+    .leftJoin(auditClientsTable, eq(auditTasksTable.clientId, auditClientsTable.id))
+    .where(and(gte(auditTasksTable.dueDate, td), lte(auditTasksTable.dueDate, in7d)));
+
+  for (const { t, c } of upcomingTasks) {
+    if (!t.dueDate || ["completed","archived"].includes(t.status)) continue;
+    const daysLeft = Math.max(0, Math.floor((new Date(t.dueDate).getTime() - Date.now()) / 86400000));
+    const priority = daysLeft <= 1 ? "high" : daysLeft <= 3 ? "medium" : "low";
+    await notify({
+      type: "upcoming_task", priority,
+      title: `Due ${daysLeft <= 1 ? "Tomorrow" : `in ${daysLeft}d`}: ${t.title}`,
+      message: `${c?.name ? `${c.name} · ` : ""}Assignee: ${t.assignee || "Unassigned"}`,
+      entityType: "task", entityId: t.id,
+      clientId: t.clientId, clientName: c?.name ?? undefined,
+      actionUrl: `/auditor/clients/${t.clientId}?tab=tasks`,
+    });
+  }
+
+  /* ── 8. Open findings approaching / past due date ── */
+  const allFindings = await db
+    .select({ f: auditFindingsTable, c: auditClientsTable })
+    .from(auditFindingsTable)
+    .leftJoin(auditClientsTable, eq(auditFindingsTable.clientId, auditClientsTable.id));
+
+  for (const { f, c } of allFindings) {
+    if (!["open","in_progress"].includes(f.status ?? "")) continue;
+    if (!f.dueDate) continue;
+    const daysLeft = Math.floor((new Date(f.dueDate).getTime() - Date.now()) / 86400000);
+    if (daysLeft < 0) {
+      await notify({
+        type: "overdue_finding",
+        priority: ["critical","high"].includes(f.severity ?? "") ? "critical" : "high",
+        title: `Finding Overdue: ${f.title}`,
+        message: `${(f.severity ?? "").toUpperCase()} finding unresolved${c?.name ? ` · ${c.name}` : ""}`,
+        entityType: "finding", entityId: f.id,
+        clientId: f.clientId, clientName: c?.name ?? undefined,
+        actionUrl: `/auditor/clients/${f.clientId}?tab=findings`,
+      });
+    } else if (daysLeft <= 7) {
+      await notify({
+        type: "finding_due_soon", priority: "medium",
+        title: `Finding Due in ${daysLeft}d: ${f.title}`,
+        message: `${(f.severity ?? "").toUpperCase()} finding needs resolution${c?.name ? ` · ${c.name}` : ""}`,
+        entityType: "finding", entityId: f.id,
+        clientId: f.clientId, clientName: c?.name ?? undefined,
+        actionUrl: `/auditor/clients/${f.clientId}?tab=findings`,
+      });
+    }
   }
 
   return { created, types };

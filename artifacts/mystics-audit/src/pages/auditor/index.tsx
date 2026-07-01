@@ -15,6 +15,7 @@ import {
   useListCollaborationRequests, useCreateCollaborationRequest, useUpdateCollaborationRequest,
   useDeleteCollaborationRequest, useGetCollaborationRequest, useGetCollaborationSummary,
   useCreateCollaborationMessage,
+  useSeedClientCompliance, useBulkCreateAuditTasks,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ import {
   LayoutGrid, List, Table2, SortAsc, SortDesc, CircleDot,
   TrendingUp, TrendingDown, Minus, Star, ArrowRight, GanttChart,
   UserCircle, Tag, CalendarRange,
+  Sparkles, Layers, Wand2, CalendarCog, CheckSquare2,
 } from "lucide-react";
 
 /* ── helpers ── */
@@ -114,6 +116,122 @@ const CAT_COLORS: Record<string,string> = {
   bank_statement:"bg-cyan-100 text-cyan-800", contract:"bg-red-100 text-red-800",
   supporting:"bg-gray-100 text-gray-800",
 };
+
+/* ══ AUDIT ENGAGEMENT TEMPLATES ══════════════════════════════════ */
+type TemplateTask = { title: string; taskType: string; phase: string; priority: string; description: string; daysOffset: number };
+type AuditTemplate = { id: string; label: string; icon: string; color: string; description: string; tasks: TemplateTask[] };
+
+const AUDIT_TEMPLATES: AuditTemplate[] = [
+  {
+    id: "statutory",
+    label: "Statutory Audit",
+    icon: "⚖️",
+    color: "border-blue-200 bg-blue-50",
+    description: "Companies Act 2013 — full statutory audit from engagement to CARO report",
+    tasks: [
+      { title:"Appointment & Engagement Letter", taskType:"compliance_task", phase:"planning", priority:"critical", description:"Obtain Board resolution and sign engagement letter", daysOffset:0 },
+      { title:"Obtain Prior Year Financials & Audit Report", taskType:"document_request", phase:"planning", priority:"high", description:"Collect prior year financial statements, notes and auditor report", daysOffset:3 },
+      { title:"Review Internal Controls & Processes", taskType:"review", phase:"planning", priority:"high", description:"Assess internal control environment, identify weaknesses", daysOffset:7 },
+      { title:"Prepare Audit Plan & Risk Assessment", taskType:"review", phase:"planning", priority:"medium", description:"Document risk-based audit plan, materiality threshold", daysOffset:10 },
+      { title:"Opening Trial Balance Verification", taskType:"review", phase:"fieldwork", priority:"high", description:"Agree opening balances with prior year closing balances", daysOffset:12 },
+      { title:"Cash & Bank Balances Verification", taskType:"review", phase:"fieldwork", priority:"high", description:"Verify cash on hand, obtain bank confirmations and reconcile", daysOffset:15 },
+      { title:"Trade Receivables Confirmation", taskType:"document_request", phase:"fieldwork", priority:"high", description:"Send balance confirmation letters to debtors", daysOffset:18 },
+      { title:"Fixed Assets Register Verification", taskType:"review", phase:"fieldwork", priority:"medium", description:"Verify fixed asset additions, disposals, and depreciation", daysOffset:20 },
+      { title:"Inventory Verification & Valuation", taskType:"review", phase:"fieldwork", priority:"medium", description:"Physical verification and valuation of closing inventory", daysOffset:22 },
+      { title:"Vendor Ledger & AP Reconciliation", taskType:"review", phase:"fieldwork", priority:"medium", description:"Reconcile creditors ledger, obtain confirmation for large balances", daysOffset:25 },
+      { title:"Revenue Recognition Testing", taskType:"review", phase:"fieldwork", priority:"high", description:"Test revenue cut-off, completeness and accuracy", daysOffset:28 },
+      { title:"Expense Vouching & Verification", taskType:"review", phase:"fieldwork", priority:"medium", description:"Vouch major expense heads, verify statutory deductions", daysOffset:30 },
+      { title:"Related Party Transactions Review", taskType:"review", phase:"fieldwork", priority:"high", description:"Identify and verify RPT disclosures per Sec 188", daysOffset:32 },
+      { title:"Draft Financial Statements Review", taskType:"review", phase:"review", priority:"high", description:"Review draft P&L, Balance Sheet, Cash Flow and Notes", daysOffset:40 },
+      { title:"CARO 2020 Checklist", taskType:"review", phase:"review", priority:"high", description:"Complete Companies Auditor's Report Order checklist", daysOffset:42 },
+      { title:"Director's Report Review", taskType:"review", phase:"review", priority:"medium", description:"Review Director's report for completeness and consistency", daysOffset:44 },
+      { title:"Issue Management Letter", taskType:"compliance_task", phase:"reporting", priority:"medium", description:"Communicate internal control weaknesses to management", daysOffset:50 },
+      { title:"Issue Statutory Audit Report", taskType:"compliance_task", phase:"reporting", priority:"critical", description:"Sign and issue final audit report under Companies Act", daysOffset:55 },
+    ],
+  },
+  {
+    id: "tax_audit",
+    label: "Tax Audit (44AB)",
+    icon: "📊",
+    color: "border-green-200 bg-green-50",
+    description: "Income Tax Sec 44AB audit — Form 3CA/3CB & Form 3CD preparation and filing",
+    tasks: [
+      { title:"Review Books of Accounts", taskType:"review", phase:"planning", priority:"high", description:"Verify books are maintained per IT Act requirements", daysOffset:0 },
+      { title:"Collect Form 3CD Supporting Details", taskType:"document_request", phase:"planning", priority:"critical", description:"Obtain all clause-wise details for Form 3CD", daysOffset:3 },
+      { title:"Verify TDS Deductions & 26AS", taskType:"document_request", phase:"planning", priority:"high", description:"Reconcile TDS deducted with 26AS statement and Form 16/16A", daysOffset:5 },
+      { title:"Verify Business Income & Expenses", taskType:"review", phase:"fieldwork", priority:"high", description:"Verify turnover, business income and allowable expenses", daysOffset:10 },
+      { title:"Check Disallowances u/s 40 & 43B", taskType:"review", phase:"fieldwork", priority:"high", description:"Verify statutory payments, ESIC/PF, interest disallowances", daysOffset:12 },
+      { title:"Capital Gains Transactions Verification", taskType:"review", phase:"fieldwork", priority:"medium", description:"Verify capital gains/losses on investments, property, securities", daysOffset:15 },
+      { title:"ICDS Compliance Check", taskType:"review", phase:"fieldwork", priority:"medium", description:"Income Computation and Disclosure Standards compliance review", daysOffset:18 },
+      { title:"Prepare Draft Form 3CD", taskType:"compliance_task", phase:"fieldwork", priority:"critical", description:"Complete all 44 clauses of Form 3CD", daysOffset:20 },
+      { title:"Internal Review of Form 3CD", taskType:"review", phase:"review", priority:"high", description:"Partner/manager review and sign-off on Form 3CD", daysOffset:25 },
+      { title:"Upload Form 3CA/3CB & 3CD", taskType:"compliance_task", phase:"reporting", priority:"critical", description:"Upload tax audit report on income tax portal", daysOffset:30 },
+    ],
+  },
+  {
+    id: "gst_audit",
+    label: "GST Audit",
+    icon: "🧾",
+    color: "border-amber-200 bg-amber-50",
+    description: "GSTR-9 & GSTR-9C preparation — reconciliation, ITC verification, and filing",
+    tasks: [
+      { title:"GSTR-9 vs Books Reconciliation", taskType:"review", phase:"planning", priority:"critical", description:"Reconcile turnover and tax per GSTR-1/3B vs books", daysOffset:0 },
+      { title:"Collect All GST Returns (GSTR-1, 3B)", taskType:"document_request", phase:"planning", priority:"high", description:"Download all filed returns for the FY from GST portal", daysOffset:3 },
+      { title:"ITC Verification — GSTR-2A vs Purchase Register", taskType:"review", phase:"fieldwork", priority:"high", description:"Match ITC claimed in 3B with GSTR-2A/2B availability", daysOffset:7 },
+      { title:"ITC Reversal Check (Rule 42/43)", taskType:"review", phase:"fieldwork", priority:"high", description:"Verify mandatory ITC reversals for exempt/personal use", daysOffset:10 },
+      { title:"RCM Applicability Verification", taskType:"review", phase:"fieldwork", priority:"high", description:"Identify RCM transactions and verify tax paid on them", daysOffset:12 },
+      { title:"E-Way Bill Compliance", taskType:"review", phase:"fieldwork", priority:"medium", description:"Verify e-way bill generation for eligible outward supplies", daysOffset:15 },
+      { title:"Credit Note & Debit Note Verification", taskType:"review", phase:"fieldwork", priority:"medium", description:"Verify credit/debit notes are properly reflected in returns", daysOffset:18 },
+      { title:"Prepare GSTR-9 Annual Return", taskType:"compliance_task", phase:"review", priority:"critical", description:"Compile and prepare the annual GST return GSTR-9", daysOffset:22 },
+      { title:"Prepare GSTR-9C Reconciliation Statement", taskType:"compliance_task", phase:"review", priority:"critical", description:"Prepare certified reconciliation statement for audit", daysOffset:25 },
+      { title:"File GSTR-9 & GSTR-9C", taskType:"compliance_task", phase:"reporting", priority:"critical", description:"File both returns on GST portal before deadline", daysOffset:30 },
+    ],
+  },
+  {
+    id: "internal_audit",
+    label: "Internal Audit",
+    icon: "🔍",
+    color: "border-violet-200 bg-violet-50",
+    description: "Risk-based internal audit — process review, controls testing, and reporting",
+    tasks: [
+      { title:"Define Audit Scope & Objectives", taskType:"review", phase:"planning", priority:"high", description:"Agree audit scope, objectives, and timeline with management", daysOffset:0 },
+      { title:"Risk-Based Audit Plan", taskType:"review", phase:"planning", priority:"high", description:"Identify high-risk areas and develop the audit program", daysOffset:3 },
+      { title:"Procurement & Vendor Management Audit", taskType:"review", phase:"fieldwork", priority:"medium", description:"Review procurement process, PO approvals, vendor selection", daysOffset:7 },
+      { title:"Payroll & HR Audit", taskType:"review", phase:"fieldwork", priority:"high", description:"Verify payroll accuracy, attendance, statutory compliance", daysOffset:10 },
+      { title:"Expense Claims Verification", taskType:"review", phase:"fieldwork", priority:"medium", description:"Review expense claim process, policy compliance, approvals", daysOffset:12 },
+      { title:"IT Systems & Data Security Review", taskType:"review", phase:"fieldwork", priority:"high", description:"Review access controls, data security, system reliability", daysOffset:15 },
+      { title:"Cash & Banking Controls Review", taskType:"review", phase:"fieldwork", priority:"high", description:"Verify cash management, bank reconciliation process, signatory controls", daysOffset:17 },
+      { title:"Draft Internal Audit Report", taskType:"review", phase:"review", priority:"high", description:"Compile findings, observations, and recommendations", daysOffset:22 },
+      { title:"Management Response Collection", taskType:"document_request", phase:"review", priority:"medium", description:"Obtain management responses to each finding", daysOffset:25 },
+      { title:"Issue Final Internal Audit Report", taskType:"review", phase:"reporting", priority:"critical", description:"Issue report to Board/Audit Committee with action plan", daysOffset:30 },
+    ],
+  },
+  {
+    id: "roc_annual",
+    label: "ROC Annual Filing",
+    icon: "🏛️",
+    color: "border-pink-200 bg-pink-50",
+    description: "Annual ROC compliance — AGM, AOC-4, MGT-7, and Registrar filings",
+    tasks: [
+      { title:"Verify Register of Members & DIN", taskType:"document_request", phase:"planning", priority:"high", description:"Verify share capital, register of members, and director DINs", daysOffset:0 },
+      { title:"Prepare Annual Accounts", taskType:"review", phase:"fieldwork", priority:"high", description:"Finalise audited financial statements for the year", daysOffset:5 },
+      { title:"Board Meeting — Approve Accounts", taskType:"compliance_task", phase:"fieldwork", priority:"critical", description:"Convene Board meeting to approve financial statements", daysOffset:10 },
+      { title:"Prepare Director's Report", taskType:"review", phase:"fieldwork", priority:"medium", description:"Draft Director's Report per Section 134 requirements", daysOffset:12 },
+      { title:"AGM Notice Dispatch (21 days)", taskType:"compliance_task", phase:"review", priority:"high", description:"Dispatch AGM notice with 21 clear days to shareholders", daysOffset:15 },
+      { title:"Conduct AGM", taskType:"compliance_task", phase:"review", priority:"critical", description:"Hold Annual General Meeting and pass required resolutions", daysOffset:22 },
+      { title:"File AOC-4 (Financial Statements)", taskType:"compliance_task", phase:"reporting", priority:"critical", description:"File financial statements with ROC within 30 days of AGM", daysOffset:28 },
+      { title:"File MGT-7 (Annual Return)", taskType:"compliance_task", phase:"reporting", priority:"critical", description:"File Annual Return with ROC within 60 days of AGM", daysOffset:35 },
+    ],
+  },
+];
+
+const SEED_CATEGORIES = [
+  { id: "gst",        label: "GST Returns",       desc: "GSTR-1 & GSTR-3B (monthly)" },
+  { id: "tds",        label: "TDS",               desc: "Monthly payment + quarterly returns" },
+  { id: "income_tax", label: "Income Tax",         desc: "Advance tax, ITR, Tax Audit Report" },
+  { id: "roc",        label: "ROC / MCA",          desc: "AGM, AOC-4, MGT-7, Audit Report" },
+  { id: "pf_esi",    label: "PF / ESI",            desc: "Monthly PF/ESI payment" },
+];
 
 type Tab = "dashboard"|"clients"|"tasks"|"calendar"|"packages"|"trail"|"findings"|"workload"|"automation"|"collaboration";
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -1059,9 +1177,60 @@ export default function AuditorWorkspace() {
   const addComment    = useAddAuditTaskComment();
   const createEvent   = useCreateComplianceEvent();
   const updateEvent   = useUpdateComplianceEvent();
-  const createFinding = useCreateAuditFinding();
-  const updateFinding = useUpdateAuditFinding();
-  const deleteFinding = useDeleteAuditFinding();
+  const createFinding   = useCreateAuditFinding();
+  const updateFinding   = useUpdateAuditFinding();
+  const deleteFinding   = useDeleteAuditFinding();
+  const bulkCreateTasks = useBulkCreateAuditTasks();
+  const seedCompliance  = useSeedClientCompliance();
+
+  /* ── template dialog state ── */
+  const [templateDlg, setTemplateDlg] = useState<{
+    open: boolean; step: 1|2|3; templateId: string|null; clientId: string; baseDate: string;
+  }>({ open: false, step: 1, templateId: null, clientId: "", baseDate: today });
+
+  function openTemplateDlg(preClientId = "") {
+    setTemplateDlg({ open: true, step: 1, templateId: null, clientId: preClientId, baseDate: today });
+  }
+
+  function applyTemplate() {
+    const tmpl = AUDIT_TEMPLATES.find(t => t.id === templateDlg.templateId);
+    if (!tmpl || !templateDlg.clientId) { toast({ title: "Select client and template", variant: "destructive" }); return; }
+    const base = new Date(templateDlg.baseDate);
+    const tasks = tmpl.tasks.map(t => {
+      const dd = new Date(base.getTime() + t.daysOffset * 86400000);
+      return { clientId: Number(templateDlg.clientId), title: t.title, taskType: t.taskType, phase: t.phase, priority: t.priority, description: t.description, dueDate: dd.toISOString().split("T")[0] };
+    });
+    bulkCreateTasks.mutate({ data: { tasks } } as any, {
+      onSuccess: (created: any) => {
+        toast({ title: `${created.length} tasks created from "${tmpl.label}" template`, description: "Tasks are now visible in the Tasks tab" });
+        setTemplateDlg(d => ({ ...d, open: false }));
+        refetchTasks();
+      },
+      onError: () => toast({ title: "Failed to create tasks", variant: "destructive" }),
+    });
+  }
+
+  /* ── seed compliance dialog state ── */
+  const [seedDlg, setSeedDlg] = useState<{
+    open: boolean; clientId: string; fy: string; categories: string[];
+  }>({ open: false, clientId: "", fy: "2025-26", categories: ["gst","tds","income_tax","roc"] });
+
+  function openSeedDlg(preClientId = "") {
+    setSeedDlg({ open: true, clientId: preClientId, fy: "2025-26", categories: ["gst","tds","income_tax","roc"] });
+  }
+
+  function runSeedCompliance() {
+    if (!seedDlg.clientId) { toast({ title: "Select a client", variant: "destructive" }); return; }
+    if (seedDlg.categories.length === 0) { toast({ title: "Select at least one category", variant: "destructive" }); return; }
+    seedCompliance.mutate({ id: Number(seedDlg.clientId), data: { fy: seedDlg.fy, categories: seedDlg.categories } } as any, {
+      onSuccess: (res: any) => {
+        toast({ title: `${res.created} compliance events generated for FY ${seedDlg.fy}`, description: "View in the Compliance Calendar tab" });
+        setSeedDlg(d => ({ ...d, open: false }));
+        refetchEvents();
+      },
+      onError: () => toast({ title: "Failed to generate compliance calendar", variant: "destructive" }),
+    });
+  }
 
   function invalidate() {
     refetchClients(); refetchTasks(); refetchEvents(); refetchFindings();
@@ -1510,6 +1679,8 @@ export default function AuditorWorkspace() {
                             <span className="w-2 h-2 rounded-full bg-emerald-400" title="All clear" />
                           )}
                           <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", c.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>{c.status}</span>
+                          <button title="Start from Template" onClick={() => openTemplateDlg(String(c.id))} className="p-1 rounded hover:bg-violet-50 text-gray-400 hover:text-violet-600"><Sparkles className="w-3.5 h-3.5" /></button>
+                          <button title="Seed Compliance Calendar" onClick={() => openSeedDlg(String(c.id))} className="p-1 rounded hover:bg-amber-50 text-gray-400 hover:text-amber-600"><CalendarCog className="w-3.5 h-3.5" /></button>
                           <button onClick={() => openEditClient(c)} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"><Pencil className="w-3.5 h-3.5" /></button>
                           <button onClick={() => removeClient(c.id)} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
@@ -1600,6 +1771,9 @@ export default function AuditorWorkspace() {
                   <Zap className="w-3.5 h-3.5" />Quick Add
                 </button>
               )}
+              <Button size="sm" variant="outline" className="rounded-xl border-violet-200 text-violet-700 hover:bg-violet-50 h-8" onClick={() => openTemplateDlg(taskFilter.clientId)}>
+                <Sparkles className="w-3.5 h-3.5 mr-1" />From Template
+              </Button>
               <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700 h-8" onClick={() => openNewTask(taskFilter.clientId)}>
                 <Plus className="w-3.5 h-3.5 mr-1" />New Task
               </Button>
@@ -2091,6 +2265,9 @@ export default function AuditorWorkspace() {
                   </button>
                 ))}
               </div>
+              <Button size="sm" variant="outline" className="rounded-xl border-violet-200 text-violet-700 hover:bg-violet-50" onClick={() => openSeedDlg()}>
+                <CalendarCog className="w-3.5 h-3.5 mr-1" />Seed Calendar
+              </Button>
               <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700" onClick={() => setEventDlg({ open: true, form: emptyEvent })}><Plus className="w-3.5 h-3.5 mr-1" />Add Event</Button>
             </div>
           </div>
@@ -2900,6 +3077,179 @@ export default function AuditorWorkspace() {
           <DialogFooter>
             <Button variant="outline" className="rounded-xl" onClick={()=>setEmailOpen(false)}>Cancel</Button>
             <Button className="rounded-xl bg-violet-600 hover:bg-violet-700" onClick={handleEmail}><Send className="w-4 h-4 mr-1.5"/>Send Email</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ══ ENGAGEMENT TEMPLATE DIALOG ══════════════════════════════════ */}
+      <Dialog open={templateDlg.open} onOpenChange={o => setTemplateDlg(d => ({ ...d, open: o }))}>
+        <DialogContent className="max-w-2xl rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="w-4 h-4 text-violet-600" />
+              {templateDlg.step === 1 ? "Choose Audit Template" : templateDlg.step === 2 ? "Configure Engagement" : "Preview & Create Tasks"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Step 1 — Pick template */}
+          {templateDlg.step === 1 && (
+            <div className="space-y-3 py-1">
+              <p className="text-xs text-gray-500">Select the type of audit engagement. All standard tasks will be created automatically with the right phases and priorities.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {AUDIT_TEMPLATES.map(tmpl => (
+                  <button key={tmpl.id} onClick={() => setTemplateDlg(d => ({ ...d, templateId: tmpl.id }))}
+                    className={cn("text-left p-4 rounded-xl border-2 transition-all hover:border-violet-300",
+                      templateDlg.templateId === tmpl.id ? "border-violet-500 bg-violet-50" : tmpl.color)}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">{tmpl.icon}</span>
+                      <span className="text-sm font-semibold text-gray-800">{tmpl.label}</span>
+                      {templateDlg.templateId === tmpl.id && <CheckSquare2 className="w-4 h-4 text-violet-600 ml-auto" />}
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed">{tmpl.description}</p>
+                    <p className="text-xs font-medium text-gray-400 mt-2">{AUDIT_TEMPLATES.find(t => t.id === tmpl.id)?.tasks.length ?? 0} tasks across all phases</p>
+                  </button>
+                ))}
+              </div>
+              <DialogFooter className="pt-2">
+                <Button variant="outline" className="rounded-xl" onClick={() => setTemplateDlg(d => ({ ...d, open: false }))}>Cancel</Button>
+                <Button className="rounded-xl bg-violet-600 hover:bg-violet-700" disabled={!templateDlg.templateId}
+                  onClick={() => setTemplateDlg(d => ({ ...d, step: 2 }))}>
+                  Next <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {/* Step 2 — Configure */}
+          {templateDlg.step === 2 && (() => {
+            const tmpl = AUDIT_TEMPLATES.find(t => t.id === templateDlg.templateId)!;
+            return (
+              <div className="space-y-4 py-1">
+                <div className={cn("flex items-center gap-3 p-3 rounded-xl border-2", tmpl.color)}>
+                  <span className="text-2xl">{tmpl.icon}</span>
+                  <div><p className="text-sm font-semibold text-gray-800">{tmpl.label}</p><p className="text-xs text-gray-500">{tmpl.tasks.length} tasks will be created</p></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Client *</Label>
+                    <Select value={templateDlg.clientId} onValueChange={v => setTemplateDlg(d => ({ ...d, clientId: v }))}>
+                      <SelectTrigger className="rounded-xl text-sm"><SelectValue placeholder="Select client" /></SelectTrigger>
+                      <SelectContent>{clients.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Engagement Start Date</Label>
+                    <Input type="date" value={templateDlg.baseDate} onChange={e => setTemplateDlg(d => ({ ...d, baseDate: e.target.value }))} className="rounded-xl text-sm" />
+                    <p className="text-xs text-gray-400">Task due dates are calculated from this date</p>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3 max-h-52 overflow-y-auto space-y-1.5">
+                  <p className="text-xs font-semibold text-gray-500 mb-2">Task preview:</p>
+                  {tmpl.tasks.map((t, i) => {
+                    const dd = templateDlg.baseDate
+                      ? new Date(new Date(templateDlg.baseDate).getTime() + t.daysOffset * 86400000).toISOString().split("T")[0]
+                      : null;
+                    return (
+                      <div key={i} className="flex items-center gap-2 text-xs">
+                        <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium shrink-0", {
+                          planning:"bg-blue-100 text-blue-700", fieldwork:"bg-amber-100 text-amber-700",
+                          review:"bg-violet-100 text-violet-700", reporting:"bg-green-100 text-green-700",
+                        }[t.phase] ?? "bg-gray-100 text-gray-600")}>{t.phase}</span>
+                        <span className="text-gray-700 flex-1 truncate">{t.title}</span>
+                        <span className="text-gray-400 shrink-0">{dd ? fmtDate(dd) : "—"}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" className="rounded-xl" onClick={() => setTemplateDlg(d => ({ ...d, step: 1 }))}>Back</Button>
+                  <Button className="rounded-xl bg-violet-600 hover:bg-violet-700" disabled={!templateDlg.clientId || bulkCreateTasks.isPending}
+                    onClick={applyTemplate}>
+                    {bulkCreateTasks.isPending ? "Creating…" : `Create ${tmpl.tasks.length} Tasks`}
+                  </Button>
+                </DialogFooter>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* ══ SEED COMPLIANCE DIALOG ══════════════════════════════════════ */}
+      <Dialog open={seedDlg.open} onOpenChange={o => setSeedDlg(d => ({ ...d, open: o }))}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <CalendarCog className="w-4 h-4 text-amber-600" />
+              Auto-Seed Compliance Calendar
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-xs text-gray-500">Generate a full year of statutory compliance deadlines for a client in one click. GST returns, TDS payments, advance tax, ROC filings, and more.</p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Client *</Label>
+                <Select value={seedDlg.clientId} onValueChange={v => setSeedDlg(d => ({ ...d, clientId: v }))}>
+                  <SelectTrigger className="rounded-xl text-sm"><SelectValue placeholder="Select client" /></SelectTrigger>
+                  <SelectContent>{clients.map((c: any) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Financial Year</Label>
+                <Select value={seedDlg.fy} onValueChange={v => setSeedDlg(d => ({ ...d, fy: v }))}>
+                  <SelectTrigger className="rounded-xl text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["2026-27","2025-26","2024-25","2023-24"].map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Compliance Categories</Label>
+              <div className="space-y-2">
+                {SEED_CATEGORIES.map(cat => (
+                  <label key={cat.id} className={cn("flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all",
+                    seedDlg.categories.includes(cat.id) ? "border-violet-300 bg-violet-50" : "border-gray-200 hover:border-gray-300")}>
+                    <input type="checkbox" checked={seedDlg.categories.includes(cat.id)}
+                      onChange={e => setSeedDlg(d => ({
+                        ...d, categories: e.target.checked
+                          ? [...d.categories, cat.id]
+                          : d.categories.filter(x => x !== cat.id)
+                      }))}
+                      className="mt-0.5 accent-violet-600" />
+                    <div>
+                      <p className="text-xs font-semibold text-gray-800">{cat.label}</p>
+                      <p className="text-xs text-gray-500">{cat.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {seedDlg.clientId && seedDlg.categories.length > 0 && (() => {
+              const approxCount = seedDlg.categories.reduce((acc, cat) => {
+                if (cat === "gst") return acc + 24;
+                if (cat === "tds") return acc + 16;
+                if (cat === "income_tax") return acc + 6;
+                if (cat === "roc") return acc + 4;
+                if (cat === "pf_esi") return acc + 12;
+                return acc;
+              }, 0);
+              return (
+                <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                  <CalendarDays className="w-3.5 h-3.5 shrink-0" />
+                  <span>~{approxCount} compliance events will be created for FY {seedDlg.fy}</span>
+                </div>
+              );
+            })()}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setSeedDlg(d => ({ ...d, open: false }))}>Cancel</Button>
+            <Button className="rounded-xl bg-amber-600 hover:bg-amber-700" disabled={!seedDlg.clientId || seedDlg.categories.length === 0 || seedCompliance.isPending}
+              onClick={runSeedCompliance}>
+              {seedCompliance.isPending ? "Generating…" : "Seed Compliance Calendar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

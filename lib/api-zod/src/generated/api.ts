@@ -3156,6 +3156,39 @@ export const DeleteAuditClientResponse = zod.void()
 
 
 /**
+ * @summary Auto-generate full-year compliance calendar for a client
+ */
+export const SeedClientComplianceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SeedClientComplianceBody = zod.object({
+  "fy": zod.string().optional().describe('Financial year e.g. \"2025-26\"'),
+  "categories": zod.array(zod.enum(['gst', 'tds', 'income_tax', 'roc', 'pf_esi'])).optional()
+})
+
+export const SeedClientComplianceResponse = zod.object({
+  "created": zod.number().optional(),
+  "events": zod.array(zod.object({
+  "id": zod.number(),
+  "clientId": zod.number().nullish(),
+  "clientName": zod.string().nullish(),
+  "eventType": zod.string(),
+  "title": zod.string(),
+  "period": zod.string().nullish(),
+  "dueDate": zod.string(),
+  "status": zod.string(),
+  "filedDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "isRecurring": zod.boolean(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})).optional()
+})
+
+
+/**
  * @summary List audit tasks
  */
 export const ListAuditTasksQueryParams = zod.object({
@@ -3227,6 +3260,50 @@ export const CreateAuditTaskResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
+
+
+/**
+ * @summary Bulk-create tasks from an engagement template
+ */
+export const BulkCreateAuditTasksBody = zod.object({
+  "tasks": zod.array(zod.object({
+  "clientId": zod.number(),
+  "title": zod.string(),
+  "taskType": zod.string().optional(),
+  "phase": zod.string().optional(),
+  "description": zod.string().optional(),
+  "instructions": zod.string().optional(),
+  "status": zod.string().optional(),
+  "priority": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "assignee": zod.string().optional(),
+  "checklist": zod.array(zod.object({
+
+}).passthrough()).optional(),
+  "createdBy": zod.string().optional()
+}))
+})
+
+export const BulkCreateAuditTasksResponseItem = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "title": zod.string(),
+  "taskType": zod.string(),
+  "phase": zod.string(),
+  "description": zod.string().nullish(),
+  "instructions": zod.string().nullish(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "dueDate": zod.string().nullish(),
+  "assignee": zod.string().nullish(),
+  "checklist": zod.string(),
+  "createdBy": zod.string(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const BulkCreateAuditTasksResponse = zod.array(BulkCreateAuditTasksResponseItem)
 
 
 /**

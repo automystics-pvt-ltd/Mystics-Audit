@@ -10,6 +10,8 @@ export interface BankTransaction {
   id: number;
   bankAccountId: number;
   date: string;
+  /** @nullable */
+  type?: string | null;
   description: string;
   debit: number;
   credit: number;
@@ -21,4 +23,6 @@ export interface BankTransaction {
   matchedJournalId?: number | null;
   /** @nullable */
   matchConfidence?: number | null;
+  /** @nullable */
+  journalId?: number | null;
 }

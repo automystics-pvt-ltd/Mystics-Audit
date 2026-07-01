@@ -876,6 +876,48 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/BankTransaction"
+    post:
+      operationId: addBankTransaction
+      tags: [bank]
+      summary: Add a bank transaction with automatic GL posting
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BankTransactionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BankTransaction"
+
+  /bank/transfer:
+    post:
+      operationId: createBankTransfer
+      tags: [bank]
+      summary: Transfer funds between two bank accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BankTransferInput"
+      responses:
+        "201":
+          description: Transfer created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fromTransaction: { $ref: "#/components/schemas/BankTransaction" }
+                  toTransaction: { $ref: "#/components/schemas/BankTransaction" }
+                required: [fromTransaction, toTransaction]
 
   /bank/accounts/{id}/reconcile:
     post:
@@ -2209,6 +2251,7 @@ components:
         id: { type: integer }
         bankAccountId: { type: integer }
         date: { type: string }
+        type: { type: ["string", "null"] }
         description: { type: string }
         debit: { type: number }
         credit: { type: number }
@@ -2217,7 +2260,29 @@ components:
         status: { type: string }
         matchedJournalId: { type: ["integer", "null"] }
         matchConfidence: { type: ["number", "null"] }
+        journalId: { type: ["integer", "null"] }
       required: [id, bankAccountId, date, description, debit, credit, balance, status]
+
+    BankTransactionInput:
+      type: object
+      properties:
+        date: { type: string }
+        type: { type: string }
+        description: { type: string }
+        amount: { type: number }
+        referenceNo: { type: string }
+      required: [date, type, description, amount]
+
+    BankTransferInput:
+      type: object
+      properties:
+        fromAccountId: { type: integer }
+        toAccountId: { type: integer }
+        amount: { type: number }
+        date: { type: string }
+        description: { type: string }
+        referenceNo: { type: string }
+      required: [fromAccountId, toAccountId, amount, date, description]
 
     ReconcileInput:
       type: object

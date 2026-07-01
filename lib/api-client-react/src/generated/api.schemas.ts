@@ -716,6 +716,8 @@ export interface BankTransaction {
   id: number;
   bankAccountId: number;
   date: string;
+  /** @nullable */
+  type?: string | null;
   description: string;
   debit: number;
   credit: number;
@@ -727,6 +729,25 @@ export interface BankTransaction {
   matchedJournalId?: number | null;
   /** @nullable */
   matchConfidence?: number | null;
+  /** @nullable */
+  journalId?: number | null;
+}
+
+export interface BankTransactionInput {
+  date: string;
+  type: string;
+  description: string;
+  amount: number;
+  referenceNo?: string;
+}
+
+export interface BankTransferInput {
+  fromAccountId: number;
+  toAccountId: number;
+  amount: number;
+  date: string;
+  description: string;
+  referenceNo?: string;
 }
 
 export interface ReconcileInput {
@@ -1302,6 +1323,11 @@ vendorId?: number;
 from?: string;
 to?: string;
 page?: number;
+};
+
+export type CreateBankTransfer201 = {
+  fromTransaction: BankTransaction;
+  toTransaction: BankTransaction;
 };
 
 export type ListExpensesParams = {

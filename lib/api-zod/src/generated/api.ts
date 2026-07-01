@@ -1822,6 +1822,7 @@ export const GetBankTransactionsResponseItem = zod.object({
   "id": zod.number(),
   "bankAccountId": zod.number(),
   "date": zod.string(),
+  "type": zod.string().nullish(),
   "description": zod.string(),
   "debit": zod.number(),
   "credit": zod.number(),
@@ -1829,9 +1830,88 @@ export const GetBankTransactionsResponseItem = zod.object({
   "referenceNo": zod.string().nullish(),
   "status": zod.string(),
   "matchedJournalId": zod.number().nullish(),
-  "matchConfidence": zod.number().nullish()
+  "matchConfidence": zod.number().nullish(),
+  "journalId": zod.number().nullish()
 })
 export const GetBankTransactionsResponse = zod.array(GetBankTransactionsResponseItem)
+
+
+/**
+ * @summary Add a bank transaction with automatic GL posting
+ */
+export const AddBankTransactionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AddBankTransactionBody = zod.object({
+  "date": zod.string(),
+  "type": zod.string(),
+  "description": zod.string(),
+  "amount": zod.number(),
+  "referenceNo": zod.string().optional()
+})
+
+export const AddBankTransactionResponse = zod.object({
+  "id": zod.number(),
+  "bankAccountId": zod.number(),
+  "date": zod.string(),
+  "type": zod.string().nullish(),
+  "description": zod.string(),
+  "debit": zod.number(),
+  "credit": zod.number(),
+  "balance": zod.number(),
+  "referenceNo": zod.string().nullish(),
+  "status": zod.string(),
+  "matchedJournalId": zod.number().nullish(),
+  "matchConfidence": zod.number().nullish(),
+  "journalId": zod.number().nullish()
+})
+
+
+/**
+ * @summary Transfer funds between two bank accounts
+ */
+export const CreateBankTransferBody = zod.object({
+  "fromAccountId": zod.number(),
+  "toAccountId": zod.number(),
+  "amount": zod.number(),
+  "date": zod.string(),
+  "description": zod.string(),
+  "referenceNo": zod.string().optional()
+})
+
+export const CreateBankTransferResponse = zod.object({
+  "fromTransaction": zod.object({
+  "id": zod.number(),
+  "bankAccountId": zod.number(),
+  "date": zod.string(),
+  "type": zod.string().nullish(),
+  "description": zod.string(),
+  "debit": zod.number(),
+  "credit": zod.number(),
+  "balance": zod.number(),
+  "referenceNo": zod.string().nullish(),
+  "status": zod.string(),
+  "matchedJournalId": zod.number().nullish(),
+  "matchConfidence": zod.number().nullish(),
+  "journalId": zod.number().nullish()
+}),
+  "toTransaction": zod.object({
+  "id": zod.number(),
+  "bankAccountId": zod.number(),
+  "date": zod.string(),
+  "type": zod.string().nullish(),
+  "description": zod.string(),
+  "debit": zod.number(),
+  "credit": zod.number(),
+  "balance": zod.number(),
+  "referenceNo": zod.string().nullish(),
+  "status": zod.string(),
+  "matchedJournalId": zod.number().nullish(),
+  "matchConfidence": zod.number().nullish(),
+  "journalId": zod.number().nullish()
+})
+})
 
 
 /**
@@ -1850,6 +1930,7 @@ export const ReconcileBankTransactionResponse = zod.object({
   "id": zod.number(),
   "bankAccountId": zod.number(),
   "date": zod.string(),
+  "type": zod.string().nullish(),
   "description": zod.string(),
   "debit": zod.number(),
   "credit": zod.number(),
@@ -1857,7 +1938,8 @@ export const ReconcileBankTransactionResponse = zod.object({
   "referenceNo": zod.string().nullish(),
   "status": zod.string(),
   "matchedJournalId": zod.number().nullish(),
-  "matchConfidence": zod.number().nullish()
+  "matchConfidence": zod.number().nullish(),
+  "journalId": zod.number().nullish()
 })
 
 

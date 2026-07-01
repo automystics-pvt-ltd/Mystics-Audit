@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useListBankAccounts, useCreateBankAccount, getListBankAccountsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/format";
-import { Building2, Plus, CreditCard, Landmark, BookOpen, ArrowUpRight } from "lucide-react";
+import { Building2, Plus, CreditCard, Landmark, BookOpen, ArrowUpRight, Wallet, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ACCOUNT_TYPES = ["Savings", "Current", "Cash Credit", "Overdraft", "Fixed Deposit"];
@@ -224,7 +224,10 @@ export default function BankList() {
   const { data } = useListBankAccounts();
   const [addOpen, setAddOpen] = useState(false);
   const banks: any[] = data ?? [];
-  const totalBalance = banks.reduce((s, b) => s + Number(b.balance), 0);
+
+  const totalBalance   = banks.reduce((s, b) => s + Number(b.balance), 0);
+  const positiveCount  = banks.filter(b => Number(b.balance) > 0).length;
+  const overdraftCount = banks.filter(b => Number(b.balance) < 0).length;
 
   return (
     <div className="space-y-6 pb-8">
@@ -232,16 +235,63 @@ export default function BankList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Bank & Cash</h1>
-          <p className="text-sm text-muted-foreground">
-            Total balance:{" "}
-            <span className="font-mono font-bold text-foreground">{formatCurrency(totalBalance)}</span>
-            {" · "}{banks.length} account{banks.length !== 1 ? "s" : ""}
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Manage bank accounts, record transactions, and reconcile with your general ledger.
           </p>
         </div>
         <Button onClick={() => setAddOpen(true)} className="gap-2">
           <Plus className="w-4 h-4" />Add Account
         </Button>
       </div>
+
+      {/* KPI summary strip */}
+      {banks.length > 0 && (
+        <div className="grid grid-cols-3 gap-4">
+          <Card className="px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-blue-50">
+                <Wallet className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium">Total Cash Position</p>
+                <p className={cn("text-xl font-black font-mono mt-0.5", totalBalance >= 0 ? "text-foreground" : "text-destructive")}>
+                  {formatCurrency(totalBalance)}
+                </p>
+              </div>
+            </div>
+          </Card>
+          <Card className="px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-emerald-50">
+                <Building2 className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium">Active Accounts</p>
+                <p className="text-xl font-black mt-0.5">
+                  {banks.filter(b => b.isActive).length}
+                  <span className="text-sm font-normal text-muted-foreground ml-1">
+                    of {banks.length}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </Card>
+          <Card className="px-5 py-4">
+            <div className="flex items-center gap-3">
+              <div className={cn("p-2 rounded-xl", overdraftCount > 0 ? "bg-rose-50" : "bg-muted")}>
+                <AlertCircle className={cn("w-5 h-5", overdraftCount > 0 ? "text-rose-600" : "text-muted-foreground")} />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium">Overdraft Accounts</p>
+                <p className={cn("text-xl font-black mt-0.5", overdraftCount > 0 ? "text-rose-600" : "text-muted-foreground")}>
+                  {overdraftCount}
+                  {overdraftCount === 0 && <span className="text-sm font-normal text-muted-foreground ml-1">accounts</span>}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Bank cards grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

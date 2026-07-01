@@ -34,6 +34,8 @@ import type {
   BankAccount,
   BankAccountInput,
   BankTransaction,
+  BankTransactionInput,
+  BankTransferInput,
   BillPaymentInput,
   Budget,
   BudgetInput,
@@ -43,6 +45,7 @@ import type {
   Company,
   CompanyInput,
   CompanyUpdate,
+  CreateBankTransfer201,
   Customer,
   CustomerAging,
   CustomerInput,
@@ -3943,6 +3946,147 @@ export function useGetBankTransactions<TData = Awaited<ReturnType<typeof getBank
 
 
 
+
+export const getAddBankTransactionUrl = (id: number,) => {
+
+
+
+
+  return `/api/bank/accounts/${id}/transactions`
+}
+
+/**
+ * @summary Add a bank transaction with automatic GL posting
+ */
+export const addBankTransaction = async (id: number,
+    bankTransactionInput: BankTransactionInput, options?: RequestInit): Promise<BankTransaction> => {
+
+  return customFetch<BankTransaction>(getAddBankTransactionUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(bankTransactionInput)
+  }
+);}
+
+
+
+
+export const getAddBankTransactionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addBankTransaction>>, TError,{id: number;data: BodyType<BankTransactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addBankTransaction>>, TError,{id: number;data: BodyType<BankTransactionInput>}, TContext> => {
+
+const mutationKey = ['addBankTransaction'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addBankTransaction>>, {id: number;data: BodyType<BankTransactionInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addBankTransaction(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddBankTransactionMutationResult = NonNullable<Awaited<ReturnType<typeof addBankTransaction>>>
+    export type AddBankTransactionMutationBody = BodyType<BankTransactionInput>
+    export type AddBankTransactionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a bank transaction with automatic GL posting
+ */
+export const useAddBankTransaction = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addBankTransaction>>, TError,{id: number;data: BodyType<BankTransactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addBankTransaction>>,
+        TError,
+        {id: number;data: BodyType<BankTransactionInput>},
+        TContext
+      > => {
+      return useMutation(getAddBankTransactionMutationOptions(options));
+    }
+
+export const getCreateBankTransferUrl = () => {
+
+
+
+
+  return `/api/bank/transfer`
+}
+
+/**
+ * @summary Transfer funds between two bank accounts
+ */
+export const createBankTransfer = async (bankTransferInput: BankTransferInput, options?: RequestInit): Promise<CreateBankTransfer201> => {
+
+  return customFetch<CreateBankTransfer201>(getCreateBankTransferUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(bankTransferInput)
+  }
+);}
+
+
+
+
+export const getCreateBankTransferMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBankTransfer>>, TError,{data: BodyType<BankTransferInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createBankTransfer>>, TError,{data: BodyType<BankTransferInput>}, TContext> => {
+
+const mutationKey = ['createBankTransfer'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createBankTransfer>>, {data: BodyType<BankTransferInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createBankTransfer(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateBankTransferMutationResult = NonNullable<Awaited<ReturnType<typeof createBankTransfer>>>
+    export type CreateBankTransferMutationBody = BodyType<BankTransferInput>
+    export type CreateBankTransferMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Transfer funds between two bank accounts
+ */
+export const useCreateBankTransfer = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBankTransfer>>, TError,{data: BodyType<BankTransferInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createBankTransfer>>,
+        TError,
+        {data: BodyType<BankTransferInput>},
+        TContext
+      > => {
+      return useMutation(getCreateBankTransferMutationOptions(options));
+    }
 
 export const getReconcileBankTransactionUrl = (id: number,) => {
 

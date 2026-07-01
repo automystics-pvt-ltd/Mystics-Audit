@@ -13,12 +13,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import {
   Trash2, Plus, ArrowLeft, SlidersHorizontal, AlertCircle,
-  ChevronDown, Info,
+  Info, Copy,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
 import { useDocSettings, DocCustomizerPanel } from "@/components/doc-customizer";
 import { cn } from "@/lib/utils";
+import { ItemCombobox } from "@/components/ItemCombobox";
 
 /* ── Constants ── */
 const GST_RATES = [0, 5, 12, 18, 28];
@@ -41,6 +42,7 @@ const DOC_TYPES = [
 ];
 
 interface LineItem {
+  itemId?: number;
   description: string;
   hsnSac: string;
   quantity: number;
@@ -60,11 +62,22 @@ function calcLine(l: LineItem) {
   return { taxable, gstAmt, total: taxable + gstAmt };
 }
 
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-semibold text-gray-600">{label}</Label>
+      {children}
+      {error && <p className="text-xs text-red-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{error}</p>}
+    </div>
+  );
+}
+
 export default function NewInvoice() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { data: customers } = useListCustomers({});
-  const { data: items } = useListItems({});
+  const { data: itemsData } = useListItems({});
+  const items: any[] = itemsData ?? [];
   const { settings, update: updateSettings, reset: resetSettings } = useDocSettings("invoice");
 
   const today = new Date().toISOString().split("T")[0];
@@ -100,13 +113,20 @@ export default function NewInvoice() {
     setLines(prev => [...prev.slice(0, i + 1), { ...prev[i] }, ...prev.slice(i + 1)]);
   };
 
-  const fillFromItem = (lineIdx: number, itemId: string) => {
-    const item = items?.find((it: any) => String(it.id) === itemId);
-    if (!item) return;
-    setLines(prev => prev.map((l, idx) => idx === lineIdx
-      ? { ...l, description: item.name, hsnSac: item.hsnSac || "", rate: Number(item.sellingRate) || 0, gstRate: Number(item.gstRate) || 18 }
-      : l,
-    ));
+  const fillFromItem = (lineIdx: number, item: any) => {
+    setLines(prev => prev.map((l, idx) => idx === lineIdx ? {
+      ...l,
+      itemId: item.id,
+      description: item.name,
+      hsnSac: item.hsnSac || item.hsnCode || "",
+      unit: item.unit || "NOS",
+      rate: Number(item.sellingRate) || 0,
+      gstRate: Number(item.gstRate) || 18,
+    } : l));
+  };
+
+  const clearItem = (lineIdx: number) => {
+    setLines(prev => prev.map((l, idx) => idx === lineIdx ? { ...emptyLine() } : l));
   };
 
   const totals = lines.reduce((acc, l) => {
@@ -278,7 +298,7 @@ export default function NewInvoice() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b border-gray-100">
                     <tr>
-                      {items && items.length > 0 && <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 w-32">Item</th>}
+                      <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 w-32">Item</th>
                       <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500">Description</th>
                       {settings.showHsn && <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-24">HSN/SAC</th>}
                       <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-16 text-right">Qty</th>
@@ -295,16 +315,15 @@ export default function NewInvoice() {
                       const c = calcLine(line);
                       return (
                         <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/60 group">
-                          {items && items.length > 0 && (
-                            <td className="px-2 py-1.5">
-                              <Select onValueChange={v => fillFromItem(i, v)}>
-                                <SelectTrigger className="h-8 text-xs rounded-lg"><SelectValue placeholder="Pick…" /></SelectTrigger>
-                                <SelectContent>
-                                  {items.map((it: any) => <SelectItem key={it.id} value={String(it.id)}>{it.name}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                            </td>
-                          )}
+                          <td className="px-2 py-1.5">
+                            <ItemCombobox
+                              items={items}
+                              selectedId={line.itemId}
+                              onSelect={item => fillFromItem(i, item)}
+                              onClear={() => clearItem(i)}
+                              rateMode="selling"
+                            />
+                          </td>
                           <td className="px-2 py-1.5">
                             <Input className="h-8 text-sm rounded-lg" value={line.description}
                               onChange={e => updateLine(i, "description", e.target.value)} placeholder="Description…" />
@@ -349,7 +368,7 @@ export default function NewInvoice() {
                           <td className="px-2 py-1.5">
                             <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button onClick={() => duplicateLine(i)} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600" title="Duplicate">
-                                <Plus className="w-3 h-3" />
+                                <Copy className="w-3 h-3" />
                               </button>
                               <button onClick={() => removeLine(i)} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500" title="Remove">
                                 <Trash2 className="w-3 h-3" />
@@ -461,36 +480,61 @@ export default function NewInvoice() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Customizer panel */}
+            <Card className="rounded-2xl border-gray-200">
+              <CardHeader className="pb-2 border-b border-gray-100">
+                <CardTitle className="text-xs font-bold text-gray-500 uppercase tracking-wider">Display Options</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-3 space-y-2">
+                {[
+                  { key: "showHsn", label: "Show HSN/SAC" },
+                  { key: "showDiscount", label: "Show Discount column" },
+                ].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => updateSettings({ [key]: !settings[key as keyof typeof settings] })}
+                    className={cn(
+                      "w-full flex items-center justify-between text-xs rounded-lg px-3 py-2 transition-colors",
+                      settings[key as keyof typeof settings]
+                        ? "bg-violet-50 text-violet-700 font-semibold"
+                        : "text-muted-foreground hover:bg-gray-50",
+                    )}
+                  >
+                    {label}
+                    <div className={cn("w-7 h-3.5 rounded-full relative transition-colors", settings[key as keyof typeof settings] ? "bg-violet-600" : "bg-gray-200")}>
+                      <div className={cn("w-2.5 h-2.5 rounded-full bg-white absolute top-0.5 transition-transform", settings[key as keyof typeof settings] ? "right-0.5" : "left-0.5")} />
+                    </div>
+                  </button>
+                ))}
+                <button onClick={resetSettings} className="text-[10px] text-gray-400 hover:text-gray-600 w-full text-right pt-1 transition-colors">
+                  Reset defaults
+                </button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
 
-      <DocCustomizerPanel
-        docType="invoice"
-        isOpen={showCustomizer}
-        onClose={() => setShowCustomizer(false)}
-        settings={settings}
-        onUpdate={updateSettings}
-        onReset={resetSettings}
-      />
+      {showCustomizer && (
+        <DocCustomizerPanel
+          docType="invoice"
+          isOpen={showCustomizer}
+          settings={settings}
+          onUpdate={updateSettings}
+          onReset={resetSettings}
+          onClose={() => setShowCustomizer(false)}
+        />
+      )}
     </>
-  );
-}
-
-function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs font-semibold text-gray-600">{label}</Label>
-      {children}
-      {error && <p className="text-xs text-red-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{error}</p>}
-    </div>
   );
 }
 
 function SummaryRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex justify-between text-muted-foreground">
-      <span>{label}</span><span className="font-medium text-gray-800">{formatCurrency(value)}</span>
+    <div className="flex justify-between text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-gray-800">{formatCurrency(value)}</span>
     </div>
   );
 }

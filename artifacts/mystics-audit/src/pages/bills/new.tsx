@@ -1,4 +1,4 @@
-import { useCreateBill, useListVendors, getListBillsQueryKey } from "@workspace/api-client-react";
+import { useCreateBill, useListVendors, useListItems, getListBillsQueryKey } from "@workspace/api-client-react";
 import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback } from "react";
@@ -12,44 +12,72 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/format";
 import {
-  Plus, Trash2, ArrowLeft, AlertCircle, SlidersHorizontal,
-  Building2, Info, CheckCircle2,
+  Plus, Trash2, ArrowLeft, AlertCircle,
+  Building2, Info, Copy,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { ItemCombobox } from "@/components/ItemCombobox";
 
 const GST_RATES = [0, 5, 12, 18, 28];
-const UNITS = ["NOS", "KG", "MTR", "LTR", "BOX", "SET", "PCS", "HRS", "DAYS"];
-const TDS_SECTIONS = ["None", "194C – Contractor (1%)", "194J – Professional (10%)", "194I – Rent (10%)", "194H – Commission (5%)", "194A – Interest (10%)", "194Q – Purchase (0.1%)"];
+const UNITS = ["NOS", "KG", "MTR", "LTR", "BOX", "SET", "PCS", "HRS", "DAYS", "SQM", "SQF"];
+const TDS_SECTIONS = [
+  "None",
+  "194C – Contractor (1%)",
+  "194J – Professional (10%)",
+  "194I – Rent (10%)",
+  "194H – Commission (5%)",
+  "194A – Interest (10%)",
+  "194Q – Purchase (0.1%)",
+];
+const TDS_RATES: Record<string, number> = {
+  "194C – Contractor (1%)": 0.01,
+  "194J – Professional (10%)": 0.1,
+  "194I – Rent (10%)": 0.1,
+  "194H – Commission (5%)": 0.05,
+  "194A – Interest (10%)": 0.1,
+  "194Q – Purchase (0.1%)": 0.001,
+};
 
 type Line = {
-  description: string; hsnSac: string;
-  quantity: number; unit: string;
-  rate: number; gstRate: number;
+  itemId?: number;
+  description: string;
+  hsnSac: string;
+  quantity: number;
+  unit: string;
+  rate: number;
+  discountPct: number;
+  gstRate: number;
 };
 
 function emptyLine(): Line {
-  return { description: "", hsnSac: "", quantity: 1, unit: "NOS", rate: 0, gstRate: 18 };
+  return { description: "", hsnSac: "", quantity: 1, unit: "NOS", rate: 0, discountPct: 0, gstRate: 18 };
 }
 
 function calcLine(l: Line) {
-  const taxable = l.quantity * l.rate;
-  const gst     = taxable * l.gstRate / 100;
+  const taxable = l.quantity * l.rate * (1 - (l.discountPct || 0) / 100);
+  const gst = taxable * l.gstRate / 100;
   return { taxable, gst, total: taxable + gst };
 }
 
-const TDS_RATES: Record<string, number> = {
-  "194C – Contractor (1%)": 0.01, "194J – Professional (10%)": 0.1,
-  "194I – Rent (10%)": 0.1, "194H – Commission (5%)": 0.05,
-  "194A – Interest (10%)": 0.1, "194Q – Purchase (0.1%)": 0.001,
-};
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-semibold text-gray-600">{label}</Label>
+      {children}
+      {error && <p className="text-xs text-red-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{error}</p>}
+    </div>
+  );
+}
 
 export default function NewBill() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: vendorsData } = useListVendors({});
+  const { data: itemsData } = useListItems({});
   const vendors: any[] = vendorsData ?? [];
+  const items: any[] = itemsData ?? [];
   const mutation = useCreateBill();
 
   const [vendorId, setVendorId]           = useState("");
@@ -67,6 +95,30 @@ export default function NewBill() {
     setLines(prev => prev.map((l, idx) => idx === i ? { ...l, [field]: val } : l));
   }, []);
 
+  const fillFromItem = (lineIdx: number, item: any) => {
+    setLines(prev => prev.map((l, idx) => idx === lineIdx ? {
+      ...l,
+      itemId: item.id,
+      description: item.name,
+      hsnSac: item.hsnSac || item.hsnCode || "",
+      unit: item.unit || "NOS",
+      rate: Number(item.purchaseRate) || 0,
+      gstRate: Number(item.gstRate) || 18,
+    } : l));
+  };
+
+  const clearItem = (lineIdx: number) => {
+    setLines(prev => prev.map((l, idx) => idx === lineIdx ? { ...emptyLine() } : l));
+  };
+
+  const removeLine = (i: number) => {
+    if (lines.length > 1) setLines(p => p.filter((_, idx) => idx !== i));
+  };
+
+  const duplicateLine = (i: number) => {
+    setLines(prev => [...prev.slice(0, i + 1), { ...prev[i] }, ...prev.slice(i + 1)]);
+  };
+
   const totals = lines.reduce((acc, l) => {
     const c = calcLine(l);
     return { taxable: acc.taxable + c.taxable, gst: acc.gst + c.gst, total: acc.total + c.total };
@@ -76,13 +128,21 @@ export default function NewBill() {
   const tdsAmt  = totals.taxable * tdsRate;
   const netPayable = totals.total - tdsAmt;
 
+  const gstBreakdown = lines.reduce<Record<number, { taxable: number; tax: number }>>((acc, l) => {
+    const c = calcLine(l);
+    if (!acc[l.gstRate]) acc[l.gstRate] = { taxable: 0, tax: 0 };
+    acc[l.gstRate].taxable += c.taxable;
+    acc[l.gstRate].tax     += c.gst;
+    return acc;
+  }, {});
+
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!vendorId)                          e.vendor = "Select a vendor";
-    if (!vendorInvoiceNo)                   e.invNo = "Vendor invoice number required";
-    if (!dueDate)                           e.dueDate = "Due date required";
-    if (lines.some(l => !l.description))    e.lines = "All lines need a description";
-    if (lines.some(l => l.rate <= 0))       e.rates = "All rates must be greater than 0";
+    if (!vendorId)                       e.vendor  = "Select a vendor";
+    if (!vendorInvoiceNo)                e.invNo   = "Vendor invoice number required";
+    if (!dueDate)                        e.dueDate = "Due date required";
+    if (lines.some(l => !l.description)) e.lines   = "All lines need a description";
+    if (lines.some(l => l.rate <= 0))    e.rates   = "All rates must be greater than 0";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -94,9 +154,13 @@ export default function NewBill() {
         vendorId: parseInt(vendorId),
         vendorInvoiceNo, date, dueDate, notes,
         lines: lines.map(l => ({
-          description: l.description, hsnSac: l.hsnSac,
-          quantity: l.quantity, unit: l.unit,
-          rate: l.rate, gstRate: l.gstRate,
+          description: l.description,
+          hsnSac: l.hsnSac,
+          quantity: l.quantity,
+          unit: l.unit,
+          rate: l.rate,
+          discountPct: l.discountPct || undefined,
+          gstRate: l.gstRate,
         })),
       },
     } as any, {
@@ -110,7 +174,7 @@ export default function NewBill() {
   };
 
   return (
-    <div className="space-y-5 max-w-4xl">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href="/bills">
@@ -132,21 +196,21 @@ export default function NewBill() {
             </CardHeader>
             <CardContent className="pt-4 grid grid-cols-2 gap-4">
 
-              <div className="col-span-2 space-y-1.5">
-                <Label className="text-xs font-semibold text-gray-600">Vendor *</Label>
-                <Select value={vendorId} onValueChange={setVendorId}>
-                  <SelectTrigger className={cn("rounded-xl", errors.vendor && "border-red-400")}>
-                    <SelectValue placeholder="Select vendor…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vendors.map((v: any) => (
-                      <SelectItem key={v.id} value={String(v.id)}>
-                        {v.name} {v.isMsme ? "🔷" : ""} {v.gstin ? `· ${v.gstin}` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.vendor && <p className="text-xs text-red-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.vendor}</p>}
+              <div className="col-span-2">
+                <Field label="Vendor *" error={errors.vendor}>
+                  <Select value={vendorId} onValueChange={setVendorId}>
+                    <SelectTrigger className={cn("rounded-xl", errors.vendor && "border-red-400")}>
+                      <SelectValue placeholder="Select vendor…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vendors.map((v: any) => (
+                        <SelectItem key={v.id} value={String(v.id)}>
+                          {v.name} {v.isMsme ? "🔷" : ""} {v.gstin ? `· ${v.gstin}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
               </div>
 
               {/* Vendor chip */}
@@ -158,54 +222,64 @@ export default function NewBill() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-blue-800">{selectedVendor.name}</p>
-                      {selectedVendor.gstin && <p className="text-xs text-blue-500 font-mono">GSTIN: {selectedVendor.gstin}</p>}
+                      {selectedVendor.gstin && (
+                        <p className="text-xs text-blue-500 font-mono">GSTIN: {selectedVendor.gstin}</p>
+                      )}
                       {selectedVendor.isMsme && (
-                        <span className="text-[10px] bg-blue-200 text-blue-700 rounded-full px-2 py-0.5 font-bold mt-1 inline-block">MSME Vendor</span>
+                        <span className="text-[10px] bg-blue-200 text-blue-700 rounded-full px-2 py-0.5 font-bold mt-1 inline-block">
+                          MSME Vendor
+                        </span>
                       )}
                     </div>
                   </div>
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-gray-600">Vendor Invoice No *</Label>
-                <Input value={vendorInvoiceNo} onChange={e => setVendorInvoiceNo(e.target.value)}
-                  placeholder="INV/2026/001" className={cn("rounded-xl", errors.invNo && "border-red-400")} />
-                {errors.invNo && <p className="text-xs text-red-500">{errors.invNo}</p>}
-              </div>
+              <Field label="Vendor Invoice No *" error={errors.invNo}>
+                <Input
+                  value={vendorInvoiceNo}
+                  onChange={e => setVendorInvoiceNo(e.target.value)}
+                  placeholder="INV/2026/001"
+                  className={cn("rounded-xl", errors.invNo && "border-red-400")}
+                />
+              </Field>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-gray-600">Bill Date *</Label>
+              <Field label="Bill Date *">
                 <DateInput value={date} onChange={e => setDate(e.target.value)} className="rounded-xl" />
-              </div>
+              </Field>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-gray-600">Due Date *</Label>
-                <DateInput value={dueDate} onChange={e => setDueDate(e.target.value)}
-                  className={cn("rounded-xl", errors.dueDate && "border-red-400")} />
-                {errors.dueDate && <p className="text-xs text-red-500">{errors.dueDate}</p>}
-              </div>
+              <Field label="Due Date *" error={errors.dueDate}>
+                <DateInput
+                  value={dueDate}
+                  onChange={e => setDueDate(e.target.value)}
+                  className={cn("rounded-xl", errors.dueDate && "border-red-400")}
+                />
+              </Field>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-gray-600">TDS Section</Label>
+              <Field label="TDS Section">
                 <Select value={tdsSection} onValueChange={setTdsSection}>
                   <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TDS_SECTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
-              </div>
+              </Field>
 
               <div className="col-span-2 space-y-1.5">
                 <Label className="text-xs font-semibold text-gray-600">Notes</Label>
-                <Textarea value={notes} onChange={e => setNotes(e.target.value)}
-                  rows={2} className="rounded-xl resize-none text-sm" placeholder="Additional notes…" />
+                <Textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  rows={2}
+                  className="rounded-xl resize-none text-sm"
+                  placeholder="Additional notes…"
+                />
               </div>
             </CardContent>
           </Card>
 
           {/* Line items */}
-          <Card className="rounded-2xl border-gray-200 overflow-x-auto">
+          <Card className="rounded-2xl border-gray-200">
             <CardHeader className="pb-3 border-b border-gray-100 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-bold text-gray-700">Line Items</CardTitle>
               <Button size="sm" variant="outline" onClick={() => setLines(p => [...p, emptyLine()])} className="rounded-xl h-8">
@@ -221,14 +295,16 @@ export default function NewBill() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
+                    <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 w-32">Item</th>
                     <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500">Description</th>
                     <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-24">HSN/SAC</th>
                     <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-16 text-right">Qty</th>
                     <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-20">Unit</th>
                     <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-28 text-right">Rate (₹)</th>
+                    <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-16 text-right">Disc%</th>
                     <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-20 text-right">GST%</th>
                     <th className="px-3 py-2.5 text-xs font-bold text-gray-500 w-28 text-right">Amount</th>
-                    <th className="px-3 py-2.5 w-10"></th>
+                    <th className="px-3 py-2.5 w-12"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -237,16 +313,37 @@ export default function NewBill() {
                     return (
                       <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/60 group">
                         <td className="px-2 py-1.5">
-                          <Input className="h-8 text-sm rounded-lg" value={l.description}
-                            onChange={e => updateLine(i, "description", e.target.value)} placeholder="Description…" />
+                          <ItemCombobox
+                            items={items}
+                            selectedId={l.itemId}
+                            onSelect={item => fillFromItem(i, item)}
+                            onClear={() => clearItem(i)}
+                            rateMode="purchase"
+                          />
                         </td>
                         <td className="px-2 py-1.5">
-                          <Input className="h-8 text-xs rounded-lg font-mono" value={l.hsnSac}
-                            onChange={e => updateLine(i, "hsnSac", e.target.value)} placeholder="998313" />
+                          <Input
+                            className="h-8 text-sm rounded-lg"
+                            value={l.description}
+                            onChange={e => updateLine(i, "description", e.target.value)}
+                            placeholder="Description…"
+                          />
                         </td>
                         <td className="px-2 py-1.5">
-                          <Input className="h-8 text-sm rounded-lg text-right" type="number" min={0}
-                            value={l.quantity} onChange={e => updateLine(i, "quantity", Number(e.target.value))} />
+                          <Input
+                            className="h-8 text-xs rounded-lg font-mono"
+                            value={l.hsnSac}
+                            onChange={e => updateLine(i, "hsnSac", e.target.value)}
+                            placeholder="998313"
+                          />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Input
+                            className="h-8 text-sm rounded-lg text-right"
+                            type="number" min={0}
+                            value={l.quantity}
+                            onChange={e => updateLine(i, "quantity", Number(e.target.value))}
+                          />
                         </td>
                         <td className="px-2 py-1.5">
                           <Select value={l.unit} onValueChange={v => updateLine(i, "unit", v)}>
@@ -257,8 +354,20 @@ export default function NewBill() {
                           </Select>
                         </td>
                         <td className="px-2 py-1.5">
-                          <Input className="h-8 text-sm rounded-lg text-right" type="number" min={0} step="0.01"
-                            value={l.rate} onChange={e => updateLine(i, "rate", Number(e.target.value))} />
+                          <Input
+                            className="h-8 text-sm rounded-lg text-right"
+                            type="number" min={0} step="0.01"
+                            value={l.rate}
+                            onChange={e => updateLine(i, "rate", Number(e.target.value))}
+                          />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Input
+                            className="h-8 text-sm rounded-lg text-right"
+                            type="number" min={0} max={100}
+                            value={l.discountPct}
+                            onChange={e => updateLine(i, "discountPct", Number(e.target.value))}
+                          />
                         </td>
                         <td className="px-2 py-1.5">
                           <Select value={String(l.gstRate)} onValueChange={v => updateLine(i, "gstRate", Number(v))}>
@@ -268,12 +377,26 @@ export default function NewBill() {
                             </SelectContent>
                           </Select>
                         </td>
-                        <td className="px-3 py-1.5 text-right font-semibold text-sm">{formatCurrency(c.total)}</td>
+                        <td className="px-3 py-1.5 text-right font-semibold text-sm text-gray-800">
+                          {formatCurrency(c.total)}
+                        </td>
                         <td className="px-2 py-1.5">
-                          <button onClick={() => lines.length > 1 && setLines(p => p.filter((_, idx) => idx !== i))}
-                            className="p-1 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => duplicateLine(i)}
+                              className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+                              title="Duplicate"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => removeLine(i)}
+                              className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"
+                              title="Remove"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -282,8 +405,10 @@ export default function NewBill() {
               </table>
             </div>
             <div className="px-4 py-3 border-t border-gray-100">
-              <button onClick={() => setLines(p => [...p, emptyLine()])}
-                className="text-xs text-violet-600 hover:text-violet-700 font-semibold flex items-center gap-1">
+              <button
+                onClick={() => setLines(p => [...p, emptyLine()])}
+                className="text-xs text-violet-600 hover:text-violet-700 font-semibold flex items-center gap-1 transition-colors"
+              >
                 <Plus className="w-3 h-3" /> Add another line
               </button>
             </div>
@@ -298,12 +423,35 @@ export default function NewBill() {
             </CardHeader>
             <CardContent className="pt-4 space-y-3 text-sm">
               <SumRow label="Taxable Amount" value={totals.taxable} />
-              <SumRow label="GST"            value={totals.gst} />
               <Separator />
-              <SumRow label="Gross Total"    value={totals.total} />
+
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">GST Breakdown</p>
+              {Object.entries(gstBreakdown).map(([rate, b]) => (
+                <div key={rate} className="space-y-0.5">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>@ {rate}% on {formatCurrency(b.taxable)}</span>
+                    <span>{formatCurrency(b.tax)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-violet-600 pl-2">
+                    <span>CGST {Number(rate) / 2}%</span><span>{formatCurrency(b.tax / 2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-violet-600 pl-2">
+                    <span>SGST {Number(rate) / 2}%</span><span>{formatCurrency(b.tax / 2)}</span>
+                  </div>
+                </div>
+              ))}
+
+              <Separator />
+              <SumRow label="Total GST" value={totals.gst} />
+              <SumRow label="Gross Total" value={totals.total} />
+
               {tdsAmt > 0 && (
                 <>
-                  <SumRow label={`TDS (${tdsSection.split("(")[1]?.replace(")", "") ?? ""})`} value={-tdsAmt} color="text-red-600" />
+                  <SumRow
+                    label={`TDS (${tdsSection.split("(")[1]?.replace(")", "") ?? ""})`}
+                    value={-tdsAmt}
+                    color="text-red-600"
+                  />
                   <Separator />
                   <SumRow label="Net Payable" value={netPayable} bold color="text-blue-700" />
                   <div className="flex items-start gap-1.5 text-xs bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-amber-700">
@@ -312,15 +460,20 @@ export default function NewBill() {
                   </div>
                 </>
               )}
+
               {selectedVendor?.isMsme && (
                 <div className="flex items-start gap-1.5 text-xs bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-blue-700">
                   <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                   MSME vendor — payment due within 45 days
                 </div>
               )}
+
               <div className="pt-2 space-y-2">
-                <Button onClick={handleSubmit} disabled={mutation.isPending}
-                  className="w-full rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={mutation.isPending}
+                  className="w-full rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold"
+                >
                   {mutation.isPending ? "Creating…" : "Create Bill"}
                 </Button>
                 <Link href="/bills">

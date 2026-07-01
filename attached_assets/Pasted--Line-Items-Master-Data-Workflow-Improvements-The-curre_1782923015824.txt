@@ -1,0 +1,48 @@
+### Line Items, Master Data & Workflow Improvements
+
+The current **Line Items** module and several data entry screens are not user-friendly and do not provide an efficient data entry experience. These areas need to be redesigned and aligned with standard ERP application practices.
+
+#### Line Items
+
+* Redesign the Line Items section to provide a smooth, intuitive, and professional data entry experience.
+* Improve the layout, spacing, validations, and user interactions.
+* Support quick item selection, keyboard navigation, inline editing, and easy row addition/removal.
+* Ensure calculations, totals, taxes, discounts, and validations update correctly in real time.
+* Make the line item entry process fast, responsive, and suitable for production use.
+
+#### Item Master Integration
+
+* Currently, it is unclear where the Line Item list is sourced from.
+* Implement a proper **Item Master** module if it does not already exist.
+* Users should be able to create, edit, activate/deactivate, and manage items from the Item Master.
+* All Line Item dropdowns and lookups must fetch data dynamically from the Item Master.
+* Ensure items cannot be selected if they are inactive or unavailable.
+* Maintain proper relationships between Item Master and all transactional modules.
+
+#### Master Data Relationships
+
+* Verify that every transactional module references its corresponding master data correctly.
+* Ensure proper relationships exist between Customers, Vendors, Items, Warehouses, Units of Measure, Tax Codes, Categories, Projects, and other master records.
+* Remove hardcoded values and replace them with configurable master data wherever applicable.
+
+#### Data Entry Experience
+
+* Improve all entry forms across the application.
+* Reduce unnecessary clicks and simplify workflows.
+* Add smart defaults, auto-complete, searchable dropdowns, lookup dialogs, and inline validation.
+* Ensure every form follows enterprise ERP standards for usability and consistency.
+
+#### Module Workflow
+
+* Review every module and every screen to ensure the complete business workflow is logical, connected, and production-ready.
+* Validate that each module flows correctly into the next without missing steps or broken relationships.
+* Ensure all document lifecycles, approvals, status changes, and dependencies are implemented correctly.
+* Every screen should have a clear purpose, proper navigation, and seamless interaction with related modules.
+
+#### Functional Validation
+
+* Verify that all modules are fully functional after these improvements.
+* Do not break any existing business logic, calculations, API integrations, validations, or database operations.
+* Fix any inconsistencies, missing relationships, or workflow gaps discovered during implementation.
+
+The final result should provide a complete, professional, enterprise-grade ERP workflow where master data, transactional data, and document lifecycles are fully integrated, user-friendly, and suitable for real-world production use.

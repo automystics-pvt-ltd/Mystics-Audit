@@ -45,6 +45,8 @@ tags:
     description: Audit trail
   - name: reports
     description: Financial reports
+  - name: audit-workspace
+    description: Audit practice management — clients, tasks, compliance calendar
 
 paths:
   /healthz:
@@ -1489,6 +1491,277 @@ paths:
                 items:
                   $ref: "#/components/schemas/DayBookEntry"
 
+  # AUDIT WORKSPACE — Clients
+  /audit-clients:
+    get:
+      operationId: listAuditClients
+      tags: [audit-workspace]
+      summary: List all audit clients
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: search, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: List of audit clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditClient"
+    post:
+      operationId: createAuditClient
+      tags: [audit-workspace]
+      summary: Create an audit client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditClientInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditClient"
+
+  /audit-clients/{id}:
+    get:
+      operationId: getAuditClient
+      tags: [audit-workspace]
+      summary: Get audit client by ID
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Audit client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditClient"
+    put:
+      operationId: updateAuditClient
+      tags: [audit-workspace]
+      summary: Update audit client
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditClientInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditClient"
+    delete:
+      operationId: deleteAuditClient
+      tags: [audit-workspace]
+      summary: Delete audit client
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204":
+          description: Deleted
+
+  # AUDIT WORKSPACE — Tasks
+  /audit-tasks:
+    get:
+      operationId: listAuditTasks
+      tags: [audit-workspace]
+      summary: List audit tasks
+      parameters:
+        - { name: clientId, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+        - { name: assignee, in: query, schema: { type: string } }
+        - { name: overdue, in: query, schema: { type: boolean } }
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditTask"
+    post:
+      operationId: createAuditTask
+      tags: [audit-workspace]
+      summary: Create audit task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditTaskInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditTask"
+
+  /audit-tasks/{id}:
+    get:
+      operationId: getAuditTask
+      tags: [audit-workspace]
+      summary: Get audit task by ID
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Task with comments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditTaskDetail"
+    put:
+      operationId: updateAuditTask
+      tags: [audit-workspace]
+      summary: Update audit task
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditTaskInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditTask"
+    delete:
+      operationId: deleteAuditTask
+      tags: [audit-workspace]
+      summary: Delete audit task
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204":
+          description: Deleted
+
+  /audit-tasks/{id}/comments:
+    post:
+      operationId: addAuditTaskComment
+      tags: [audit-workspace]
+      summary: Add comment to audit task
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditCommentInput"
+      responses:
+        "201":
+          description: Comment added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditTaskComment"
+
+  /audit-tasks/{id}/status:
+    put:
+      operationId: updateAuditTaskStatus
+      tags: [audit-workspace]
+      summary: Update task status
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditTaskStatusPatch"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditTask"
+
+  # AUDIT WORKSPACE — Compliance Events
+  /compliance-events:
+    get:
+      operationId: listComplianceEvents
+      tags: [audit-workspace]
+      summary: List compliance events
+      parameters:
+        - { name: clientId, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: month, in: query, schema: { type: string }, description: "YYYY-MM" }
+        - { name: eventType, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: List of compliance events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ComplianceEvent"
+    post:
+      operationId: createComplianceEvent
+      tags: [audit-workspace]
+      summary: Create compliance event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplianceEventInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceEvent"
+
+  /compliance-events/{id}:
+    put:
+      operationId: updateComplianceEvent
+      tags: [audit-workspace]
+      summary: Update compliance event
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplianceEventInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceEvent"
+    delete:
+      operationId: deleteComplianceEvent
+      tags: [audit-workspace]
+      summary: Delete compliance event
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -2833,3 +3106,146 @@ components:
         debit: { type: number }
         credit: { type: number }
       required: [id, date, voucherNo, type, debit, credit]
+
+    AuditClient:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        pan: { type: ["string", "null"] }
+        gstin: { type: ["string", "null"] }
+        contactName: { type: ["string", "null"] }
+        contactEmail: { type: ["string", "null"] }
+        contactPhone: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        city: { type: ["string", "null"] }
+        state: { type: ["string", "null"] }
+        engagementTypes: { type: string }
+        status: { type: string }
+        notes: { type: ["string", "null"] }
+        orgId: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+      required: [id, name, engagementTypes, status, orgId, createdAt, updatedAt]
+
+    AuditClientInput:
+      type: object
+      properties:
+        name: { type: string }
+        pan: { type: string }
+        gstin: { type: string }
+        contactName: { type: string }
+        contactEmail: { type: string }
+        contactPhone: { type: string }
+        address: { type: string }
+        city: { type: string }
+        state: { type: string }
+        engagementTypes: { type: array, items: { type: string } }
+        status: { type: string }
+        notes: { type: string }
+      required: [name]
+
+    AuditTask:
+      type: object
+      properties:
+        id: { type: integer }
+        clientId: { type: integer }
+        clientName: { type: ["string", "null"] }
+        title: { type: string }
+        taskType: { type: string }
+        description: { type: ["string", "null"] }
+        instructions: { type: ["string", "null"] }
+        status: { type: string }
+        priority: { type: string }
+        dueDate: { type: ["string", "null"] }
+        assignee: { type: ["string", "null"] }
+        checklist: { type: string }
+        createdBy: { type: string }
+        orgId: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+      required: [id, clientId, title, taskType, status, priority, checklist, createdBy, orgId, createdAt, updatedAt]
+
+    AuditTaskDetail:
+      allOf:
+        - $ref: "#/components/schemas/AuditTask"
+        - type: object
+          properties:
+            comments:
+              type: array
+              items:
+                $ref: "#/components/schemas/AuditTaskComment"
+
+    AuditCommentInput:
+      type: object
+      properties:
+        message: { type: string }
+        author: { type: string }
+        authorType: { type: string }
+      required: [message]
+
+    AuditTaskStatusPatch:
+      type: object
+      properties:
+        status: { type: string }
+      required: [status]
+
+    AuditTaskComment:
+      type: object
+      properties:
+        id: { type: integer }
+        taskId: { type: integer }
+        author: { type: string }
+        authorType: { type: string }
+        message: { type: string }
+        createdAt: { type: string }
+      required: [id, taskId, author, authorType, message, createdAt]
+
+    AuditTaskInput:
+      type: object
+      properties:
+        clientId: { type: integer }
+        title: { type: string }
+        taskType: { type: string }
+        description: { type: string }
+        instructions: { type: string }
+        status: { type: string }
+        priority: { type: string }
+        dueDate: { type: string }
+        assignee: { type: string }
+        checklist: { type: array, items: { type: object } }
+        createdBy: { type: string }
+      required: [clientId, title]
+
+    ComplianceEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        clientId: { type: ["integer", "null"] }
+        clientName: { type: ["string", "null"] }
+        eventType: { type: string }
+        title: { type: string }
+        period: { type: ["string", "null"] }
+        dueDate: { type: string }
+        status: { type: string }
+        filedDate: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+        isRecurring: { type: boolean }
+        orgId: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+      required: [id, eventType, title, dueDate, status, isRecurring, orgId, createdAt, updatedAt]
+
+    ComplianceEventInput:
+      type: object
+      properties:
+        clientId: { type: integer }
+        eventType: { type: string }
+        title: { type: string }
+        period: { type: string }
+        dueDate: { type: string }
+        status: { type: string }
+        filedDate: { type: string }
+        notes: { type: string }
+        isRecurring: { type: boolean }
+      required: [title, dueDate]

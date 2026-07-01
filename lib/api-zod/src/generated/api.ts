@@ -3003,3 +3003,472 @@ export const GetDayBookResponseItem = zod.object({
 export const GetDayBookResponse = zod.array(GetDayBookResponseItem)
 
 
+/**
+ * @summary List all audit clients
+ */
+export const ListAuditClientsQueryParams = zod.object({
+  "status": zod.coerce.string().optional(),
+  "search": zod.coerce.string().optional()
+})
+
+export const ListAuditClientsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "pan": zod.string().nullish(),
+  "gstin": zod.string().nullish(),
+  "contactName": zod.string().nullish(),
+  "contactEmail": zod.string().nullish(),
+  "contactPhone": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "engagementTypes": zod.string(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAuditClientsResponse = zod.array(ListAuditClientsResponseItem)
+
+
+/**
+ * @summary Create an audit client
+ */
+export const CreateAuditClientBody = zod.object({
+  "name": zod.string(),
+  "pan": zod.string().optional(),
+  "gstin": zod.string().optional(),
+  "contactName": zod.string().optional(),
+  "contactEmail": zod.string().optional(),
+  "contactPhone": zod.string().optional(),
+  "address": zod.string().optional(),
+  "city": zod.string().optional(),
+  "state": zod.string().optional(),
+  "engagementTypes": zod.array(zod.string()).optional(),
+  "status": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const CreateAuditClientResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "pan": zod.string().nullish(),
+  "gstin": zod.string().nullish(),
+  "contactName": zod.string().nullish(),
+  "contactEmail": zod.string().nullish(),
+  "contactPhone": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "engagementTypes": zod.string(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get audit client by ID
+ */
+export const GetAuditClientParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAuditClientResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "pan": zod.string().nullish(),
+  "gstin": zod.string().nullish(),
+  "contactName": zod.string().nullish(),
+  "contactEmail": zod.string().nullish(),
+  "contactPhone": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "engagementTypes": zod.string(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update audit client
+ */
+export const UpdateAuditClientParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAuditClientBody = zod.object({
+  "name": zod.string(),
+  "pan": zod.string().optional(),
+  "gstin": zod.string().optional(),
+  "contactName": zod.string().optional(),
+  "contactEmail": zod.string().optional(),
+  "contactPhone": zod.string().optional(),
+  "address": zod.string().optional(),
+  "city": zod.string().optional(),
+  "state": zod.string().optional(),
+  "engagementTypes": zod.array(zod.string()).optional(),
+  "status": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const UpdateAuditClientResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "pan": zod.string().nullish(),
+  "gstin": zod.string().nullish(),
+  "contactName": zod.string().nullish(),
+  "contactEmail": zod.string().nullish(),
+  "contactPhone": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "engagementTypes": zod.string(),
+  "status": zod.string(),
+  "notes": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete audit client
+ */
+export const DeleteAuditClientParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAuditClientResponse = zod.void()
+
+
+/**
+ * @summary List audit tasks
+ */
+export const ListAuditTasksQueryParams = zod.object({
+  "clientId": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional(),
+  "priority": zod.coerce.string().optional(),
+  "assignee": zod.coerce.string().optional(),
+  "overdue": zod.coerce.boolean().optional()
+})
+
+export const ListAuditTasksResponseItem = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "title": zod.string(),
+  "taskType": zod.string(),
+  "description": zod.string().nullish(),
+  "instructions": zod.string().nullish(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "dueDate": zod.string().nullish(),
+  "assignee": zod.string().nullish(),
+  "checklist": zod.string(),
+  "createdBy": zod.string(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAuditTasksResponse = zod.array(ListAuditTasksResponseItem)
+
+
+/**
+ * @summary Create audit task
+ */
+export const CreateAuditTaskBody = zod.object({
+  "clientId": zod.number(),
+  "title": zod.string(),
+  "taskType": zod.string().optional(),
+  "description": zod.string().optional(),
+  "instructions": zod.string().optional(),
+  "status": zod.string().optional(),
+  "priority": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "assignee": zod.string().optional(),
+  "checklist": zod.array(zod.object({
+
+}).passthrough()).optional(),
+  "createdBy": zod.string().optional()
+})
+
+export const CreateAuditTaskResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "title": zod.string(),
+  "taskType": zod.string(),
+  "description": zod.string().nullish(),
+  "instructions": zod.string().nullish(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "dueDate": zod.string().nullish(),
+  "assignee": zod.string().nullish(),
+  "checklist": zod.string(),
+  "createdBy": zod.string(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get audit task by ID
+ */
+export const GetAuditTaskParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAuditTaskResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "title": zod.string(),
+  "taskType": zod.string(),
+  "description": zod.string().nullish(),
+  "instructions": zod.string().nullish(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "dueDate": zod.string().nullish(),
+  "assignee": zod.string().nullish(),
+  "checklist": zod.string(),
+  "createdBy": zod.string(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}).and(zod.object({
+  "comments": zod.array(zod.object({
+  "id": zod.number(),
+  "taskId": zod.number(),
+  "author": zod.string(),
+  "authorType": zod.string(),
+  "message": zod.string(),
+  "createdAt": zod.string()
+})).optional()
+}))
+
+
+/**
+ * @summary Update audit task
+ */
+export const UpdateAuditTaskParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAuditTaskBody = zod.object({
+  "clientId": zod.number(),
+  "title": zod.string(),
+  "taskType": zod.string().optional(),
+  "description": zod.string().optional(),
+  "instructions": zod.string().optional(),
+  "status": zod.string().optional(),
+  "priority": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "assignee": zod.string().optional(),
+  "checklist": zod.array(zod.object({
+
+}).passthrough()).optional(),
+  "createdBy": zod.string().optional()
+})
+
+export const UpdateAuditTaskResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "title": zod.string(),
+  "taskType": zod.string(),
+  "description": zod.string().nullish(),
+  "instructions": zod.string().nullish(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "dueDate": zod.string().nullish(),
+  "assignee": zod.string().nullish(),
+  "checklist": zod.string(),
+  "createdBy": zod.string(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete audit task
+ */
+export const DeleteAuditTaskParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAuditTaskResponse = zod.void()
+
+
+/**
+ * @summary Add comment to audit task
+ */
+export const AddAuditTaskCommentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AddAuditTaskCommentBody = zod.object({
+  "message": zod.string(),
+  "author": zod.string().optional(),
+  "authorType": zod.string().optional()
+})
+
+export const AddAuditTaskCommentResponse = zod.object({
+  "id": zod.number(),
+  "taskId": zod.number(),
+  "author": zod.string(),
+  "authorType": zod.string(),
+  "message": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update task status
+ */
+export const UpdateAuditTaskStatusParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAuditTaskStatusBody = zod.object({
+  "status": zod.string()
+})
+
+export const UpdateAuditTaskStatusResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "title": zod.string(),
+  "taskType": zod.string(),
+  "description": zod.string().nullish(),
+  "instructions": zod.string().nullish(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "dueDate": zod.string().nullish(),
+  "assignee": zod.string().nullish(),
+  "checklist": zod.string(),
+  "createdBy": zod.string(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary List compliance events
+ */
+export const ListComplianceEventsQueryParams = zod.object({
+  "clientId": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional(),
+  "month": zod.coerce.string().optional().describe('YYYY-MM'),
+  "eventType": zod.coerce.string().optional()
+})
+
+export const ListComplianceEventsResponseItem = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number().nullish(),
+  "clientName": zod.string().nullish(),
+  "eventType": zod.string(),
+  "title": zod.string(),
+  "period": zod.string().nullish(),
+  "dueDate": zod.string(),
+  "status": zod.string(),
+  "filedDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "isRecurring": zod.boolean(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListComplianceEventsResponse = zod.array(ListComplianceEventsResponseItem)
+
+
+/**
+ * @summary Create compliance event
+ */
+export const CreateComplianceEventBody = zod.object({
+  "clientId": zod.number().optional(),
+  "eventType": zod.string().optional(),
+  "title": zod.string(),
+  "period": zod.string().optional(),
+  "dueDate": zod.string(),
+  "status": zod.string().optional(),
+  "filedDate": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "isRecurring": zod.boolean().optional()
+})
+
+export const CreateComplianceEventResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number().nullish(),
+  "clientName": zod.string().nullish(),
+  "eventType": zod.string(),
+  "title": zod.string(),
+  "period": zod.string().nullish(),
+  "dueDate": zod.string(),
+  "status": zod.string(),
+  "filedDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "isRecurring": zod.boolean(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update compliance event
+ */
+export const UpdateComplianceEventParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateComplianceEventBody = zod.object({
+  "clientId": zod.number().optional(),
+  "eventType": zod.string().optional(),
+  "title": zod.string(),
+  "period": zod.string().optional(),
+  "dueDate": zod.string(),
+  "status": zod.string().optional(),
+  "filedDate": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "isRecurring": zod.boolean().optional()
+})
+
+export const UpdateComplianceEventResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number().nullish(),
+  "clientName": zod.string().nullish(),
+  "eventType": zod.string(),
+  "title": zod.string(),
+  "period": zod.string().nullish(),
+  "dueDate": zod.string(),
+  "status": zod.string(),
+  "filedDate": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "isRecurring": zod.boolean(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete compliance event
+ */
+export const DeleteComplianceEventParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteComplianceEventResponse = zod.void()
+
+

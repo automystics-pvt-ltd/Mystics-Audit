@@ -16,3 +16,4 @@ export * from "./users";
 export * from "./subscriptions";
 export * from "./documents";
 export * from "./platform";
+export * from "./audit-workspace";

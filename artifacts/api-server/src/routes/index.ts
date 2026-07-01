@@ -28,6 +28,7 @@ import reportsExtendedRouter from "./reports-extended";
 import registerRouter from "./register";
 import emailSettingsRouter from "./email-settings";
 import paymentGatewayRouter from "./payment-gateway";
+import auditWorkspaceRouter from "./audit-workspace";
 
 const router: IRouter = Router();
 
@@ -60,5 +61,6 @@ router.use(reportsExtendedRouter);
 router.use(registerRouter);
 router.use(emailSettingsRouter);
 router.use(paymentGatewayRouter);
+router.use(auditWorkspaceRouter);
 
 export default router;

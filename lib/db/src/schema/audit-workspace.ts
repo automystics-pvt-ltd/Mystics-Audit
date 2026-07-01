@@ -1,0 +1,74 @@
+import { pgTable, serial, text, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod/v4";
+
+export const auditClientsTable = pgTable("audit_clients", {
+  id:              serial("id").primaryKey(),
+  name:            text("name").notNull(),
+  pan:             text("pan"),
+  gstin:           text("gstin"),
+  contactName:     text("contact_name"),
+  contactEmail:    text("contact_email"),
+  contactPhone:    text("contact_phone"),
+  address:         text("address"),
+  city:            text("city"),
+  state:           text("state"),
+  engagementTypes: text("engagement_types").notNull().default("[]"),
+  status:          text("status").notNull().default("active"),
+  notes:           text("notes"),
+  orgId:           integer("org_id").notNull().default(1),
+  createdAt:       timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:       timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const auditTasksTable = pgTable("audit_tasks", {
+  id:           serial("id").primaryKey(),
+  clientId:     integer("client_id").notNull().references(() => auditClientsTable.id),
+  title:        text("title").notNull(),
+  taskType:     text("task_type").notNull().default("document_request"),
+  description:  text("description"),
+  instructions: text("instructions"),
+  status:       text("status").notNull().default("created"),
+  priority:     text("priority").notNull().default("medium"),
+  dueDate:      text("due_date"),
+  assignee:     text("assignee"),
+  checklist:    text("checklist").notNull().default("[]"),
+  createdBy:    text("created_by").notNull().default("Current User"),
+  orgId:        integer("org_id").notNull().default(1),
+  createdAt:    timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:    timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const auditTaskCommentsTable = pgTable("audit_task_comments", {
+  id:         serial("id").primaryKey(),
+  taskId:     integer("task_id").notNull().references(() => auditTasksTable.id),
+  author:     text("author").notNull().default("Current User"),
+  authorType: text("author_type").notNull().default("auditor"),
+  message:    text("message").notNull(),
+  createdAt:  timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const complianceEventsTable = pgTable("compliance_events", {
+  id:          serial("id").primaryKey(),
+  clientId:    integer("client_id").references(() => auditClientsTable.id),
+  eventType:   text("event_type").notNull().default("custom"),
+  title:       text("title").notNull(),
+  period:      text("period"),
+  dueDate:     text("due_date").notNull(),
+  status:      text("status").notNull().default("pending"),
+  filedDate:   text("filed_date"),
+  notes:       text("notes"),
+  isRecurring: boolean("is_recurring").notNull().default(false),
+  orgId:       integer("org_id").notNull().default(1),
+  createdAt:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:   timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const insertAuditClientSchema     = createInsertSchema(auditClientsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAuditTaskSchema       = createInsertSchema(auditTasksTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertComplianceEventSchema = createInsertSchema(complianceEventsTable).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type AuditClient      = typeof auditClientsTable.$inferSelect;
+export type AuditTask        = typeof auditTasksTable.$inferSelect;
+export type AuditTaskComment = typeof auditTaskCommentsTable.$inferSelect;
+export type ComplianceEvent  = typeof complianceEventsTable.$inferSelect;

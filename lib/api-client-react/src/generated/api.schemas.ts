@@ -1252,6 +1252,146 @@ export interface DayBookEntry {
   credit: number;
 }
 
+export interface AuditClient {
+  id: number;
+  name: string;
+  /** @nullable */
+  pan?: string | null;
+  /** @nullable */
+  gstin?: string | null;
+  /** @nullable */
+  contactName?: string | null;
+  /** @nullable */
+  contactEmail?: string | null;
+  /** @nullable */
+  contactPhone?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  engagementTypes: string;
+  status: string;
+  /** @nullable */
+  notes?: string | null;
+  orgId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuditClientInput {
+  name: string;
+  pan?: string;
+  gstin?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  engagementTypes?: string[];
+  status?: string;
+  notes?: string;
+}
+
+export interface AuditTask {
+  id: number;
+  clientId: number;
+  /** @nullable */
+  clientName?: string | null;
+  title: string;
+  taskType: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  instructions?: string | null;
+  status: string;
+  priority: string;
+  /** @nullable */
+  dueDate?: string | null;
+  /** @nullable */
+  assignee?: string | null;
+  checklist: string;
+  createdBy: string;
+  orgId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuditTaskComment {
+  id: number;
+  taskId: number;
+  author: string;
+  authorType: string;
+  message: string;
+  createdAt: string;
+}
+
+export type AuditTaskDetail = AuditTask & {
+  comments?: AuditTaskComment[];
+};
+
+export interface AuditCommentInput {
+  message: string;
+  author?: string;
+  authorType?: string;
+}
+
+export interface AuditTaskStatusPatch {
+  status: string;
+}
+
+export type AuditTaskInputChecklistItem = { [key: string]: unknown };
+
+export interface AuditTaskInput {
+  clientId: number;
+  title: string;
+  taskType?: string;
+  description?: string;
+  instructions?: string;
+  status?: string;
+  priority?: string;
+  dueDate?: string;
+  assignee?: string;
+  checklist?: AuditTaskInputChecklistItem[];
+  createdBy?: string;
+}
+
+export interface ComplianceEvent {
+  id: number;
+  /** @nullable */
+  clientId?: number | null;
+  /** @nullable */
+  clientName?: string | null;
+  eventType: string;
+  title: string;
+  /** @nullable */
+  period?: string | null;
+  dueDate: string;
+  status: string;
+  /** @nullable */
+  filedDate?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  isRecurring: boolean;
+  orgId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ComplianceEventInput {
+  clientId?: number;
+  eventType?: string;
+  title: string;
+  period?: string;
+  dueDate: string;
+  status?: string;
+  filedDate?: string;
+  notes?: string;
+  isRecurring?: boolean;
+}
+
 export type GetDashboardSummaryParams = {
 /**
  * Financial year e.g. 2024-25
@@ -1411,5 +1551,28 @@ from?: string;
 to?: string;
 type?: string;
 page?: number;
+};
+
+export type ListAuditClientsParams = {
+status?: string;
+search?: string;
+};
+
+export type ListAuditTasksParams = {
+clientId?: number;
+status?: string;
+priority?: string;
+assignee?: string;
+overdue?: boolean;
+};
+
+export type ListComplianceEventsParams = {
+clientId?: number;
+status?: string;
+/**
+ * YYYY-MM
+ */
+month?: string;
+eventType?: string;
 };
 

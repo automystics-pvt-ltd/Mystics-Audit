@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useListInvoices } from "@workspace/api-client-react";
+import { useFY } from "@/contexts/fy-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,11 +22,14 @@ const STATUS_CFG: Record<string, { color: string; icon: React.FC<{ className?: s
 };
 
 export default function InvoicesList() {
+  const { fy } = useFY();
   const [search, setSearch]       = useState("");
   const [statusFilter, setStatus] = useState("all");
   const [typeFilter, setType]     = useState("all");
 
   const { data: invoices, isLoading, refetch, isFetching } = useListInvoices({
+    from:   fy.from,
+    to:     fy.to,
     status: statusFilter !== "all" ? statusFilter : undefined,
     type:   typeFilter   !== "all" ? typeFilter   : undefined,
   } as any);

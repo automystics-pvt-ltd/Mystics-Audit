@@ -1,5 +1,6 @@
 import { useGetProfitLoss } from "@workspace/api-client-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useFY } from "@/contexts/fy-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
@@ -11,9 +12,10 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 import { printReportPage } from "@/lib/print-utils";
 
 export default function ProfitLoss() {
-  const today = new Date();
-  const [from, setFrom] = useState(`${today.getFullYear()}-04-01`);
-  const [to, setTo] = useState(today.toISOString().split("T")[0]);
+  const { fy } = useFY();
+  const [from, setFrom] = useState(fy.from);
+  const [to, setTo] = useState(fy.to);
+  useEffect(() => { setFrom(fy.from); setTo(fy.to); }, [fy.value]);
   const { data } = useGetProfitLoss({ from, to });
   const d = data as any;
 

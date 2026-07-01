@@ -1,5 +1,6 @@
 import { useListAuditLogs } from "@workspace/api-client-react";
 import { useState } from "react";
+import { useFY } from "@/contexts/fy-context";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -17,9 +18,15 @@ const ENTITY_TYPES = ["", "Journal", "Invoice", "Customer", "Vendor", "Bill", "P
 const ACTION_TYPES = ["", "CREATE", "UPDATE", "DELETE", "VIEW", "LOGIN"];
 
 export default function AuditLogsList() {
+  const { fy } = useFY();
   const [entityType, setEntityType] = useState("");
   const [actionType, setActionType] = useState("");
-  const { data } = useListAuditLogs(entityType || actionType ? { ...(entityType ? { entityType } : {}), ...(actionType ? { actionType } : {}) } : undefined);
+  const { data } = useListAuditLogs({
+    from: fy.from,
+    to: fy.to,
+    ...(entityType ? { entityType } : {}),
+    ...(actionType ? { actionType } : {}),
+  } as any);
   const logs: any[] = data ?? [];
 
   return (

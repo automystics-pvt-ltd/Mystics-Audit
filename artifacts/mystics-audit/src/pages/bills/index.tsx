@@ -1,6 +1,7 @@
 import { useListBills } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Link } from "wouter";
+import { useFY } from "@/contexts/fy-context";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,9 @@ const STATUS_COLORS: Record<string, "default" | "secondary" | "destructive" | "o
 };
 
 export default function BillsList() {
+  const { fy } = useFY();
   const [status, setStatus] = useState("");
-  const { data } = useListBills(status ? { status } : {});
+  const { data } = useListBills({ from: fy.from, to: fy.to, ...(status ? { status } : {}) } as any);
   const bills: any[] = data ?? [];
   const today = new Date().toISOString().split("T")[0];
 

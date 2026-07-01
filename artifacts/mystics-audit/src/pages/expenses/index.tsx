@@ -1,5 +1,6 @@
 import { useListExpenses } from "@workspace/api-client-react";
 import { useState } from "react";
+import { useFY } from "@/contexts/fy-context";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ const BRANCHES    = ["Head Office", "Mumbai", "Delhi", "Bangalore", "Chennai", "
 const PROJECTS    = ["Project Alpha", "Project Beta", "Infra Upgrade", "Client Delivery", "Internal", "R&D"];
 
 export default function ExpensesList() {
+  const { fy } = useFY();
   const [status, setStatus] = useState("");
   const [department, setDepartment] = useState("");
   const [project, setProject] = useState("");
@@ -50,7 +52,7 @@ export default function ExpensesList() {
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  const params: Record<string, any> = {};
+  const params: Record<string, any> = { from: fy.from, to: fy.to };
   if (status)     params.status = status;
   if (department) params.department = department;
   if (project)    params.project = project;

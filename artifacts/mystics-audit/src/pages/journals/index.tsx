@@ -1,6 +1,7 @@
 import { useListJournals } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Link } from "wouter";
+import { useFY } from "@/contexts/fy-context";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,8 +15,9 @@ const STATUS_COLORS: Record<string, "default" | "secondary" | "destructive"> = {
 };
 
 export default function JournalsList() {
+  const { fy } = useFY();
   const [status, setStatus] = useState("");
-  const { data } = useListJournals(status ? { status } : {});
+  const { data } = useListJournals({ from: fy.from, to: fy.to, ...(status ? { status } : {}) } as any);
   const journals: any[] = data ?? [];
 
   return (

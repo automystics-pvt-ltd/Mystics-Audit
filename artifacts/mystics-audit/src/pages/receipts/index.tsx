@@ -1,5 +1,6 @@
 import { useListReceipts } from "@workspace/api-client-react";
 import { Link } from "wouter";
+import { useFY } from "@/contexts/fy-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,7 +9,8 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { Plus } from "lucide-react";
 
 export default function ReceiptsList() {
-  const { data } = useListReceipts({});
+  const { fy } = useFY();
+  const { data } = useListReceipts({ from: fy.from, to: fy.to } as any);
   const receipts: any[] = data ?? [];
 
   return (

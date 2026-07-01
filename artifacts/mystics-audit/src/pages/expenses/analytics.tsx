@@ -1,4 +1,5 @@
 import { useGetExpenseAnalytics } from "@workspace/api-client-react";
+import { useFY } from "@/contexts/fy-context";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Legend, LineChart, Line, CartesianGrid,
@@ -13,7 +14,8 @@ const COLORS = ["#6366f1","#8b5cf6","#a78bfa","#06b6d4","#10b981","#f59e0b","#ef
 const fmt = (v: any) => formatCurrency(Number(v) || 0);
 
 export default function ExpenseAnalytics() {
-  const { data } = useGetExpenseAnalytics({});
+  const { fy } = useFY();
+  const { data } = useGetExpenseAnalytics({ from: fy.from, to: fy.to } as any);
   const d = data as any;
 
   const byCategory: any[] = d?.byCategory ?? [];

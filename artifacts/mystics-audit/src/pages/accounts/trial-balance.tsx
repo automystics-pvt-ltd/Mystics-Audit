@@ -31,18 +31,18 @@ export default function TrialBalance() {
       </div>
 
       <div className="flex gap-4">
-        <Card className="flex-1">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Debit</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-mono font-semibold">{formatCurrency(totalDebit)}</p></CardContent>
-        </Card>
-        <Card className="flex-1">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Credit</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-mono font-semibold">{formatCurrency(totalCredit)}</p></CardContent>
-        </Card>
-        <Card className="flex-1">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Status</CardTitle></CardHeader>
-          <CardContent><Badge variant={isBalanced ? "default" : "destructive"}>{isBalanced ? "Balanced" : "Unbalanced"}</Badge></CardContent>
-        </Card>
+        <div className="flex-1 rounded-2xl px-5 py-5 text-white bg-blue-600">
+          <p className="text-xs font-medium opacity-80">Total Debit</p>
+          <p className="text-2xl font-bold font-mono mt-2">{formatCurrency(totalDebit)}</p>
+        </div>
+        <div className="flex-1 rounded-2xl px-5 py-5 text-white bg-emerald-600">
+          <p className="text-xs font-medium opacity-80">Total Credit</p>
+          <p className="text-2xl font-bold font-mono mt-2">{formatCurrency(totalCredit)}</p>
+        </div>
+        <div className={`flex-1 rounded-2xl px-5 py-5 text-white ${isBalanced ? "bg-emerald-700" : "bg-red-600"}`}>
+          <p className="text-xs font-medium opacity-80">Status</p>
+          <p className="text-xl font-bold mt-2">{isBalanced ? "Balanced ✓" : "Unbalanced"}</p>
+        </div>
       </div>
 
       <Card>

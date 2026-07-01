@@ -51,20 +51,18 @@ export default function CustomersList() {
       {/* KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total Customers",  value: all.length,           sub: "all types",             icon: Users,     color: "bg-violet-50 border-violet-100", iconBg: "bg-violet-100", iconColor: "text-violet-600" },
-          { label: "Business",         value: business.length,      sub: "corporate clients",     icon: Building2, color: "bg-blue-50 border-blue-100",     iconBg: "bg-blue-100",   iconColor: "text-blue-600"   },
-          { label: "Individual",       value: individual.length,    sub: "personal accounts",     icon: User,      color: "bg-emerald-50 border-emerald-100",iconBg: "bg-emerald-100",iconColor: "text-emerald-600"},
-          { label: "Total Outstanding",value: formatCurrency(totalBal), sub: "receivable balance",icon: Wallet,    color: "bg-amber-50 border-amber-100",   iconBg: "bg-amber-100",  iconColor: "text-amber-600"  },
-        ].map(({ label, value, sub, icon: Icon, color, iconBg, iconColor }) => (
-          <div key={label} className={cn("rounded-2xl border px-5 py-4 flex items-start gap-3", color)}>
-            <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0", iconBg)}>
-              <Icon className={cn("w-4.5 h-4.5", iconColor)} />
+          { label: "Total Customers",  value: String(all.length),       sub: "all types",             icon: Users,     bg: "bg-violet-600" },
+          { label: "Business",         value: String(business.length),  sub: "corporate clients",     icon: Building2, bg: "bg-blue-600"   },
+          { label: "Individual",       value: String(individual.length), sub: "personal accounts",    icon: User,      bg: "bg-emerald-600"},
+          { label: "Total Outstanding",value: formatCurrency(totalBal), sub: "receivable balance",    icon: Wallet,    bg: "bg-amber-600"  },
+        ].map(({ label, value, sub, icon: Icon, bg }) => (
+          <div key={label} className={cn("rounded-2xl px-5 py-5 text-white", bg)}>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium opacity-80">{label}</p>
+              <Icon className="w-4 h-4 opacity-60" />
             </div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500 font-medium">{label}</p>
-              <p className="text-xl font-bold text-gray-900 mt-0.5 truncate">{value}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
-            </div>
+            <p className="text-2xl font-bold font-mono mt-2">{value}</p>
+            <p className="text-xs opacity-70 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>

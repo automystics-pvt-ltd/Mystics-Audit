@@ -45,15 +45,15 @@ export default function ReceiptsList() {
       {/* KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Gross Collected",  value: formatCurrency(totalGross), sub: `${receipts.length} receipts`,   color: "bg-violet-50 border-violet-100", text: "text-violet-700" },
-          { label: "TDS Deducted",     value: formatCurrency(totalTds),   sub: "withholding tax",               color: "bg-amber-50 border-amber-100",   text: "text-amber-700" },
-          { label: "Net Received",     value: formatCurrency(totalNet),   sub: "after TDS",                     color: "bg-emerald-50 border-emerald-100",text: "text-emerald-700"},
-          { label: "Top Payment Mode", value: topMode ? topMode[0] : "—", sub: topMode ? formatCurrency(topMode[1]) : "no receipts", color: "bg-blue-50 border-blue-100", text: "text-blue-700" },
-        ].map(({ label, value, sub, color, text }) => (
-          <div key={label} className={cn("rounded-2xl border px-5 py-4", color)}>
-            <p className="text-xs text-gray-500 font-medium">{label}</p>
-            <p className={cn("text-xl font-bold mt-0.5 truncate", text)}>{value}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+          { label: "Gross Collected",  value: formatCurrency(totalGross), sub: `${receipts.length} receipts`,   bg: "bg-violet-600" },
+          { label: "TDS Deducted",     value: formatCurrency(totalTds),   sub: "withholding tax",               bg: "bg-amber-600"  },
+          { label: "Net Received",     value: formatCurrency(totalNet),   sub: "after TDS",                     bg: "bg-emerald-600" },
+          { label: "Top Payment Mode", value: topMode ? topMode[0] : "—", sub: topMode ? formatCurrency(topMode[1]) : "no receipts", bg: "bg-blue-600" },
+        ].map(({ label, value, sub, bg }) => (
+          <div key={label} className={cn("rounded-2xl px-5 py-5 text-white", bg)}>
+            <p className="text-xs font-medium opacity-80">{label}</p>
+            <p className="text-2xl font-bold font-mono mt-2 truncate">{value}</p>
+            <p className="text-xs opacity-70 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>

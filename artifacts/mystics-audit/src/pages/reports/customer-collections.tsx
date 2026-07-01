@@ -66,15 +66,15 @@ export default function CustomerCollections() {
 
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label:"Total Invoiced",     value:inr(totals.billed),      sub:`${rows.length} invoices`, color:"text-gray-900" },
-          { label:"Total Collected",    value:inr(totals.collected),   sub:`${collectionRate}% rate`, color:"text-green-700" },
-          { label:"Outstanding AR",     value:inr(totals.outstanding), sub:"Yet to collect",          color:"text-red-700" },
-          { label:"Collection Rate",    value:`${collectionRate}%`,    sub:"Efficiency metric",       color:parseFloat(collectionRate)>=80?"text-green-700":"text-amber-700" },
+          { label:"Total Invoiced",  value:inr(totals.billed),      sub:`${rows.length} invoices`, bg:"bg-gray-700" },
+          { label:"Total Collected", value:inr(totals.collected),   sub:`${collectionRate}% rate`, bg:"bg-emerald-600" },
+          { label:"Outstanding AR",  value:inr(totals.outstanding), sub:"Yet to collect",          bg:"bg-red-600" },
+          { label:"Collection Rate", value:`${collectionRate}%`,    sub:"Efficiency metric",       bg:parseFloat(collectionRate)>=80?"bg-emerald-700":"bg-amber-600" },
         ].map(k => (
-          <div key={k.label} className="bg-white border rounded-xl p-3">
-            <p className="text-xs text-gray-500">{k.label}</p>
-            <p className={cn("text-xl font-bold", k.color)}>{k.value}</p>
-            <p className="text-xs text-gray-400">{k.sub}</p>
+          <div key={k.label} className={cn("rounded-2xl px-5 py-5 text-white", k.bg)}>
+            <p className="text-xs font-medium opacity-80">{k.label}</p>
+            <p className="text-2xl font-bold font-mono mt-2">{k.value}</p>
+            <p className="text-xs opacity-70 mt-0.5">{k.sub}</p>
           </div>
         ))}
       </div>

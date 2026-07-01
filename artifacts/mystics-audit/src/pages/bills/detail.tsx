@@ -109,14 +109,15 @@ export default function BillDetail() {
 
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Amount",  value: formatCurrency(b.totalAmount) },
-          { label: "Paid Amount",   value: formatCurrency(b.paidAmount)  },
-          { label: "Balance Due",   value: formatCurrency(b.balanceDue)  },
-        ].map(({ label, value }) => (
-          <Card key={label}>
-            <CardHeader className="pb-1"><CardTitle className="text-xs text-muted-foreground font-medium">{label}</CardTitle></CardHeader>
-            <CardContent><p className="text-xl font-mono font-semibold">{value}</p></CardContent>
-          </Card>
+          { label: "Total Amount", value: formatCurrency(b.totalAmount), sub: "Bill total",    bg: "bg-violet-600" },
+          { label: "Paid Amount",  value: formatCurrency(b.paidAmount),  sub: "Payments made", bg: "bg-emerald-600" },
+          { label: "Balance Due",  value: formatCurrency(b.balanceDue),  sub: b.balanceDue > 0 ? "Outstanding" : "Fully settled", bg: b.balanceDue > 0 ? "bg-amber-600" : "bg-gray-500" },
+        ].map(({ label, value, sub, bg }) => (
+          <div key={label} className={`rounded-2xl text-white px-5 py-5 ${bg}`}>
+            <p className="text-xs font-medium opacity-80">{label}</p>
+            <p className="text-2xl font-bold font-mono mt-2">{value}</p>
+            <p className="text-xs opacity-70 mt-0.5">{sub}</p>
+          </div>
         ))}
       </div>
 

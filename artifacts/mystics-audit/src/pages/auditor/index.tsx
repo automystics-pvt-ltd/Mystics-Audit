@@ -1538,23 +1538,24 @@ export default function AuditorWorkspace() {
             return (
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {[
-              { label:"Active Clients",      value: activeClients.length,  icon:<Building2 className="w-5 h-5 text-violet-500"/>, sub:`${clients.length} total`, color:"bg-violet-50 border-violet-100", onClick: () => setTab("clients") },
-              { label:"Open Tasks",          value: openTasks.length,      icon:<ClipboardList className="w-5 h-5 text-blue-500"/>,   sub:"Pending completion",    color:"bg-blue-50 border-blue-100",   onClick: () => setTab("tasks") },
-              { label:"Overdue Tasks",       value: overdueTasks.length,   icon:<AlertTriangle className="w-5 h-5 text-red-500"/>,    sub:"Need immediate action", color:"bg-red-50 border-red-100",     onClick: () => setTab("tasks") },
-              { label:"Upcoming Deadlines",  value: pendingEvents.length,  icon:<CalendarDays className="w-5 h-5 text-amber-500"/>,   sub:"Compliance pending",    color:"bg-amber-50 border-amber-100", onClick: () => setTab("calendar") },
-              { label:"Pending Requests",    value: pendingCollab.length,  icon:<MessageCircle className="w-5 h-5 text-violet-600"/>, sub: overdueCollab.length > 0 ? `${overdueCollab.length} overdue` : "Client collaboration", color: overdueCollab.length > 0 ? "bg-red-50 border-red-200" : "bg-violet-50 border-violet-100", onClick: () => setTab("collaboration") },
-            ].map(k => (
-              <Card key={k.label} className={cn("rounded-2xl border cursor-pointer hover:shadow-md transition-shadow", k.color)} onClick={(k as any).onClick}>
-                <CardContent className="p-4 flex items-start gap-3">
-                  <div className="p-2 bg-white rounded-xl shadow-sm shrink-0">{k.icon}</div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">{k.value}</p>
-                    <p className="text-xs font-semibold text-gray-700">{k.label}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{k.sub}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+              { label:"Active Clients",     value: activeClients.length, icon: Building2,     sub:`${clients.length} total`,    bg:"bg-violet-600", onClick: () => setTab("clients") },
+              { label:"Open Tasks",         value: openTasks.length,     icon: ClipboardList, sub:"Pending completion",         bg:"bg-blue-600",   onClick: () => setTab("tasks") },
+              { label:"Overdue Tasks",      value: overdueTasks.length,  icon: AlertTriangle, sub:"Need immediate action",      bg:"bg-red-600",    onClick: () => setTab("tasks") },
+              { label:"Upcoming Deadlines", value: pendingEvents.length, icon: CalendarDays,  sub:"Compliance pending",         bg:"bg-amber-600",  onClick: () => setTab("calendar") },
+              { label:"Pending Requests",   value: pendingCollab.length, icon: MessageCircle, sub: overdueCollab.length > 0 ? `${overdueCollab.length} overdue` : "Client collaboration", bg: overdueCollab.length > 0 ? "bg-red-600" : "bg-violet-600", onClick: () => setTab("collaboration") },
+            ].map(k => {
+              const Icon = k.icon;
+              return (
+              <div key={k.label} className={cn("rounded-2xl px-5 py-5 text-white cursor-pointer hover:opacity-90 transition-opacity", k.bg)} onClick={k.onClick}>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium opacity-80">{k.label}</p>
+                  <Icon className="w-4 h-4 opacity-60" />
+                </div>
+                <p className="text-2xl font-bold font-mono mt-2">{k.value}</p>
+                <p className="text-xs opacity-70 mt-0.5">{k.sub}</p>
+              </div>
+              );
+            })}
           </div>
             );
           })()}

@@ -13,24 +13,22 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function KpiCard({ label, value, sub, color, icon: Icon }: {
+function KpiCard({ label, value, sub, bg, icon: Icon }: {
   label: string; value: number; sub?: string;
-  color: string; icon: React.ElementType;
+  bg: string; icon: React.ElementType;
 }) {
   const isNeg = value < 0;
   return (
-    <div className={cn("rounded-2xl border px-5 py-4 flex items-start gap-3", color)}>
-      <div className="p-2 bg-white rounded-xl shadow-sm shrink-0">
-        <Icon className="w-4 h-4" />
+    <div className={cn("rounded-2xl px-5 py-5 text-white", bg)}>
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium opacity-80">{label}</p>
+        <Icon className="w-4 h-4 opacity-60" />
       </div>
-      <div className="min-w-0">
-        <p className="text-xs text-gray-500 font-medium">{label}</p>
-        <p className={cn("text-xl font-bold font-mono mt-0.5", isNeg ? "text-red-600" : "text-gray-900")}>
-          {formatCurrency(Math.abs(value))}
-          {isNeg && <span className="text-xs font-normal text-red-400 ml-1">(loss)</span>}
-        </p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-      </div>
+      <p className="text-2xl font-bold font-mono mt-2">
+        {isNeg && <span className="text-xs font-normal opacity-70 mr-1">(loss)</span>}
+        {formatCurrency(Math.abs(value))}
+      </p>
+      {sub && <p className="text-xs opacity-70 mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -127,16 +125,16 @@ export default function ProfitLoss() {
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Total Revenue" value={totalRevenue} sub={`FY ${fy.value}`} color="bg-violet-50 border-violet-100" icon={TrendingUp} />
-        <KpiCard label="Total Expenses" value={totalExpenses} sub="All categories" color="bg-red-50 border-red-100" icon={TrendingDown} />
+        <KpiCard label="Total Revenue" value={totalRevenue} sub={`FY ${fy.value}`} bg="bg-violet-600" icon={TrendingUp} />
+        <KpiCard label="Total Expenses" value={totalExpenses} sub="All categories" bg="bg-red-600" icon={TrendingDown} />
         <KpiCard
           label={netProfit >= 0 ? "Net Profit" : "Net Loss"}
           value={netProfit}
           sub={`${grossMargin}% net margin`}
-          color={netProfit >= 0 ? "bg-emerald-50 border-emerald-100" : "bg-red-50 border-red-100"}
+          bg={netProfit >= 0 ? "bg-emerald-600" : "bg-red-700"}
           icon={netProfit >= 0 ? ArrowUpRight : ArrowDownRight}
         />
-        <KpiCard label="Gross Margin %" value={Number(grossMargin)} sub="Net profit / revenue" color="bg-blue-50 border-blue-100" icon={netProfit >= 0 ? TrendingUp : Minus} />
+        <KpiCard label="Gross Margin %" value={Number(grossMargin)} sub="Net profit / revenue" bg="bg-blue-600" icon={netProfit >= 0 ? TrendingUp : Minus} />
       </div>
 
       {/* Revenue & Expenses sections */}

@@ -49,6 +49,7 @@ import PoDetail from "@/pages/purchases/orders/detail";
 
 import GrnList from "@/pages/purchases/grn/index";
 import NewGrn from "@/pages/purchases/grn/new";
+import GrnDetail from "@/pages/purchases/grn/detail";
 
 import InventoryList from "@/pages/inventory/index";
 import NewInventory from "@/pages/inventory/new";
@@ -184,6 +185,7 @@ function Router() {
 
             <Route path="/purchases/grn" component={GrnList} />
             <Route path="/purchases/grn/new" component={NewGrn} />
+            <Route path="/purchases/grn/:id" component={GrnDetail} />
 
             <Route path="/inventory" component={InventoryList} />
             <Route path="/inventory/new" component={NewInventory} />

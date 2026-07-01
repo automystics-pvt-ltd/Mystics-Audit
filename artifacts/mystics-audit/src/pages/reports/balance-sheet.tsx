@@ -112,18 +112,17 @@ export default function BalanceSheet() {
       {/* KPI strip */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Assets",      value: totalAssets,      icon: Landmark,   color: "bg-violet-50 border-violet-100", iconColor: "text-violet-600" },
-          { label: "Total Liabilities", value: totalLiabilities, icon: AlertCircle, color: "bg-red-50 border-red-100",      iconColor: "text-red-500" },
-          { label: "Total Equity",      value: totalEquity,      icon: TrendingUp, color: "bg-emerald-50 border-emerald-100", iconColor: "text-emerald-600" },
-        ].map(({ label, value, icon: Icon, color, iconColor }) => (
-          <div key={label} className={cn("rounded-2xl border px-5 py-4 flex items-start gap-3", color)}>
-            <div className="p-2 bg-white rounded-xl shadow-sm shrink-0">
-              <Icon className={cn("w-4 h-4", iconColor)} />
+          { label: "Total Assets",      value: totalAssets,      icon: Landmark,    bg: "bg-violet-600", sub: "All asset classes" },
+          { label: "Total Liabilities", value: totalLiabilities, icon: AlertCircle, bg: "bg-red-600",    sub: "Obligations due" },
+          { label: "Total Equity",      value: totalEquity,      icon: TrendingUp,  bg: "bg-emerald-600", sub: "Net worth" },
+        ].map(({ label, value, icon: Icon, bg, sub }) => (
+          <div key={label} className={cn("rounded-2xl px-5 py-5 text-white", bg)}>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium opacity-80">{label}</p>
+              <Icon className="w-4 h-4 opacity-60" />
             </div>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">{label}</p>
-              <p className="text-xl font-bold font-mono mt-0.5 text-gray-900">{formatCurrency(value)}</p>
-            </div>
+            <p className="text-2xl font-bold font-mono mt-2">{formatCurrency(value)}</p>
+            <p className="text-xs opacity-70 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>

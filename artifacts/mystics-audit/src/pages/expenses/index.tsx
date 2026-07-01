@@ -114,17 +114,17 @@ export default function ExpensesList() {
       </div>
 
       {/* KPI row */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total Submitted",  value: formatCurrency(total),      sub: `${allExpenses.length} claims`,                                                     color: "text-gray-900" },
-          { label: "Pending Approval", value: formatCurrency(pending),    sub: `${allExpenses.filter(e => e.status === "submitted").length} claims`,                color: "text-amber-600" },
-          { label: "Approved",         value: formatCurrency(approved),   sub: `${allExpenses.filter(e => e.status === "approved").length} claims`,                 color: "text-blue-600" },
-          { label: "Reimbursed / Paid",value: formatCurrency(reimbursed), sub: `${allExpenses.filter(e => ["reimbursed","paid"].includes(e.status)).length} claims`, color: "text-emerald-600" },
-        ].map(({ label, value, sub, color }) => (
-          <div key={label} className="bg-white rounded-xl border border-gray-100 px-5 py-4 shadow-sm">
-            <p className="text-xs text-gray-400 font-medium mb-1">{label}</p>
-            <p className={`text-xl font-bold font-mono ${color}`}>{value}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+          { label: "Total Submitted",  value: formatCurrency(total),      sub: `${allExpenses.length} claims`,                                                      bg: "bg-violet-600" },
+          { label: "Pending Approval", value: formatCurrency(pending),    sub: `${allExpenses.filter(e => e.status === "submitted").length} claims`,                 bg: "bg-amber-600" },
+          { label: "Approved",         value: formatCurrency(approved),   sub: `${allExpenses.filter(e => e.status === "approved").length} claims`,                  bg: "bg-blue-600" },
+          { label: "Reimbursed / Paid",value: formatCurrency(reimbursed), sub: `${allExpenses.filter(e => ["reimbursed","paid"].includes(e.status)).length} claims`, bg: "bg-emerald-600" },
+        ].map(({ label, value, sub, bg }) => (
+          <div key={label} className={`rounded-2xl px-5 py-5 text-white ${bg}`}>
+            <p className="text-xs font-medium opacity-80">{label}</p>
+            <p className="text-2xl font-bold font-mono mt-2">{value}</p>
+            <p className="text-xs opacity-70 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>

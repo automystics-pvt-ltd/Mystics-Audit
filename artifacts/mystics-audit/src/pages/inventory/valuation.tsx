@@ -17,14 +17,14 @@ export default function InventoryValuation() {
 
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Stock Value", value: formatCurrency(d?.totalValue ?? 0) },
-          { label: "Total Items", value: String(d?.totalItems ?? items.length) },
-          { label: "Low Stock Items", value: String(d?.lowStockItems ?? d?.lowStockCount ?? 0) },
-        ].map(({ label, value }) => (
-          <Card key={label}>
-            <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground font-medium">{label}</CardTitle></CardHeader>
-            <CardContent><p className="text-xl font-mono font-semibold">{value}</p></CardContent>
-          </Card>
+          { label: "Total Stock Value", value: formatCurrency(d?.totalValue ?? 0), bg: "bg-violet-600" },
+          { label: "Total Items",       value: String(d?.totalItems ?? items.length), bg: "bg-blue-600" },
+          { label: "Low Stock Items",   value: String(d?.lowStockItems ?? d?.lowStockCount ?? 0), bg: "bg-amber-600" },
+        ].map(({ label, value, bg }) => (
+          <div key={label} className={`rounded-2xl px-5 py-5 text-white ${bg}`}>
+            <p className="text-xs font-medium opacity-80">{label}</p>
+            <p className="text-2xl font-bold font-mono mt-2">{value}</p>
+          </div>
         ))}
       </div>
 

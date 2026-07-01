@@ -48,11 +48,15 @@ export default function PoDetail() {
       </div>
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Amount", value: formatCurrency(p.totalAmount) },
-          { label: "Received", value: formatCurrency(p.receivedAmount) },
-          { label: "Billed", value: formatCurrency(p.billedAmount) },
-        ].map(({ label, value }) => (
-          <Card key={label}><CardHeader className="pb-1"><CardTitle className="text-xs text-muted-foreground font-medium">{label}</CardTitle></CardHeader><CardContent><p className="text-xl font-mono font-semibold">{value}</p></CardContent></Card>
+          { label: "Total Amount", value: formatCurrency(p.totalAmount), sub: "PO value",         bg: "bg-violet-600" },
+          { label: "Received",     value: formatCurrency(p.receivedAmount), sub: "GRN received",  bg: "bg-blue-600" },
+          { label: "Billed",       value: formatCurrency(p.billedAmount),   sub: "Invoiced so far", bg: "bg-emerald-600" },
+        ].map(({ label, value, sub, bg }) => (
+          <div key={label} className={`rounded-2xl text-white px-5 py-5 ${bg}`}>
+            <p className="text-xs font-medium opacity-80">{label}</p>
+            <p className="text-2xl font-bold font-mono mt-2">{value}</p>
+            <p className="text-xs opacity-70 mt-0.5">{sub}</p>
+          </div>
         ))}
       </div>
       {p.deliveryDate && <div className="text-sm text-muted-foreground">Expected delivery: <span className="font-medium text-foreground">{formatDate(p.deliveryDate)}</span></div>}

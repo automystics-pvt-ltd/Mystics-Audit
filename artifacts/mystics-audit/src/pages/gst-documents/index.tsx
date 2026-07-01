@@ -54,15 +54,12 @@ const STATES = [
 const GST_RATES = ["0","5","12","18","28"];
 
 /* ── Summary card ─────────────────────────────────────── */
-function SummaryCard({ label, value, sub, color, icon }: { label: string; value: string; sub?: string; color: string; icon: React.ReactNode }) {
+function SummaryCard({ label, value, sub, bg }: { label: string; value: string; sub?: string; bg: string }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
-      <div className="flex items-center gap-2 mb-2">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>{icon}</div>
-        <span className="text-xs font-medium text-gray-400">{label}</span>
-      </div>
-      <p className="text-xl font-bold text-gray-900 font-mono">{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+    <div className={`rounded-2xl px-5 py-5 text-white ${bg}`}>
+      <p className="text-xs font-medium opacity-80">{label}</p>
+      <p className="text-2xl font-bold font-mono mt-2">{value}</p>
+      {sub && <p className="text-xs opacity-70 mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -303,52 +300,43 @@ export default function GstDocuments() {
 
       {/* Summary cards */}
       {summary && (
-        <div className="grid grid-cols-4 gap-4 lg:grid-cols-8">
-          <div className="col-span-2">
-            <SummaryCard label="Total Documents" value={String(summary.totalDocs)}
-              sub={`${summary.filed} filed · ${summary.unfiled} unfiled`}
-              color="bg-indigo-100 text-indigo-600" icon={<FileText className="w-4 h-4" />} />
-          </div>
-          <div className="col-span-2">
-            <SummaryCard label="Tax Liability (Sales)" value={fmt(summary.taxLiability ?? 0)}
-              sub={`${summary.sales?.count ?? 0} sales docs`}
-              color="bg-blue-100 text-blue-600" icon={<TrendingUp className="w-4 h-4" />} />
-          </div>
-          <div className="col-span-2">
-            <SummaryCard label="ITC Available (Purchase)" value={fmt(summary.itcAvailable ?? 0)}
-              sub={`${summary.purchases?.count ?? 0} purchase docs`}
-              color="bg-emerald-100 text-emerald-600" icon={<TrendingDown className="w-4 h-4" />} />
-          </div>
-          <div className="col-span-2">
-            <SummaryCard label="Net GST Payable" value={fmt(summary.netPayable ?? 0)}
-              sub="After ITC set-off"
-              color={summary.netPayable > 0 ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600"}
-              icon={<Banknote className="w-4 h-4" />} />
-          </div>
+        <div className="grid grid-cols-4 gap-4">
+          <SummaryCard label="Total Documents" value={String(summary.totalDocs)}
+            sub={`${summary.filed} filed · ${summary.unfiled} unfiled`}
+            bg="bg-indigo-600" />
+          <SummaryCard label="Tax Liability (Sales)" value={fmt(summary.taxLiability ?? 0)}
+            sub={`${summary.sales?.count ?? 0} sales docs`}
+            bg="bg-blue-600" />
+          <SummaryCard label="ITC Available (Purchase)" value={fmt(summary.itcAvailable ?? 0)}
+            sub={`${summary.purchases?.count ?? 0} purchase docs`}
+            bg="bg-emerald-600" />
+          <SummaryCard label="Net GST Payable" value={fmt(summary.netPayable ?? 0)}
+            sub="After ITC set-off"
+            bg={summary.netPayable > 0 ? "bg-amber-600" : "bg-emerald-700"} />
         </div>
       )}
 
       {/* ITC vs Liability strip */}
       {summary && (
-        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-indigo-800 text-sm">GST Position — {period || "All Periods"}</h3>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-gray-700 text-sm">GST Position — {period || "All Periods"}</h3>
             <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-36 h-8 text-xs border-indigo-200 bg-white"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>{periodOptions().map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-5 gap-4 text-center">
+          <div className="grid grid-cols-5 gap-3">
             {[
-              { label: "Output Tax (Sales)", value: summary.taxLiability ?? 0, color: "text-blue-700" },
-              { label: "ITC (Purchases)", value: summary.itcAvailable ?? 0, color: "text-emerald-700" },
-              { label: "CGST", value: (summary.sales?.cgst ?? 0) - (summary.purchases?.cgst ?? 0), color: "text-gray-700" },
-              { label: "SGST", value: (summary.sales?.sgst ?? 0) - (summary.purchases?.sgst ?? 0), color: "text-gray-700" },
-              { label: "Net Payable", value: summary.netPayable ?? 0, color: summary.netPayable > 0 ? "text-red-600 font-extrabold" : "text-emerald-700" },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="bg-white/70 rounded-xl p-3">
-                <p className="text-[10px] font-medium text-indigo-500 uppercase tracking-wider mb-1">{label}</p>
-                <p className={`font-bold font-mono text-base ${color}`}>{fmt(value)}</p>
+              { label: "Output Tax (Sales)", value: summary.taxLiability ?? 0,                                              bg: "bg-blue-600" },
+              { label: "ITC (Purchases)",    value: summary.itcAvailable ?? 0,                                              bg: "bg-emerald-600" },
+              { label: "CGST",               value: (summary.sales?.cgst ?? 0) - (summary.purchases?.cgst ?? 0),           bg: "bg-gray-700" },
+              { label: "SGST",               value: (summary.sales?.sgst ?? 0) - (summary.purchases?.sgst ?? 0),           bg: "bg-violet-600" },
+              { label: "Net Payable",        value: summary.netPayable ?? 0,                                                bg: summary.netPayable > 0 ? "bg-red-600" : "bg-emerald-700" },
+            ].map(({ label, value, bg }) => (
+              <div key={label} className={`rounded-2xl px-4 py-4 text-white ${bg}`}>
+                <p className="text-xs font-medium opacity-80">{label}</p>
+                <p className="text-lg font-bold font-mono mt-1.5">{fmt(value)}</p>
               </div>
             ))}
           </div>

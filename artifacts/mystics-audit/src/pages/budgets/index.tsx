@@ -39,43 +39,15 @@ export default function BudgetsList() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          {
-            label: "Total Budget",
-            value: formatCurrency(totalBudget),
-            sub: `${fy.label}`,
-            icon: <Wallet className="w-5 h-5 text-violet-500" />,
-            bg: "bg-violet-50 border-violet-100",
-          },
-          {
-            label: "Total Spent",
-            value: formatCurrency(totalActual),
-            sub: `${overallPct}% utilised`,
-            icon: <TrendingUp className="w-5 h-5 text-blue-500" />,
-            bg: "bg-blue-50 border-blue-100",
-          },
-          {
-            label: "Remaining",
-            value: formatCurrency(Math.max(0, totalRemaining)),
-            sub: totalRemaining < 0 ? "Over budget!" : "Available",
-            icon: <TrendingDown className="w-5 h-5 text-emerald-500" />,
-            bg: totalRemaining < 0 ? "bg-red-50 border-red-100" : "bg-emerald-50 border-emerald-100",
-            valueColor: totalRemaining < 0 ? "text-red-600" : "text-emerald-700",
-          },
-          {
-            label: "Alerts",
-            value: overBudget.length + warningBudgets.length,
-            sub: `${overBudget.length} over · ${warningBudgets.length} warning`,
-            icon: <AlertTriangle className="w-5 h-5 text-amber-500" />,
-            bg: overBudget.length > 0 ? "bg-red-50 border-red-100" : "bg-amber-50 border-amber-100",
-          },
+          { label: "Total Budget", value: formatCurrency(totalBudget),              sub: fy.label,                                              bg: "bg-violet-600" },
+          { label: "Total Spent",  value: formatCurrency(totalActual),              sub: `${overallPct}% utilised`,                             bg: "bg-blue-600"   },
+          { label: "Remaining",    value: formatCurrency(Math.max(0, totalRemaining)), sub: totalRemaining < 0 ? "Over budget!" : "Available",  bg: totalRemaining < 0 ? "bg-red-600" : "bg-emerald-600" },
+          { label: "Alerts",       value: String(overBudget.length + warningBudgets.length), sub: `${overBudget.length} over · ${warningBudgets.length} warning`, bg: overBudget.length > 0 ? "bg-red-600" : "bg-amber-600" },
         ].map(k => (
-          <div key={k.label} className={`rounded-2xl border px-5 py-4 flex items-start gap-3 ${k.bg}`}>
-            <div className="p-2 bg-white rounded-xl shadow-sm shrink-0">{k.icon}</div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500 font-medium">{k.label}</p>
-              <p className={`text-xl font-bold mt-0.5 ${(k as any).valueColor ?? "text-gray-900"}`}>{k.value}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{k.sub}</p>
-            </div>
+          <div key={k.label} className={`rounded-2xl px-5 py-5 text-white ${k.bg}`}>
+            <p className="text-xs font-medium opacity-80">{k.label}</p>
+            <p className="text-2xl font-bold font-mono mt-2">{k.value}</p>
+            <p className="text-xs opacity-70 mt-0.5">{k.sub}</p>
           </div>
         ))}
       </div>

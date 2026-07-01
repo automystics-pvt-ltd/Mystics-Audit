@@ -62,28 +62,25 @@ const TREND_COLORS = { revenue: "#7c3aed", expenses: "#ef4444", profit: "#10b981
 
 /* ── KPI card ───────────────────────────────────────────── */
 function KpiCard({
-  label, value, sub, trend, trendValue, icon: Icon, color, href, alert,
+  label, value, sub, trend, trendValue, icon: Icon, color, href, alert, bg,
 }: {
   label: string; value: string; sub?: string; trend?: "up" | "down" | "neutral";
-  trendValue?: string; icon: any; color: string; href?: string; alert?: boolean;
+  trendValue?: string; icon: any; color: string; href?: string; alert?: boolean; bg: string;
 }) {
   const content = (
-    <div className={cn(
-      "border rounded-xl p-4 bg-white transition-all hover:shadow-md",
-      alert ? "border-amber-300 bg-amber-50/30" : "hover:border-primary/30"
-    )}>
-      <div className="flex items-start justify-between mb-3">
-        <div className={cn("p-2 rounded-lg", `${color}/10`)}>
-          <Icon className={cn("w-5 h-5", color)} />
+    <div className={cn("rounded-2xl px-5 py-5 text-white cursor-pointer hover:opacity-90 transition-opacity", bg)}>
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium opacity-80">{label}</p>
+        <div className="flex items-center gap-1.5">
+          {alert && <AlertCircle className="w-3.5 h-3.5 opacity-80" />}
+          {trend === "up"   && <div className="flex items-center gap-0.5 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full"><ArrowUpRight className="w-2.5 h-2.5" />{trendValue}</div>}
+          {trend === "down" && <div className="flex items-center gap-0.5 text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full"><ArrowDownRight className="w-2.5 h-2.5" />{trendValue}</div>}
+          <Icon className="w-4 h-4 opacity-60" />
         </div>
-        {alert && <AlertCircle className="w-4 h-4 text-amber-500" />}
-        {trend === "up"   && <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full"><ArrowUpRight className="w-3 h-3" />{trendValue}</div>}
-        {trend === "down" && <div className="flex items-center gap-1 text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded-full"><ArrowDownRight className="w-3 h-3" />{trendValue}</div>}
       </div>
-      <p className="text-xs text-gray-500 mb-1">{label}</p>
-      <p className="text-2xl font-bold text-gray-900 leading-none">{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
-      {href && <div className="flex items-center gap-1 text-xs text-primary mt-2">View details <ArrowRight className="w-3 h-3" /></div>}
+      <p className="text-2xl font-bold font-mono mt-2">{value}</p>
+      {sub && <p className="text-xs opacity-70 mt-0.5">{sub}</p>}
+      {href && <p className="text-[10px] opacity-60 mt-1.5">View details →</p>}
     </div>
   );
   return href ? <Link href={href}>{content}</Link> : content;
@@ -174,18 +171,18 @@ export default function FinanceOverview() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KpiCard label="Total Revenue" value={inrK(pnl.totalRevenue)}
             sub={`${pnl.grossMargin.toFixed(1)}% gross margin`}
-            icon={TrendingUp} color="text-emerald-600" href="/invoices" />
+            icon={TrendingUp} color="text-emerald-600" href="/invoices" bg="bg-emerald-600" />
           <KpiCard label="Total Purchases (CoGS)" value={inrK(pnl.totalPurchases)}
             sub="Vendor bills incl. GST"
-            icon={Package} color="text-orange-600" href="/bills" />
+            icon={Package} color="text-orange-600" href="/bills" bg="bg-orange-600" />
           <KpiCard label="Gross Profit" value={inrK(pnl.grossProfit)}
             sub={`Margin: ${pnl.grossMargin.toFixed(1)}%`}
             trend={pnl.grossProfit >= 0 ? "up" : "down"} trendValue={`${pnl.grossMargin.toFixed(1)}%`}
-            icon={BarChart3} color="text-violet-600" />
+            icon={BarChart3} color="text-violet-600" bg="bg-violet-600" />
           <KpiCard label="Net Profit" value={inrK(pnl.netProfit)}
             sub={`After operating expenses · ${pnl.netMargin.toFixed(1)}% net margin`}
             trend={pnl.netProfit >= 0 ? "up" : "down"} trendValue={`${pnl.netMargin.toFixed(1)}%`}
-            icon={Activity} color={pnl.netProfit >= 0 ? "text-green-600" : "text-red-600"} />
+            icon={Activity} color={pnl.netProfit >= 0 ? "text-green-600" : "text-red-600"} bg={pnl.netProfit >= 0 ? "bg-green-600" : "bg-red-600"} />
         </div>
       </div>
 
@@ -196,18 +193,18 @@ export default function FinanceOverview() {
           <KpiCard label="Outstanding Receivables" value={inrK(ar.outstanding)}
             sub={`₹${inrK(ar.overdue)} overdue`}
             alert={ar.overdue > 0}
-            icon={Receipt} color="text-blue-600" href="/customers/ar-aging" />
+            icon={Receipt} color="text-blue-600" href="/customers/ar-aging" bg="bg-blue-600" />
           <KpiCard label="Outstanding Payables" value={inrK(ap.outstanding)}
             sub={`₹${inrK(ap.overdue)} overdue`}
             alert={ap.overdue > 0}
-            icon={CreditCard} color="text-red-600" href="/vendors/ap-aging" />
+            icon={CreditCard} color="text-red-600" href="/vendors/ap-aging" bg="bg-red-600" />
           <KpiCard label="Available Cash & Bank" value={inrK(cash.total)}
             sub={`Across ${cash.accounts.length} account${cash.accounts.length !== 1 ? "s" : ""}`}
-            icon={Landmark} color="text-cyan-600" href="/bank" />
+            icon={Landmark} color="text-cyan-600" href="/bank" bg="bg-cyan-600" />
           <KpiCard label={gstLabel} value={inrK(gstAmt)}
             sub={`Output: ${inrK(gst.outputTax)} · ITC: ${inrK(gst.inputCredit)}`}
             trend={gstNet > 0 ? "down" : "up"} trendValue={gstNet > 0 ? "Payable" : "Receivable"}
-            icon={IndianRupee} color="text-amber-600" href="/gst/gstr3b" />
+            icon={IndianRupee} color="text-amber-600" href="/gst/gstr3b" bg="bg-amber-600" />
         </div>
       </div>
 

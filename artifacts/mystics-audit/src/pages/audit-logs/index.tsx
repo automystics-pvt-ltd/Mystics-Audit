@@ -64,14 +64,14 @@ export default function AuditLogsList() {
       {/* KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total Events",  value: all.length,    color: "bg-violet-50 border-violet-100", text: "text-violet-700" },
-          { label: "Created",       value: createCount,   color: "bg-emerald-50 border-emerald-100", text: "text-emerald-700" },
-          { label: "Updated",       value: updateCount,   color: "bg-blue-50 border-blue-100",     text: "text-blue-700" },
-          { label: "Deleted",       value: deleteCount,   color: "bg-red-50 border-red-100",       text: "text-red-700" },
-        ].map(({ label, value, color, text }) => (
-          <div key={label} className={cn("rounded-2xl border px-5 py-4", color)}>
-            <p className="text-xs text-gray-500 font-medium">{label}</p>
-            <p className={cn("text-2xl font-bold mt-0.5", text)}>{value}</p>
+          { label: "Total Events", value: all.length,   bg: "bg-violet-600" },
+          { label: "Created",      value: createCount,  bg: "bg-emerald-600" },
+          { label: "Updated",      value: updateCount,  bg: "bg-blue-600" },
+          { label: "Deleted",      value: deleteCount,  bg: "bg-red-600" },
+        ].map(({ label, value, bg }) => (
+          <div key={label} className={cn("rounded-2xl px-5 py-5 text-white", bg)}>
+            <p className="text-xs font-medium opacity-80">{label}</p>
+            <p className="text-2xl font-bold font-mono mt-2">{value}</p>
           </div>
         ))}
       </div>

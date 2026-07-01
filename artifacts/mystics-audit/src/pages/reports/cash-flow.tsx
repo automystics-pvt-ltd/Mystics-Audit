@@ -86,10 +86,10 @@ export default function CashFlow() {
   ] : [];
 
   const kpis = [
-    { label: "Operating", value: totalOperating, color: "text-violet-600" },
-    { label: "Investing",  value: totalInvesting,  color: "text-blue-600" },
-    { label: "Financing",  value: totalFinancing,  color: "text-amber-600" },
-    { label: "Net Cash",   value: netCashFlow,     color: netCashFlow >= 0 ? "text-emerald-600" : "text-red-600" },
+    { label: "Operating", value: totalOperating, bg: "bg-violet-600", sub: "Cash from operations" },
+    { label: "Investing",  value: totalInvesting,  bg: "bg-blue-600",   sub: "Investment activities" },
+    { label: "Financing",  value: totalFinancing,  bg: "bg-amber-600",  sub: "Debt & equity" },
+    { label: "Net Cash",   value: netCashFlow,     bg: netCashFlow >= 0 ? "bg-emerald-600" : "bg-red-600", sub: "Net change in cash" },
   ];
 
   return (
@@ -118,12 +118,13 @@ export default function CashFlow() {
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map(({ label, value, color }) => (
-          <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-            <p className="text-xs text-gray-500 font-medium">{label}</p>
-            <p className={cn("text-xl font-bold font-mono mt-1", color)}>
+        {kpis.map(({ label, value, bg, sub }) => (
+          <div key={label} className={cn("rounded-2xl px-5 py-5 text-white", bg)}>
+            <p className="text-xs font-medium opacity-80">{label}</p>
+            <p className="text-2xl font-bold font-mono mt-2">
               {value < 0 ? `(${formatCurrency(Math.abs(value))})` : formatCurrency(value)}
             </p>
+            <p className="text-xs opacity-70 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>

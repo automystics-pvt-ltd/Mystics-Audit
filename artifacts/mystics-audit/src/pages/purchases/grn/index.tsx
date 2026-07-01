@@ -45,20 +45,18 @@ export default function GrnList() {
       {/* KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total GRNs",  value: all.length,       sub: "all receipts",       icon: Package,      color: "bg-violet-50 border-violet-100", text: "text-violet-700" },
-          { label: "Received",    value: received.length,  sub: "fully received",     icon: CheckCircle2, color: "bg-emerald-50 border-emerald-100",text: "text-emerald-700"},
-          { label: "Partial",     value: partial.length,   sub: "partially received", icon: Truck,        color: "bg-amber-50 border-amber-100",   text: "text-amber-700"  },
-          { label: "Pending",     value: pending.length,   sub: "awaiting receipt",   icon: Clock,        color: "bg-blue-50 border-blue-100",     text: "text-blue-700"   },
-        ].map(({ label, value, sub, icon: Icon, color, text }) => (
-          <div key={label} className={cn("rounded-2xl border px-5 py-4 flex items-start gap-3", color)}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/60">
-              <Icon className={cn("w-4 h-4", text)} />
+          { label: "Total GRNs", value: String(all.length),      sub: "all receipts",       icon: Package,      bg: "bg-violet-600" },
+          { label: "Received",   value: String(received.length), sub: "fully received",     icon: CheckCircle2, bg: "bg-emerald-600" },
+          { label: "Partial",    value: String(partial.length),  sub: "partially received", icon: Truck,        bg: "bg-amber-600" },
+          { label: "Pending",    value: String(pending.length),  sub: "awaiting receipt",   icon: Clock,        bg: "bg-blue-600" },
+        ].map(({ label, value, sub, icon: Icon, bg }) => (
+          <div key={label} className={cn("rounded-2xl px-5 py-5 text-white", bg)}>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium opacity-80">{label}</p>
+              <Icon className="w-4 h-4 opacity-60" />
             </div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500 font-medium">{label}</p>
-              <p className={cn("text-2xl font-bold mt-0.5", text)}>{value}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
-            </div>
+            <p className="text-2xl font-bold font-mono mt-2">{value}</p>
+            <p className="text-xs opacity-70 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>

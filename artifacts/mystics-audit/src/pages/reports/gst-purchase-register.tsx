@@ -76,16 +76,16 @@ export default function GstPurchaseRegister() {
 
       <div className="grid grid-cols-6 gap-3">
         {[
-          { label:"Taxable Amount", value:totals.taxable, color:"text-gray-900" },
-          { label:"CGST (Input)",   value:totals.cgst,    color:"text-blue-700" },
-          { label:"SGST (Input)",   value:totals.sgst,    color:"text-purple-700" },
-          { label:"IGST (Input)",   value:totals.igst,    color:"text-orange-700" },
-          { label:"TDS Deducted",   value:totals.tds,     color:"text-red-700" },
-          { label:"Total ITC",      value:totals.cgst+totals.sgst+totals.igst, color:"text-primary" },
+          { label:"Taxable Amount", value:totals.taxable,                              bg:"bg-gray-700" },
+          { label:"CGST (Input)",   value:totals.cgst,                                 bg:"bg-blue-600" },
+          { label:"SGST (Input)",   value:totals.sgst,                                 bg:"bg-violet-600" },
+          { label:"IGST (Input)",   value:totals.igst,                                 bg:"bg-orange-600" },
+          { label:"TDS Deducted",   value:totals.tds,                                  bg:"bg-red-600" },
+          { label:"Total ITC",      value:totals.cgst+totals.sgst+totals.igst,         bg:"bg-emerald-600" },
         ].map(k => (
-          <div key={k.label} className="bg-white border rounded-xl p-3">
-            <p className="text-xs text-gray-500">{k.label}</p>
-            <p className={cn("text-base font-bold", k.color)}>₹{(k.value/100_000).toFixed(2)}L</p>
+          <div key={k.label} className={cn("rounded-2xl px-4 py-4 text-white", k.bg)}>
+            <p className="text-xs font-medium opacity-80">{k.label}</p>
+            <p className="text-lg font-bold font-mono mt-1.5">₹{(k.value/100_000).toFixed(2)}L</p>
           </div>
         ))}
       </div>

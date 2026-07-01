@@ -24,12 +24,12 @@ export default function ExpenseAnalytics() {
   const byStatus: any[]   = d?.byStatus ?? [];
 
   const kpis = [
-    { label: "Total Claimed",   value: fmt(d?.totalAmount),    sub: "All periods",        color: "text-gray-900", icon: <TrendingDown className="w-5 h-5 text-gray-400" /> },
-    { label: "Pending Approval",value: fmt(d?.totalPending),   sub: "Awaiting review",    color: "text-amber-600", icon: <Clock className="w-5 h-5 text-amber-400" /> },
-    { label: "Approved",        value: fmt(d?.totalApproved),  sub: "Cleared for payment",color: "text-blue-700", icon: <CheckCircle2 className="w-5 h-5 text-blue-400" /> },
-    { label: "Rejected",        value: fmt(d?.totalRejected),  sub: "Claims denied",      color: "text-red-600", icon: <AlertTriangle className="w-5 h-5 text-red-400" /> },
-    { label: "Reimbursed",      value: fmt(d?.totalReimbursed),sub: "Paid to employees",  color: "text-violet-600", icon: <Banknote className="w-5 h-5 text-violet-400" /> },
-    { label: "Policy Violations",value: String(d?.policyViolations ?? 0), sub: "Require review", color: d?.policyViolations > 0 ? "text-amber-600" : "text-emerald-600", icon: <AlertTriangle className="w-5 h-5 text-amber-400" /> },
+    { label: "Total Claimed",    value: fmt(d?.totalAmount),    sub: "All periods",         bg: "bg-gray-700",    Icon: TrendingDown },
+    { label: "Pending Approval", value: fmt(d?.totalPending),   sub: "Awaiting review",     bg: "bg-amber-600",   Icon: Clock },
+    { label: "Approved",         value: fmt(d?.totalApproved),  sub: "Cleared for payment", bg: "bg-blue-600",    Icon: CheckCircle2 },
+    { label: "Rejected",         value: fmt(d?.totalRejected),  sub: "Claims denied",       bg: "bg-red-600",     Icon: AlertTriangle },
+    { label: "Reimbursed",       value: fmt(d?.totalReimbursed),sub: "Paid to employees",   bg: "bg-violet-600",  Icon: Banknote },
+    { label: "Policy Violations",value: String(d?.policyViolations ?? 0), sub: "Require review", bg: (d?.policyViolations ?? 0) > 0 ? "bg-amber-600" : "bg-emerald-600", Icon: AlertTriangle },
   ];
 
   return (
@@ -45,11 +45,14 @@ export default function ExpenseAnalytics() {
 
       {/* KPI grid */}
       <div className="grid grid-cols-3 gap-4 lg:grid-cols-6">
-        {kpis.map(({ label, value, sub, color, icon }) => (
-          <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 space-y-2">
-            <div className="flex items-center justify-between">{icon}<span className="text-xs font-medium text-gray-400">{label}</span></div>
-            <p className={`text-xl font-bold font-mono ${color}`}>{value}</p>
-            <p className="text-xs text-gray-400">{sub}</p>
+        {kpis.map(({ label, value, sub, bg, Icon }) => (
+          <div key={label} className={`rounded-2xl px-5 py-5 text-white ${bg}`}>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium opacity-80">{label}</p>
+              <Icon className="w-4 h-4 opacity-60" />
+            </div>
+            <p className="text-2xl font-bold font-mono mt-2">{value}</p>
+            <p className="text-xs opacity-70 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>

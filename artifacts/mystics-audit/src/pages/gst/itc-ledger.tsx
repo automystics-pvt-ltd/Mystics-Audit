@@ -54,15 +54,15 @@ export default function ItcLedger() {
 
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: "CGST Available", value: formatCurrency(summary.cgstAvailable ?? 0), color: "" },
-          { label: "SGST Available", value: formatCurrency(summary.sgstAvailable ?? 0), color: "" },
-          { label: "IGST Available", value: formatCurrency(summary.igstAvailable ?? 0), color: "" },
-          { label: "Total ITC", value: formatCurrency((summary.cgstAvailable ?? 0) + (summary.sgstAvailable ?? 0) + (summary.igstAvailable ?? 0)), color: "text-green-600" },
-        ].map(({ label, value, color }) => (
-          <Card key={label}>
-            <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground font-medium">{label}</CardTitle></CardHeader>
-            <CardContent><p className={`text-xl font-mono font-semibold ${color}`}>{value}</p></CardContent>
-          </Card>
+          { label: "CGST Available", value: formatCurrency(summary.cgstAvailable ?? 0), bg: "bg-violet-600" },
+          { label: "SGST Available", value: formatCurrency(summary.sgstAvailable ?? 0), bg: "bg-blue-600" },
+          { label: "IGST Available", value: formatCurrency(summary.igstAvailable ?? 0), bg: "bg-indigo-600" },
+          { label: "Total ITC", value: formatCurrency((summary.cgstAvailable ?? 0) + (summary.sgstAvailable ?? 0) + (summary.igstAvailable ?? 0)), bg: "bg-emerald-600" },
+        ].map(({ label, value, bg }) => (
+          <div key={label} className={`rounded-2xl px-5 py-5 text-white ${bg}`}>
+            <p className="text-xs font-medium opacity-80">{label}</p>
+            <p className="text-2xl font-bold font-mono mt-2">{value}</p>
+          </div>
         ))}
       </div>
 

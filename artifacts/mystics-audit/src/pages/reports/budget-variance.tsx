@@ -60,17 +60,17 @@ export default function BudgetVariance() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label:"Total Budget",  value:inr(grand.budget),     sub:`${budgets.length} budgets`, color:"text-gray-900" },
-          { label:"Total Actual",  value:inr(grand.actual),     sub:"Spent so far",              color:"text-primary" },
-          { label:"Total Variance",value:inr(grandVariance),    sub:grandVariance>=0?"Under budget":"Over budget", color:grandVariance>=0?"text-green-700":"text-red-700" },
-          { label:"Utilization",   value:`${grand.budget>0?((grand.actual/grand.budget)*100).toFixed(1):0}%`, sub:"Of total budget", color:"text-amber-700" },
+          { label:"Total Budget",  value:inr(grand.budget),   sub:`${budgets.length} budgets`,                                       bg:"bg-violet-600" },
+          { label:"Total Actual",  value:inr(grand.actual),   sub:"Spent so far",                                                     bg:"bg-blue-600" },
+          { label:"Total Variance",value:inr(grandVariance),  sub:grandVariance>=0?"Under budget":"Over budget",                       bg:grandVariance>=0?"bg-emerald-600":"bg-red-600" },
+          { label:"Utilization",   value:`${grand.budget>0?((grand.actual/grand.budget)*100).toFixed(1):0}%`, sub:"Of total budget",  bg:"bg-amber-600" },
         ].map(k => (
-          <div key={k.label} className="bg-white border rounded-xl p-3">
-            <p className="text-xs text-gray-500">{k.label}</p>
-            <p className={cn("text-xl font-bold", k.color)}>{k.value}</p>
-            <p className="text-xs text-gray-400">{k.sub}</p>
+          <div key={k.label} className={cn("rounded-2xl px-5 py-5 text-white", k.bg)}>
+            <p className="text-xs font-medium opacity-80">{k.label}</p>
+            <p className="text-2xl font-bold font-mono mt-2">{k.value}</p>
+            <p className="text-xs opacity-70 mt-0.5">{k.sub}</p>
           </div>
         ))}
       </div>

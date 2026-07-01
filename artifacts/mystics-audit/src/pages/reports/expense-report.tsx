@@ -99,15 +99,15 @@ export default function ExpenseReport() {
 
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label:"Total Claimed",  value:inr(totals.totalAmount), sub:`${totals.count} claims`, color:"text-gray-900" },
-          { label:"GST Component",  value:inr(totals.totalGst),    sub:"Input tax",              color:"text-amber-700" },
-          { label:"Net Expense",    value:inr(totals.totalAmount-totals.totalGst), sub:"Excl. GST", color:"text-primary" },
-          { label:"Policy Violations", value:totals.violations,   sub:"Claims with breach",    color:totals.violations>0?"text-red-600":"text-green-600" },
+          { label:"Total Claimed",     value:inr(totals.totalAmount),               sub:`${totals.count} claims`, bg:"bg-gray-700" },
+          { label:"GST Component",     value:inr(totals.totalGst),                  sub:"Input tax",              bg:"bg-amber-600" },
+          { label:"Net Expense",       value:inr(totals.totalAmount-totals.totalGst),sub:"Excl. GST",             bg:"bg-violet-600" },
+          { label:"Policy Violations", value:String(totals.violations),             sub:"Claims with breach",     bg:totals.violations>0?"bg-red-600":"bg-emerald-600" },
         ].map(k => (
-          <div key={k.label} className="bg-white border rounded-xl p-3">
-            <p className="text-xs text-gray-500">{k.label}</p>
-            <p className={cn("text-xl font-bold", k.color)}>{k.value}</p>
-            <p className="text-xs text-gray-400">{k.sub}</p>
+          <div key={k.label} className={cn("rounded-2xl px-5 py-5 text-white", k.bg)}>
+            <p className="text-xs font-medium opacity-80">{k.label}</p>
+            <p className="text-2xl font-bold font-mono mt-2">{k.value}</p>
+            <p className="text-xs opacity-70 mt-0.5">{k.sub}</p>
           </div>
         ))}
       </div>

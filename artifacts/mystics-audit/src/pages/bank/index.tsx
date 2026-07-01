@@ -247,49 +247,30 @@ export default function BankList() {
       {/* KPI summary strip */}
       {banks.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
-          <Card className="px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-blue-50">
-                <Wallet className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">Total Cash Position</p>
-                <p className={cn("text-xl font-black font-mono mt-0.5", totalBalance >= 0 ? "text-foreground" : "text-destructive")}>
-                  {formatCurrency(totalBalance)}
-                </p>
-              </div>
+          <div className="rounded-2xl px-5 py-5 text-white bg-blue-600">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium opacity-80">Total Cash Position</p>
+              <Wallet className="w-4 h-4 opacity-60" />
             </div>
-          </Card>
-          <Card className="px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-emerald-50">
-                <Building2 className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">Active Accounts</p>
-                <p className="text-xl font-black mt-0.5">
-                  {banks.filter(b => b.isActive).length}
-                  <span className="text-sm font-normal text-muted-foreground ml-1">
-                    of {banks.length}
-                  </span>
-                </p>
-              </div>
+            <p className="text-2xl font-bold font-mono mt-2">{formatCurrency(totalBalance)}</p>
+            <p className="text-xs opacity-70 mt-0.5">{banks.length} accounts</p>
+          </div>
+          <div className="rounded-2xl px-5 py-5 text-white bg-emerald-600">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium opacity-80">Active Accounts</p>
+              <Building2 className="w-4 h-4 opacity-60" />
             </div>
-          </Card>
-          <Card className="px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className={cn("p-2 rounded-xl", overdraftCount > 0 ? "bg-rose-50" : "bg-muted")}>
-                <AlertCircle className={cn("w-5 h-5", overdraftCount > 0 ? "text-rose-600" : "text-muted-foreground")} />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">Overdraft Accounts</p>
-                <p className={cn("text-xl font-black mt-0.5", overdraftCount > 0 ? "text-rose-600" : "text-muted-foreground")}>
-                  {overdraftCount}
-                  {overdraftCount === 0 && <span className="text-sm font-normal text-muted-foreground ml-1">accounts</span>}
-                </p>
-              </div>
+            <p className="text-2xl font-bold font-mono mt-2">{banks.filter(b => b.isActive).length}</p>
+            <p className="text-xs opacity-70 mt-0.5">of {banks.length} total</p>
+          </div>
+          <div className={cn("rounded-2xl px-5 py-5 text-white", overdraftCount > 0 ? "bg-rose-600" : "bg-violet-600")}>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium opacity-80">Overdraft Accounts</p>
+              <AlertCircle className="w-4 h-4 opacity-60" />
             </div>
-          </Card>
+            <p className="text-2xl font-bold font-mono mt-2">{overdraftCount}</p>
+            <p className="text-xs opacity-70 mt-0.5">{overdraftCount > 0 ? "require attention" : "all clear"}</p>
+          </div>
         </div>
       )}
 

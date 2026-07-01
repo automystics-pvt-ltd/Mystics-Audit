@@ -81,16 +81,16 @@ export default function GstSalesRegister() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label:"Taxable Amount", value:totals.taxable, color:"text-gray-900" },
-          { label:"CGST",           value:totals.cgst,    color:"text-blue-700" },
-          { label:"SGST",           value:totals.sgst,    color:"text-purple-700" },
-          { label:"IGST",           value:totals.igst,    color:"text-orange-700" },
-          { label:"Total Tax",      value:totals.cgst+totals.sgst+totals.igst, color:"text-primary" },
+          { label:"Taxable Amount", value:totals.taxable,                              bg:"bg-gray-700" },
+          { label:"CGST",           value:totals.cgst,                                 bg:"bg-blue-600" },
+          { label:"SGST",           value:totals.sgst,                                 bg:"bg-violet-600" },
+          { label:"IGST",           value:totals.igst,                                 bg:"bg-orange-600" },
+          { label:"Total Tax",      value:totals.cgst+totals.sgst+totals.igst,         bg:"bg-emerald-600" },
         ].map(k => (
-          <div key={k.label} className="bg-white border rounded-xl p-3">
-            <p className="text-xs text-gray-500">{k.label}</p>
-            <p className={cn("text-lg font-bold", k.color)}>₹{(k.value/100_000).toFixed(2)}L</p>
-            <p className="text-xs text-gray-400">{rows.length} invoices</p>
+          <div key={k.label} className={cn("rounded-2xl px-5 py-5 text-white", k.bg)}>
+            <p className="text-xs font-medium opacity-80">{k.label}</p>
+            <p className="text-2xl font-bold font-mono mt-2">₹{(k.value/100_000).toFixed(2)}L</p>
+            <p className="text-xs opacity-70 mt-0.5">{rows.length} invoices</p>
           </div>
         ))}
       </div>

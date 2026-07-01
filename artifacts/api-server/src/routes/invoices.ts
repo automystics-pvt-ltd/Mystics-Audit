@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { db, invoicesTable, invoiceLinesTable, accountsTable, companiesTable } from "@workspace/db";
+import { db, invoicesTable, invoiceLinesTable, accountsTable } from "@workspace/db";
 import { eq, and, desc, gte, lte } from "drizzle-orm";
-import { createPostedJournal, round2 } from "../utils/accounting";
+import { createPostedJournal, round2, getCompanyState, GL_CODES, type JournalLine } from "../utils/accounting";
 
 const router = Router();
 
@@ -22,20 +22,6 @@ async function nextInvoiceNo(): Promise<string> {
   return `INV-${new Date().getFullYear()}-${String(invSeq).padStart(5, "0")}`;
 }
 
-/** Fetch company state for inter-state GST determination */
-async function getCompanyState(): Promise<string> {
-  const [company] = await db.select({ state: companiesTable.state }).from(companiesTable).limit(1);
-  return company?.state ?? "Tamil Nadu";
-}
-
-/** Default revenue GL account code */
-const GL = {
-  AR:            "1100",  // Accounts Receivable
-  REVENUE:       "6000",  // Revenue from IT Services (default)
-  GST_CGST:      "3100",  // GST Payable - CGST
-  GST_SGST:      "3110",  // GST Payable - SGST
-  GST_IGST:      "3120",  // GST Payable - IGST
-};
 
 async function getInvoiceWithLines(id: number) {
   const [inv] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, id));
@@ -275,17 +261,17 @@ router.post("/invoices/:id/post", async (req, res) => {
     const totalAmount   = round2(Number(inv.totalAmount));
 
     // 2. Build journal lines
-    const journalLines = [
+    const journalLines: JournalLine[] = [
       // Debit: Accounts Receivable increases by full invoice amount
-      { accountCode: GL.AR,      debit: totalAmount,    credit: 0,             narration: "AR for " + inv.invoiceNo, partyName: inv.customerName },
+      { accountCode: GL_CODES.AR,      debit: totalAmount,    credit: 0,             narration: "AR for " + inv.invoiceNo, partyName: inv.customerName },
       // Credit: Revenue
-      { accountCode: GL.REVENUE, debit: 0,              credit: taxableAmount, narration: "Revenue " + inv.invoiceNo },
+      { accountCode: GL_CODES.REVENUE, debit: 0,              credit: taxableAmount, narration: "Revenue " + inv.invoiceNo },
     ];
 
     // Credit: GST (only non-zero amounts)
-    if (cgst > 0) journalLines.push({ accountCode: GL.GST_CGST, debit: 0, credit: cgst, narration: "CGST " + inv.invoiceNo });
-    if (sgst > 0) journalLines.push({ accountCode: GL.GST_SGST, debit: 0, credit: sgst, narration: "SGST " + inv.invoiceNo });
-    if (igst > 0) journalLines.push({ accountCode: GL.GST_IGST, debit: 0, credit: igst, narration: "IGST " + inv.invoiceNo });
+    if (cgst > 0) journalLines.push({ accountCode: GL_CODES.GST_CGST, debit: 0, credit: cgst, narration: "CGST " + inv.invoiceNo });
+    if (sgst > 0) journalLines.push({ accountCode: GL_CODES.GST_SGST, debit: 0, credit: sgst, narration: "SGST " + inv.invoiceNo });
+    if (igst > 0) journalLines.push({ accountCode: GL_CODES.GST_IGST, debit: 0, credit: igst, narration: "IGST " + inv.invoiceNo });
 
     // 3. Create the posted journal entry
     await createPostedJournal({

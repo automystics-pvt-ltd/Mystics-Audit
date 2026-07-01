@@ -7,19 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
-  Plus, Search, FileText, Clock, CheckCircle2, AlertCircle,
-  Receipt, Download, RefreshCw,
+  Plus, Search, FileText, Download, RefreshCw,
+  Clock, CheckCircle2, AlertCircle,
 } from "lucide-react";
+import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
 
-const STATUS_CFG: Record<string, { color: string; icon: React.FC<{ className?: string }> }> = {
-  draft:     { color: "bg-amber-100 text-amber-700 border-amber-200",    icon: Clock },
-  posted:    { color: "bg-blue-100 text-blue-700 border-blue-200",       icon: CheckCircle2 },
-  partial:   { color: "bg-violet-100 text-violet-700 border-violet-200", icon: Receipt },
-  paid:      { color: "bg-green-100 text-green-700 border-green-200",    icon: CheckCircle2 },
-  cancelled: { color: "bg-red-100 text-red-700 border-red-200",          icon: AlertCircle },
-  overdue:   { color: "bg-red-100 text-red-700 border-red-200",          icon: AlertCircle },
-};
 
 export default function InvoicesList() {
   const { fy } = useFY();
@@ -173,8 +166,6 @@ export default function InvoicesList() {
                 : filtered.map((inv: any) => {
                     const isOverdue = inv.status !== "paid" && inv.status !== "cancelled" && inv.balanceDue > 0 && new Date(inv.dueDate) < new Date();
                     const cfgKey    = isOverdue ? "overdue" : (inv.status as string);
-                    const cfg       = STATUS_CFG[cfgKey] ?? STATUS_CFG.draft;
-                    const Icon      = cfg.icon;
                     return (
                       <tr key={inv.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
                         <td className="px-4 py-3">
@@ -195,10 +186,7 @@ export default function InvoicesList() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <span className={cn("inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border", cfg.color)}>
-                            <Icon className="w-3 h-3" />
-                            {isOverdue ? "Overdue" : inv.status}
-                          </span>
+                          <StatusBadge status={cfgKey} showIcon />
                         </td>
                         <td className="px-4 py-3 text-right text-gray-600">{formatCurrency(inv.taxableAmount)}</td>
                         <td className="px-4 py-3 text-right font-bold text-gray-900">{formatCurrency(inv.totalAmount)}</td>

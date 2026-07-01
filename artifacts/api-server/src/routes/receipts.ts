@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, receiptsTable, receiptAllocationsTable, bankAccountsTable, invoicesTable } from "@workspace/db";
 import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
-import { createPostedJournal, round2, type JournalLine } from "../utils/accounting";
+import { createPostedJournal, round2, type JournalLine, GL_CODES } from "../utils/accounting";
 
 const router = Router();
 
@@ -21,12 +21,6 @@ async function nextReceiptNo(): Promise<string> {
   return `RCT-${new Date().getFullYear()}-${String(receiptSeq).padStart(5, "0")}`;
 }
 
-const GL = {
-  AR:               "1100",   // Accounts Receivable (credit — reduces AR)
-  TDS_RECEIVABLE:   "1150",   // TDS Receivable (debit — we'll collect from Tax Dept)
-  DISCOUNT_ALLOWED: "7040",   // Settlement Discount (debit — expense)
-  CASH:             "1000",   // Cash in Hand (fallback if no bank account)
-};
 
 async function getReceiptWithAllocations(id: number) {
   const [receipt] = await db.select().from(receiptsTable).where(eq(receiptsTable.id, id));
@@ -102,7 +96,7 @@ router.post("/receipts", async (req, res) => {
     });
 
     // Fetch bank GL account code
-    let bankGlCode = GL.CASH;
+    let bankGlCode: string = GL_CODES.CASH;
     if (bankAccountId) {
       const [bankAcc] = await db
         .select({ accountId: bankAccountsTable.accountId })
@@ -187,13 +181,13 @@ router.post("/receipts", async (req, res) => {
     //    CR AR      = gross amount (full invoice value being settled)
     const journalLines: JournalLine[] = [
       { accountCode: bankGlCode, debit: net,   credit: 0,     narration: "Receipt " + receipt.receiptNo,    partyName: customerData?.name },
-      { accountCode: GL.AR,      debit: 0,     credit: gross, narration: "AR cleared " + receipt.receiptNo, partyName: customerData?.name },
+      { accountCode: GL_CODES.AR,      debit: 0,     credit: gross, narration: "AR cleared " + receipt.receiptNo, partyName: customerData?.name },
     ];
     if (tds > 0) {
-      journalLines.push({ accountCode: GL.TDS_RECEIVABLE,   debit: tds,      credit: 0, narration: "TDS on " + receipt.receiptNo });
+      journalLines.push({ accountCode: GL_CODES.TDS_RECEIVABLE,   debit: tds,      credit: 0, narration: "TDS on " + receipt.receiptNo });
     }
     if (discount > 0) {
-      journalLines.push({ accountCode: GL.DISCOUNT_ALLOWED, debit: discount, credit: 0, narration: "Discount on " + receipt.receiptNo });
+      journalLines.push({ accountCode: GL_CODES.DISCOUNT_ALLOWED, debit: discount, credit: 0, narration: "Discount on " + receipt.receiptNo });
     }
 
     await createPostedJournal({

@@ -2,8 +2,8 @@ import { useListExpenses, useApproveExpense } from "@workspace/api-client-react"
 import { useState } from "react";
 import { useFY } from "@/contexts/fy-context";
 import { Link } from "wouter";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -25,21 +25,6 @@ const STATUSES = [
   { value: "paid",        label: "Paid" },
 ];
 
-const STATUS_ICON: Record<string, React.ReactNode> = {
-  submitted:  <Clock className="w-3 h-3" />,
-  approved:   <CheckCircle2 className="w-3 h-3" />,
-  rejected:   <XCircle className="w-3 h-3" />,
-  reimbursed: <Banknote className="w-3 h-3" />,
-  paid:       <CheckCircle2 className="w-3 h-3" />,
-};
-
-const STATUS_COLOR: Record<string, string> = {
-  submitted:  "bg-amber-50 text-amber-700 border border-amber-200",
-  approved:   "bg-blue-50 text-blue-700 border border-blue-200",
-  rejected:   "bg-red-50 text-red-700 border border-red-200",
-  reimbursed: "bg-violet-50 text-violet-700 border border-violet-200",
-  paid:       "bg-emerald-50 text-emerald-700 border border-emerald-200",
-};
 
 const DEPARTMENTS = ["Sales", "Engineering", "Finance", "Operations", "HR", "Marketing", "Administration"];
 const BRANCHES    = ["Head Office", "Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad", "Pune"];
@@ -269,9 +254,7 @@ export default function ExpensesList() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLOR[e.status] ?? "bg-gray-100 text-gray-500"}`}>
-                      {STATUS_ICON[e.status]}{e.status.charAt(0).toUpperCase() + e.status.slice(1)}
-                    </span>
+                    <StatusBadge status={e.status} showIcon />
                   </TableCell>
                   <TableCell>
                     {e.policyViolations > 0

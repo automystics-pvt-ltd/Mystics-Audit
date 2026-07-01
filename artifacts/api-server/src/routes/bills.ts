@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { db, vendorBillsTable, billLinesTable, vendorsTable, bankAccountsTable, companiesTable } from "@workspace/db";
+import { db, vendorBillsTable, billLinesTable, vendorsTable, bankAccountsTable } from "@workspace/db";
 import { eq, and, desc, gte, lte } from "drizzle-orm";
-import { createPostedJournal, round2, type JournalLine } from "../utils/accounting";
+import { createPostedJournal, round2, type JournalLine, getCompanyState, GL_CODES } from "../utils/accounting";
 
 const router = Router();
 
@@ -21,19 +21,6 @@ async function nextBillNo(): Promise<string> {
   return `BILL-${new Date().getFullYear()}-${String(billSeq).padStart(5, "0")}`;
 }
 
-/** Fetch company state for inter-state GST determination */
-async function getCompanyState(): Promise<string> {
-  const [company] = await db.select({ state: companiesTable.state }).from(companiesTable).limit(1);
-  return company?.state ?? "Tamil Nadu";
-}
-
-const GL = {
-  AP:        "3000",  // Accounts Payable
-  PURCHASES: "5500",  // Purchases / Cost of Goods
-  GST_ITC:   "1400",  // GST Input Tax Credit (ITC)
-  AP_TDS:    "3200",  // TDS Payable (we deduct TDS from vendor, remit to govt)
-  CASH:      "1000",  // Cash fallback
-};
 
 async function getBillWithLines(id: number) {
   const [bill] = await db.select().from(vendorBillsTable).where(eq(vendorBillsTable.id, id));
@@ -229,11 +216,11 @@ router.post("/bills/:id/post", async (req, res) => {
     const apAmount = totalAmount;
 
     const journalLines: JournalLine[] = [
-      { accountCode: GL.PURCHASES, debit: taxableAmount, credit: 0, narration: "Purchase " + bill.billNo, partyName: bill.vendorName },
-      { accountCode: GL.AP,        debit: 0, credit: apAmount, narration: "AP for "     + bill.billNo, partyName: bill.vendorName },
+      { accountCode: GL_CODES.PURCHASES, debit: taxableAmount, credit: 0, narration: "Purchase " + bill.billNo, partyName: bill.vendorName },
+      { accountCode: GL_CODES.AP,        debit: 0, credit: apAmount, narration: "AP for "     + bill.billNo, partyName: bill.vendorName },
     ];
     if (totalGst > 0) {
-      journalLines.push({ accountCode: GL.GST_ITC, debit: totalGst, credit: 0, narration: "ITC " + bill.billNo });
+      journalLines.push({ accountCode: GL_CODES.GST_ITC, debit: totalGst, credit: 0, narration: "ITC " + bill.billNo });
     }
 
     await createPostedJournal({
@@ -277,7 +264,7 @@ router.post("/bills/:id/pay", async (req, res) => {
     if (!bill) { res.status(404).json({ error: "Not found" }); return; }
 
     // Determine bank GL code
-    let bankGlCode = GL.CASH;
+    let bankGlCode: string = GL_CODES.CASH;
     if (bankAccountId) {
       const [bankAcc] = await db
         .select({ accountId: bankAccountsTable.accountId })
@@ -294,11 +281,11 @@ router.post("/bills/:id/pay", async (req, res) => {
 
     // Build journal
     const journalLines: JournalLine[] = [
-      { accountCode: GL.AP,      debit: payAmt, credit: 0,       narration: "Payment for " + bill.billNo, partyName: bill.vendorName },
+      { accountCode: GL_CODES.AP,      debit: payAmt, credit: 0,       narration: "Payment for " + bill.billNo, partyName: bill.vendorName },
       { accountCode: bankGlCode, debit: 0,      credit: cashOut, narration: "Payment for " + bill.billNo },
     ];
     if (tds > 0) {
-      journalLines.push({ accountCode: GL.AP_TDS, debit: 0, credit: tds, narration: "TDS on " + bill.billNo });
+      journalLines.push({ accountCode: GL_CODES.AP_TDS, debit: 0, credit: tds, narration: "TDS on " + bill.billNo });
     }
 
     await createPostedJournal({

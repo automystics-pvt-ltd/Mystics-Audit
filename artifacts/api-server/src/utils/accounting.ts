@@ -3,7 +3,7 @@
  * Every financial transaction (invoice post, receipt, bill post, payment)
  * must call createPostedJournal() so the GL is always up-to-date.
  */
-import { db, journalEntriesTable, journalLinesTable, accountsTable } from "@workspace/db";
+import { db, journalEntriesTable, journalLinesTable, accountsTable, companiesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 let seq = 0;
@@ -119,4 +119,26 @@ export async function createPostedJournal(opts: {
 
 export function round2(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+/** Single source of truth for all GL account codes used in transaction posting */
+export const GL_CODES = {
+  CASH:             "1000",  // Cash in Hand
+  AR:               "1100",  // Accounts Receivable
+  TDS_RECEIVABLE:   "1150",  // TDS Receivable
+  GST_ITC:          "1400",  // GST Input Tax Credit
+  AP:               "3000",  // Accounts Payable
+  GST_CGST:         "3100",  // GST Payable – CGST
+  GST_SGST:         "3110",  // GST Payable – SGST
+  GST_IGST:         "3120",  // GST Payable – IGST
+  AP_TDS:           "3200",  // TDS Payable
+  PURCHASES:        "5500",  // Purchases / Cost of Services
+  REVENUE:          "6000",  // Revenue from IT Services (default)
+  DISCOUNT_ALLOWED: "7040",  // Settlement Discount Allowed
+} as const;
+
+/** Fetch company's registered state for inter-state GST determination */
+export async function getCompanyState(): Promise<string> {
+  const [company] = await db.select({ state: companiesTable.state }).from(companiesTable).limit(1);
+  return company?.state ?? "Tamil Nadu";
 }

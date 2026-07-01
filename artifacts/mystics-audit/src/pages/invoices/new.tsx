@@ -437,9 +437,9 @@ export default function NewInvoice() {
             </Card>
           </div>
 
-          {/* Right: Summary */}
-          <div className="space-y-4">
-            <Card className="rounded-2xl border-gray-200 sticky top-4">
+          {/* Right: Summary — entire column is sticky */}
+          <div className="sticky top-4 self-start space-y-4">
+            <Card className="rounded-2xl border-gray-200">
               <CardHeader className="pb-3 border-b border-gray-100">
                 <CardTitle className="text-sm font-bold text-gray-700">Invoice Summary</CardTitle>
               </CardHeader>
@@ -457,15 +457,15 @@ export default function NewInvoice() {
                     </div>
                     {isInterState ? (
                       <div className="flex justify-between text-xs text-blue-600 pl-2">
-                        <span>  IGST {rate}%</span><span>{formatCurrency(b.tax)}</span>
+                        <span>IGST {rate}%</span><span>{formatCurrency(b.tax)}</span>
                       </div>
                     ) : (
                       <>
                         <div className="flex justify-between text-xs text-violet-600 pl-2">
-                          <span>  CGST {Number(rate) / 2}%</span><span>{formatCurrency(b.tax / 2)}</span>
+                          <span>CGST {Number(rate) / 2}%</span><span>{formatCurrency(b.tax / 2)}</span>
                         </div>
                         <div className="flex justify-between text-xs text-violet-600 pl-2">
-                          <span>  SGST {Number(rate) / 2}%</span><span>{formatCurrency(b.tax / 2)}</span>
+                          <span>SGST {Number(rate) / 2}%</span><span>{formatCurrency(b.tax / 2)}</span>
                         </div>
                       </>
                     )}
@@ -473,21 +473,28 @@ export default function NewInvoice() {
                 ))}
 
                 <Separator className="my-1" />
-
                 <SummaryRow label="Total GST" value={totals.gst} />
 
-                {/* Round-off */}
+                {/* Round-off toggle */}
                 <div className="flex items-center justify-between">
-                  <button onClick={() => setRoundOff(r => !r)}
-                    className={cn("flex items-center gap-2 text-xs font-medium transition-colors", roundOff ? "text-violet-600" : "text-muted-foreground")}>
-                    <div className={cn("w-8 h-4 rounded-full relative transition-colors", roundOff ? "bg-violet-600" : "bg-gray-200")}>
-                      <div className={cn("w-3 h-3 rounded-full bg-white absolute top-0.5 transition-transform", roundOff ? "translate-x-4" : "translate-x-0.5")} style={{ left: roundOff ? "auto" : "2px", right: roundOff ? "2px" : "auto" }} />
+                  <button
+                    onClick={() => setRoundOff(r => !r)}
+                    className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-gray-800 transition-colors"
+                  >
+                    <div className={cn(
+                      "w-8 h-4 rounded-full relative transition-colors shrink-0",
+                      roundOff ? "bg-violet-600" : "bg-gray-200"
+                    )}>
+                      <div className={cn(
+                        "w-3 h-3 rounded-full bg-white absolute top-0.5 transition-all duration-150",
+                        roundOff ? "left-[18px]" : "left-[2px]"
+                      )} />
                     </div>
                     Round off
                   </button>
                   {roundOff && (
-                    <span className={cn("text-xs font-semibold", roundOffAmt >= 0 ? "text-green-600" : "text-red-600")}>
-                      {roundOffAmt >= 0 ? "+" : ""}{formatCurrency(Math.abs(roundOffAmt))}
+                    <span className={cn("text-xs font-semibold tabular-nums", roundOffAmt >= 0 ? "text-green-600" : "text-red-600")}>
+                      {roundOffAmt >= 0 ? "+" : "−"}{formatCurrency(Math.abs(roundOffAmt))}
                     </span>
                   )}
                 </div>
@@ -506,45 +513,63 @@ export default function NewInvoice() {
                 )}
 
                 <div className="pt-2 space-y-2">
-                  <Button onClick={() => handleSave(false)} disabled={createMutation.isPending}
-                    variant="outline" className="w-full rounded-xl border-violet-200 text-violet-700 hover:bg-violet-50">
+                  <Button
+                    onClick={() => handleSave(false)}
+                    disabled={createMutation.isPending}
+                    variant="outline"
+                    className="w-full rounded-xl border-violet-200 text-violet-700 hover:bg-violet-50"
+                  >
                     {createMutation.isPending ? "Saving…" : "Save as Draft"}
                   </Button>
-                  <Button onClick={() => handleSave(true)} disabled={createMutation.isPending}
-                    className="w-full rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold">
+                  <Button
+                    onClick={() => handleSave(true)}
+                    disabled={createMutation.isPending}
+                    className="w-full rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold"
+                  >
                     Create & Post Invoice
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Customizer panel */}
+            {/* Display Options — always visible, inside the sticky column */}
             <Card className="rounded-2xl border-gray-200">
               <CardHeader className="pb-2 border-b border-gray-100">
                 <CardTitle className="text-xs font-bold text-gray-500 uppercase tracking-wider">Display Options</CardTitle>
               </CardHeader>
-              <CardContent className="pt-3 space-y-2">
-                {[
-                  { key: "showHsn", label: "Show HSN/SAC" },
+              <CardContent className="pt-3 space-y-1">
+                {([
+                  { key: "showHsn",      label: "Show HSN/SAC" },
                   { key: "showDiscount", label: "Show Discount column" },
-                ].map(({ key, label }) => (
-                  <button
-                    key={key}
-                    onClick={() => updateSettings({ [key]: !settings[key as keyof typeof settings] })}
-                    className={cn(
-                      "w-full flex items-center justify-between text-xs rounded-lg px-3 py-2 transition-colors",
-                      settings[key as keyof typeof settings]
-                        ? "bg-violet-50 text-violet-700 font-semibold"
-                        : "text-muted-foreground hover:bg-gray-50",
-                    )}
-                  >
-                    {label}
-                    <div className={cn("w-7 h-3.5 rounded-full relative transition-colors", settings[key as keyof typeof settings] ? "bg-violet-600" : "bg-gray-200")}>
-                      <div className={cn("w-2.5 h-2.5 rounded-full bg-white absolute top-0.5 transition-transform", settings[key as keyof typeof settings] ? "right-0.5" : "left-0.5")} />
-                    </div>
-                  </button>
-                ))}
-                <button onClick={resetSettings} className="text-[10px] text-gray-400 hover:text-gray-600 w-full text-right pt-1 transition-colors">
+                ] as const).map(({ key, label }) => {
+                  const on = !!settings[key as keyof typeof settings];
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => updateSettings({ [key]: !on })}
+                      className={cn(
+                        "w-full flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors",
+                        on ? "bg-violet-50 text-violet-700" : "text-gray-600 hover:bg-gray-50",
+                      )}
+                    >
+                      <span className="text-xs font-medium">{label}</span>
+                      {/* Proper toggle switch */}
+                      <div className={cn(
+                        "w-8 h-4 rounded-full relative transition-colors shrink-0",
+                        on ? "bg-violet-600" : "bg-gray-200"
+                      )}>
+                        <div className={cn(
+                          "w-3 h-3 rounded-full bg-white absolute top-0.5 transition-all duration-150 shadow-sm",
+                          on ? "left-[18px]" : "left-[2px]"
+                        )} />
+                      </div>
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={resetSettings}
+                  className="text-[10px] text-gray-400 hover:text-gray-600 w-full text-right pt-1 pb-0.5 transition-colors"
+                >
                   Reset defaults
                 </button>
               </CardContent>

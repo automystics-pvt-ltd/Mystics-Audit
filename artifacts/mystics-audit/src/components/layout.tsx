@@ -661,11 +661,11 @@ function HeaderProfile() {
 
             {/* Actions */}
             <div className="py-1">
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors">
+              <button onClick={() => { setOpen(false); navigate("/users"); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors">
                 <User className="w-4 h-4" />
                 My Profile
               </button>
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors">
+              <button onClick={() => { setOpen(false); navigate("/settings"); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors">
                 <Settings className="w-4 h-4" />
                 Account Settings
               </button>

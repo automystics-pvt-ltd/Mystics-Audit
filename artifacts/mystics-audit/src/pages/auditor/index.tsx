@@ -235,16 +235,13 @@ const SEED_CATEGORIES = [
 
 type Tab = "dashboard"|"clients"|"tasks"|"calendar"|"packages"|"trail"|"findings"|"workload"|"automation"|"collaboration";
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "dashboard", label: "Dashboard",   icon: <Shield className="w-4 h-4" /> },
-  { id: "clients",   label: "Clients",     icon: <Users className="w-4 h-4" /> },
-  { id: "tasks",     label: "Tasks",       icon: <ClipboardList className="w-4 h-4" /> },
-  { id: "findings",  label: "Findings",    icon: <Flag className="w-4 h-4" /> },
-  { id: "calendar",  label: "Compliance",  icon: <CalendarDays className="w-4 h-4" /> },
-  { id: "packages",  label: "Doc Packages",icon: <Package className="w-4 h-4" /> },
-  { id: "workload",  label: "Team Workload",  icon: <BarChart3 className="w-4 h-4" /> },
+  { id: "dashboard",     label: "Dashboard",     icon: <Shield className="w-4 h-4" /> },
+  { id: "clients",       label: "Clients",       icon: <Users className="w-4 h-4" /> },
+  { id: "tasks",         label: "Tasks",         icon: <ClipboardList className="w-4 h-4" /> },
+  { id: "findings",      label: "Findings",      icon: <Flag className="w-4 h-4" /> },
+  { id: "calendar",      label: "Compliance",    icon: <CalendarDays className="w-4 h-4" /> },
   { id: "collaboration", label: "Collaboration", icon: <MessageCircle className="w-4 h-4" /> },
-  { id: "automation",   label: "Automation Hub", icon: <Zap className="w-4 h-4" /> },
-  { id: "trail",        label: "Audit Trail",   icon: <Activity className="w-4 h-4" /> },
+  { id: "packages",      label: "Doc Packages",  icon: <Package className="w-4 h-4" /> },
 ];
 
 /* ── findings helpers ── */
@@ -1509,10 +1506,17 @@ export default function AuditorWorkspace() {
           </h1>
           <p className="text-sm text-muted-foreground">Manage audit clients, tasks, compliance calendar and document packages</p>
         </div>
-        <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700" onClick={() => { if (tab === "clients") openNewClient(); else if (tab === "tasks") openNewTask(); else if (tab === "calendar") setEventDlg({ open: true, form: emptyEvent }); else if (tab === "findings") openNewFinding(); }}>
-          <Plus className="w-3.5 h-3.5 mr-1.5" />
-          {tab === "clients" ? "New Client" : tab === "tasks" ? "New Task" : tab === "calendar" ? "Add Event" : tab === "findings" ? "Add Finding" : "New"}
-        </Button>
+        {tab !== "packages" && (
+          <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700" onClick={() => {
+            if (tab === "clients" || tab === "dashboard") openNewClient();
+            else if (tab === "tasks") openNewTask();
+            else if (tab === "calendar") setEventDlg({ open: true, form: emptyEvent });
+            else if (tab === "findings") openNewFinding();
+          }}>
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            {tab === "clients" || tab === "dashboard" ? "New Client" : tab === "tasks" ? "New Task" : tab === "calendar" ? "Add Event" : tab === "findings" ? "Add Finding" : "New"}
+          </Button>
+        )}
       </div>
 
       {/* Tab bar */}
@@ -2982,9 +2986,9 @@ export default function AuditorWorkspace() {
 
       {/* Findings dialog */}
       <Dialog open={findingDlg.open} onOpenChange={o => setFindingDlg(d => ({ ...d, open: o }))}>
-        <DialogContent className="max-w-2xl rounded-2xl">
-          <DialogHeader><DialogTitle>{findingDlg.edit ? "Edit Finding" : "Add Audit Finding"}</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-3 py-2">
+        <DialogContent className="max-w-2xl rounded-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0"><DialogTitle>{findingDlg.edit ? "Edit Finding" : "Add Audit Finding"}</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-3 py-2 overflow-y-auto flex-1 pr-1">
             <div className="col-span-2 space-y-1">
               <Label className="text-xs font-semibold">Client *</Label>
               <Select value={findingDlg.form.clientId} onValueChange={v => setFindingDlg(d => ({ ...d, form: { ...d.form, clientId: v } }))}>

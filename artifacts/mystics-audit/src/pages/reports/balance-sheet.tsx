@@ -1,17 +1,54 @@
 import { useGetBalanceSheet } from "@workspace/api-client-react";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DateInput } from "@/components/ui/date-input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { DateInput } from "@/components/ui/date-input";
 import { formatCurrency } from "@/lib/format";
 import { printReportPage } from "@/lib/print-utils";
+import {
+  Printer, RefreshCw, CheckCircle2, AlertCircle, Scale,
+  TrendingUp, Building2, Landmark,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+function BSSection({
+  title, items, total, color, bg,
+}: {
+  title: string;
+  items: { name: string; amount: number }[];
+  total: number;
+  color: string;
+  bg: string;
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className={cn("px-4 py-3 flex items-center justify-between", bg)}>
+        <p className={cn("text-sm font-semibold", color)}>{title}</p>
+        <span className={cn("text-sm font-bold font-mono", color)}>{formatCurrency(total)}</span>
+      </div>
+      {items.length === 0 ? (
+        <div className="py-8 text-center text-sm text-gray-400">No {title.toLowerCase()} entries</div>
+      ) : (
+        <>
+          {items.map((item, i) => (
+            <div key={i} className="flex items-center justify-between py-2.5 px-4 border-t border-gray-50 hover:bg-gray-50/50">
+              <span className="text-sm text-gray-600">{item.name}</span>
+              <span className="text-sm font-mono text-gray-700">{formatCurrency(item.amount)}</span>
+            </div>
+          ))}
+          <div className="flex items-center justify-between py-2.5 px-4 border-t border-gray-200 bg-gray-50">
+            <span className="text-sm font-semibold text-gray-800">Total {title}</span>
+            <span className={cn("text-sm font-bold font-mono", color)}>{formatCurrency(total)}</span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function BalanceSheet() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const { data } = useGetBalanceSheet({ date });
+  const { data, refetch, isFetching } = useGetBalanceSheet({ date });
   const d = data as any;
 
   const totalAssets      = d?.totalAssets      ?? 0;
@@ -19,108 +56,115 @@ export default function BalanceSheet() {
   const totalEquity      = d?.totalEquity      ?? 0;
   const isBalanced       = Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 1;
 
-  /* Build line arrays from flat API response */
   const assets: { name: string; amount: number }[] = d
     ? [
-        { name: "Fixed Assets",          amount: d.fixedAssets      ?? 0 },
-        { name: "Current Assets",        amount: d.currentAssets    ?? 0 },
-        { name: "Bank & Cash",           amount: d.bankCash         ?? 0 },
-        { name: "Trade Receivables (AR)", amount: d.tradeReceivables ?? 0 },
-        { name: "Inventory",             amount: d.inventory        ?? 0 },
+        { name: "Fixed Assets",               amount: d.fixedAssets      ?? 0 },
+        { name: "Current Assets",             amount: d.currentAssets    ?? 0 },
+        { name: "Bank & Cash",                amount: d.bankCash         ?? 0 },
+        { name: "Trade Receivables (AR)",     amount: d.tradeReceivables ?? 0 },
+        { name: "Inventory & Digital Assets", amount: d.inventory        ?? 0 },
       ].filter(r => r.amount !== 0)
     : [];
 
   const liabilities: { name: string; amount: number }[] = d
     ? [
-        { name: "Long-Term Liabilities",  amount: d.longTermLiabilities ?? 0 },
-        { name: "Current Liabilities",    amount: d.currentLiabilities  ?? 0 },
-        { name: "Trade Payables (AP)",    amount: d.tradePayables       ?? 0 },
-        { name: "GST Payable",            amount: d.gstPayable          ?? 0 },
+        { name: "Long-Term Liabilities", amount: d.longTermLiabilities ?? 0 },
+        { name: "Current Liabilities",   amount: d.currentLiabilities  ?? 0 },
+        { name: "Trade Payables (AP)",   amount: d.tradePayables       ?? 0 },
+        { name: "GST Payable",           amount: d.gstPayable          ?? 0 },
       ].filter(r => r.amount !== 0)
     : [];
 
   const equity: { name: string; amount: number }[] = d
-    ? [
-        { name: "Owner's Equity",   amount: d.equity ?? totalEquity },
-      ].filter(r => r.amount !== 0)
+    ? [{ name: "Owner's Equity / Retained Earnings", amount: d.equity ?? totalEquity }].filter(r => r.amount !== 0)
     : [];
-
-  function Section({ title, items, total, colorClass }: { title: string; items: { name: string; amount: number }[]; total: number; colorClass: string }) {
-    return (
-      <div>
-        <h3 className={`font-semibold mb-2 ${colorClass}`}>{title}</h3>
-        <Table>
-          <TableBody>
-            {items.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={2} className="text-muted-foreground text-sm pl-4 py-2">No entries</TableCell>
-              </TableRow>
-            )}
-            {items.map((item, i) => (
-              <TableRow key={i}>
-                <TableCell className="text-sm pl-4">{item.name}</TableCell>
-                <TableCell className={`text-right font-mono text-sm ${colorClass}`}>{formatCurrency(item.amount)}</TableCell>
-              </TableRow>
-            ))}
-            <TableRow className="font-semibold border-t-2">
-              <TableCell>Total {title}</TableCell>
-              <TableCell className={`text-right font-mono ${colorClass}`}>{formatCurrency(total)}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Balance Sheet</h1>
-          <p className="text-muted-foreground text-sm">Statement of financial position as of {date}</p>
+          <h1 className="text-2xl font-bold text-gray-900">Balance Sheet</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Statement of financial position as of {date}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-2">
-            <Label className="text-sm">As of</Label>
-            <DateInput className="w-32" value={date} onChange={e => setDate(e.target.value)} />
+            <Label className="text-xs font-semibold text-gray-500">As of</Label>
+            <DateInput className="h-8 rounded-xl text-sm w-36" value={date} onChange={e => setDate(e.target.value)} />
           </div>
-          <Badge variant={isBalanced ? "default" : "destructive"}>{isBalanced ? "Balanced" : "Unbalanced"}</Badge>
-          <Button variant="outline" size="sm" onClick={() => printReportPage("Balance Sheet")}>Print</Button>
+          <span className={cn(
+            "inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full",
+            isBalanced ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700",
+          )}>
+            {isBalanced
+              ? <><CheckCircle2 className="w-3.5 h-3.5" />Balanced</>
+              : <><AlertCircle className="w-3.5 h-3.5" />Unbalanced</>}
+          </span>
+          <Button size="sm" variant="outline" className="rounded-xl h-8 gap-1.5" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={cn("w-3.5 h-3.5", isFetching && "animate-spin")} />Refresh
+          </Button>
+          <Button size="sm" variant="outline" className="rounded-xl h-8 gap-1.5" onClick={() => printReportPage("Balance Sheet")}>
+            <Printer className="w-3.5 h-3.5" />Print
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* KPI strip */}
+      <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Assets",      value: formatCurrency(totalAssets),      color: "text-primary" },
-          { label: "Total Liabilities", value: formatCurrency(totalLiabilities), color: "text-destructive" },
-          { label: "Total Equity",      value: formatCurrency(totalEquity),       color: "text-green-600" },
-        ].map(({ label, value, color }) => (
-          <Card key={label}>
-            <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground font-medium">{label}</CardTitle></CardHeader>
-            <CardContent><p className={`text-xl font-mono font-bold ${color}`}>{value}</p></CardContent>
-          </Card>
+          { label: "Total Assets",      value: totalAssets,      icon: Landmark,   color: "bg-violet-50 border-violet-100", iconColor: "text-violet-600" },
+          { label: "Total Liabilities", value: totalLiabilities, icon: AlertCircle, color: "bg-red-50 border-red-100",      iconColor: "text-red-500" },
+          { label: "Total Equity",      value: totalEquity,      icon: TrendingUp, color: "bg-emerald-50 border-emerald-100", iconColor: "text-emerald-600" },
+        ].map(({ label, value, icon: Icon, color, iconColor }) => (
+          <div key={label} className={cn("rounded-2xl border px-5 py-4 flex items-start gap-3", color)}>
+            <div className="p-2 bg-white rounded-xl shadow-sm shrink-0">
+              <Icon className={cn("w-4 h-4", iconColor)} />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-medium">{label}</p>
+              <p className="text-xl font-bold font-mono mt-0.5 text-gray-900">{formatCurrency(value)}</p>
+            </div>
+          </div>
         ))}
       </div>
 
+      {/* Main sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader><CardTitle>Assets</CardTitle></CardHeader>
-          <CardContent>
-            <Section title="Assets" items={assets} total={totalAssets} colorClass="text-primary" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>Liabilities & Equity</CardTitle></CardHeader>
-          <CardContent className="space-y-6">
-            <Section title="Liabilities" items={liabilities} total={totalLiabilities} colorClass="text-destructive" />
-            <Section title="Equity" items={equity} total={totalEquity} colorClass="text-green-600" />
-            <div className="flex justify-between font-bold text-lg border-t-2 pt-2">
-              <span>Total Liabilities + Equity</span>
-              <span className="font-mono">{formatCurrency(totalLiabilities + totalEquity)}</span>
+        <BSSection
+          title="Assets" items={assets} total={totalAssets}
+          color="text-violet-800" bg="bg-violet-50"
+        />
+        <div className="space-y-4">
+          <BSSection
+            title="Liabilities" items={liabilities} total={totalLiabilities}
+            color="text-red-800" bg="bg-red-50"
+          />
+          <BSSection
+            title="Equity" items={equity} total={totalEquity}
+            color="text-emerald-800" bg="bg-emerald-50"
+          />
+          {/* L + E = A confirmation */}
+          <div className={cn(
+            "rounded-2xl border px-4 py-3 flex items-center justify-between",
+            isBalanced ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200",
+          )}>
+            <div className="flex items-center gap-2">
+              <Scale className={cn("w-4 h-4", isBalanced ? "text-emerald-600" : "text-red-600")} />
+              <span className="text-sm font-semibold text-gray-700">Total Liabilities + Equity</span>
             </div>
-          </CardContent>
-        </Card>
+            <span className={cn("font-bold font-mono text-sm", isBalanced ? "text-emerald-700" : "text-red-700")}>
+              {formatCurrency(totalLiabilities + totalEquity)}
+            </span>
+          </div>
+        </div>
       </div>
+
+      {!isBalanced && (
+        <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span><strong>Balance Sheet is unbalanced.</strong> Total Assets ({formatCurrency(totalAssets)}) ≠ Liabilities + Equity ({formatCurrency(totalLiabilities + totalEquity)}). Check for unposted journals or missing entries.</span>
+        </div>
+      )}
     </div>
   );
 }

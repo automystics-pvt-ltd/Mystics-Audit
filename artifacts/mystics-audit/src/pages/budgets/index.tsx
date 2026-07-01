@@ -150,18 +150,18 @@ export default function BudgetsList() {
                 </div>
 
                 {/* Amounts */}
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div>
-                    <p className="text-xs text-gray-400 mb-0.5">Budget</p>
-                    <p className="text-sm font-bold text-gray-900 font-mono">{formatCurrency(budget)}</p>
+                <div className="grid grid-cols-3 gap-1 text-center">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-gray-400 mb-0.5 font-medium">Budget</p>
+                    <p className="text-xs font-bold text-gray-900 font-mono truncate">{formatCurrency(budget)}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-0.5">Spent</p>
-                    <p className={`text-sm font-bold font-mono ${isOver ? "text-red-600" : "text-gray-700"}`}>{formatCurrency(spent)}</p>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-gray-400 mb-0.5 font-medium">Spent</p>
+                    <p className={`text-xs font-bold font-mono truncate ${isOver ? "text-red-600" : "text-gray-700"}`}>{formatCurrency(spent)}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-0.5">Remaining</p>
-                    <p className={`text-sm font-bold font-mono ${remaining < 0 ? "text-red-600" : "text-emerald-600"}`}>{formatCurrency(Math.abs(remaining))}</p>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-gray-400 mb-0.5 font-medium">Remaining</p>
+                    <p className={`text-xs font-bold font-mono truncate ${remaining < 0 ? "text-red-600" : "text-emerald-600"}`}>{formatCurrency(Math.abs(remaining))}</p>
                   </div>
                 </div>
 

@@ -1,70 +1,139 @@
 import { useListPurchaseOrders } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Link } from "wouter";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { Plus } from "lucide-react";
+import { Plus, ShoppingCart, Clock, CheckCircle2, Archive, ClipboardList } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const STATUS_COLORS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  approved: "default", draft: "secondary", closed: "outline", cancelled: "destructive",
+const STATUS_CFG: Record<string, { color: string; label: string }> = {
+  approved:  { color: "bg-blue-100 text-blue-700 border-blue-200",      label: "Approved" },
+  draft:     { color: "bg-gray-100 text-gray-600 border-gray-200",      label: "Draft" },
+  closed:    { color: "bg-emerald-100 text-emerald-700 border-emerald-200", label: "Closed" },
+  cancelled: { color: "bg-red-100 text-red-700 border-red-200",         label: "Cancelled" },
 };
 
 export default function PoList() {
   const [status, setStatus] = useState("");
-  const { data } = useListPurchaseOrders(status ? { status } : {});
-  const orders: any[] = data ?? [];
+  const { data, isLoading } = useListPurchaseOrders(status ? { status } : {});
+  const all: any[] = data ?? [];
+
+  const approved   = all.filter(o => o.status === "approved");
+  const draft      = all.filter(o => o.status === "draft");
+  const totalValue = all.reduce((s, o) => s + (Number(o.totalAmount) ?? 0), 0);
+  const pending    = approved.reduce((s, o) => s + (Number(o.totalAmount) ?? 0) - (Number(o.receivedAmount) ?? 0), 0);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Purchase Orders</h1>
-          <p className="text-muted-foreground text-sm">{orders.length} orders</p>
+          <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{all.length} orders</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/purchases/grn"><Button variant="outline">Goods Receipts</Button></Link>
-          <Link href="/purchases/orders/new"><Button><Plus className="w-4 h-4 mr-2" />New PO</Button></Link>
+          <Link href="/purchases/grn">
+            <Button variant="outline" size="sm" className="rounded-xl h-8 gap-1.5">
+              <ClipboardList className="w-3.5 h-3.5" />Goods Receipts
+            </Button>
+          </Link>
+          <Link href="/purchases/orders/new">
+            <Button size="sm" className="rounded-xl h-8 gap-1.5">
+              <Plus className="w-3.5 h-3.5" />New PO
+            </Button>
+          </Link>
         </div>
       </div>
-      <div className="flex gap-2">
-        {["", "draft", "approved", "closed", "cancelled"].map(s => (
-          <Button key={s} variant={status === s ? "default" : "outline"} size="sm" onClick={() => setStatus(s)}>
-            {s === "" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[
+          { label: "Total Orders",    value: all.length,        sub: "all statuses",       icon: ShoppingCart,  color: "bg-violet-50 border-violet-100", text: "text-violet-700" },
+          { label: "Approved",        value: approved.length,   sub: "pending fulfillment",icon: CheckCircle2,  color: "bg-blue-50 border-blue-100",     text: "text-blue-700"   },
+          { label: "Draft",           value: draft.length,      sub: "pending approval",   icon: Clock,         color: "bg-amber-50 border-amber-100",   text: "text-amber-700"  },
+          { label: "Total Value",     value: formatCurrency(totalValue), sub: "all orders", icon: Archive,       color: "bg-emerald-50 border-emerald-100",text: "text-emerald-700"},
+        ].map(({ label, value, sub, icon: Icon, color, text }) => (
+          <div key={label} className={cn("rounded-2xl border px-5 py-4 flex items-start gap-3", color)}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/60">
+              <Icon className={cn("w-4 h-4", text)} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-gray-500 font-medium">{label}</p>
+              <p className={cn("text-xl font-bold mt-0.5 truncate", text)}>{value}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Status filter */}
+      <div className="flex gap-2 flex-wrap">
+        {(["", "draft", "approved", "closed", "cancelled"] as const).map(s => (
+          <Button key={s} size="sm"
+            variant={status === s ? "default" : "outline"}
+            className="h-8 rounded-xl text-sm"
+            onClick={() => setStatus(s)}>
+            {s === "" ? `All ${all.length}` : `${s.charAt(0).toUpperCase() + s.slice(1)} ${all.filter(o => o.status === s).length}`}
           </Button>
         ))}
       </div>
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>PO No</TableHead>
-              <TableHead>Vendor</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Delivery</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-              <TableHead className="text-right">Received</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {orders.map((o: any) => (
-              <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50">
-                <TableCell><Link href={`/purchases/orders/${o.id}`} className="font-mono text-primary hover:underline">{o.poNo}</Link></TableCell>
-                <TableCell className="font-medium">{o.vendorName}</TableCell>
-                <TableCell className="text-sm">{formatDate(o.date)}</TableCell>
-                <TableCell className="text-sm">{o.deliveryDate ? formatDate(o.deliveryDate) : "—"}</TableCell>
-                <TableCell className="text-right font-mono">{formatCurrency(o.totalAmount)}</TableCell>
-                <TableCell className="text-right font-mono text-sm text-muted-foreground">{formatCurrency(o.receivedAmount)}</TableCell>
-                <TableCell><Badge variant={STATUS_COLORS[o.status] ?? "secondary"}>{o.status}</Badge></TableCell>
-              </TableRow>
-            ))}
-            {orders.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground">No purchase orders found</TableCell></TableRow>}
-          </TableBody>
-        </Table>
-      </Card>
+
+      {/* Table */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="grid grid-cols-[160px_1fr_100px_110px_130px_110px_100px] gap-0 px-4 py-2.5 bg-gray-50 border-b border-gray-100">
+          {["PO No", "Vendor", "Date", "Delivery", "Total", "Received", "Status"].map(h => (
+            <div key={h} className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{h}</div>
+          ))}
+        </div>
+
+        {isLoading ? (
+          <div>{[...Array(4)].map((_, i) => (
+            <div key={i} className="h-14 px-4 flex items-center animate-pulse border-b border-gray-50">
+              <div className="h-3 w-full bg-gray-100 rounded" />
+            </div>
+          ))}</div>
+        ) : all.length === 0 ? (
+          <div className="py-16 text-center">
+            <ShoppingCart className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+            <p className="text-gray-500 font-medium">No purchase orders found</p>
+            <p className="text-sm text-gray-400 mt-1">Create your first purchase order to get started</p>
+          </div>
+        ) : (
+          all.map((o: any) => {
+            const cfg = STATUS_CFG[o.status] ?? STATUS_CFG.draft;
+            const received = Number(o.receivedAmount ?? 0);
+            const total    = Number(o.totalAmount ?? 0);
+            const pct      = total > 0 ? Math.round((received / total) * 100) : 0;
+            return (
+              <div key={o.id} className="grid grid-cols-[160px_1fr_100px_110px_130px_110px_100px] gap-0 px-4 py-3 border-b border-gray-50 hover:bg-violet-50/30 transition-colors">
+                <div className="self-center">
+                  <Link href={`/purchases/orders/${o.id}`}>
+                    <span className="font-mono text-sm text-violet-700 hover:text-violet-900 hover:underline cursor-pointer">{o.poNo}</span>
+                  </Link>
+                </div>
+                <div className="self-center text-sm font-medium text-gray-700 pr-4 truncate">{o.vendorName}</div>
+                <div className="self-center text-sm text-gray-500">{formatDate(o.date)}</div>
+                <div className="self-center text-sm text-gray-500">{o.deliveryDate ? formatDate(o.deliveryDate) : "—"}</div>
+                <div className="self-center text-sm font-mono text-gray-700">{formatCurrency(o.totalAmount)}</div>
+                <div className="self-center">
+                  <div className="text-sm font-mono text-gray-500">{formatCurrency(o.receivedAmount)}</div>
+                  {pct > 0 && <div className="text-[10px] text-gray-400">{pct}% received</div>}
+                </div>
+                <div className="self-center">
+                  <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border", cfg.color)}>{cfg.label}</span>
+                </div>
+              </div>
+            );
+          })
+        )}
+
+        {all.length > 0 && (
+          <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+            <span className="text-xs text-gray-400">{all.length} orders</span>
+            {pending > 0 && <span className="text-xs font-mono text-amber-600">Pending delivery: {formatCurrency(pending)}</span>}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

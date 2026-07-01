@@ -200,7 +200,11 @@ export default function Dashboard() {
         <KpiCard
           title="Revenue (MTD)" href="/invoices"
           value={formatCurrency(s?.revenueMtd)}
-          sub={`YTD: ${formatCurrency(s?.revenueYtd)}`}
+          sub={
+            !isLoadingSummary && !s?.revenueMtd && !s?.revenueYtd
+              ? "No invoices posted yet"
+              : `YTD: ${formatCurrency(s?.revenueYtd)}`
+          }
           icon={TrendingUp} from="#7C3AED" to="#A78BFA" trend="up"
           isLoading={isLoadingSummary}
         />

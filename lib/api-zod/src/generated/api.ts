@@ -3643,3 +3643,318 @@ export const DeleteAuditFindingParams = zod.object({
 export const DeleteAuditFindingResponse = zod.void()
 
 
+/**
+ * @summary List audit queries
+ */
+export const ListAuditQueriesQueryParams = zod.object({
+  "clientId": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional(),
+  "priority": zod.coerce.string().optional(),
+  "queryType": zod.coerce.string().optional()
+})
+
+export const ListAuditQueriesResponseItem = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "taskId": zod.number().nullish(),
+  "queryNo": zod.string().nullish(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "queryType": zod.string(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "raisedBy": zod.string().nullish(),
+  "assignedTo": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "clientResponse": zod.string().nullish(),
+  "auditorNote": zod.string().nullish(),
+  "period": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAuditQueriesResponse = zod.array(ListAuditQueriesResponseItem)
+
+
+/**
+ * @summary Create audit query
+ */
+export const CreateAuditQueryBody = zod.object({
+  "clientId": zod.number(),
+  "taskId": zod.number().optional(),
+  "queryNo": zod.string().optional(),
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "queryType": zod.string().optional(),
+  "status": zod.string().optional(),
+  "priority": zod.string().optional(),
+  "raisedBy": zod.string().optional(),
+  "assignedTo": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "clientResponse": zod.string().optional(),
+  "auditorNote": zod.string().optional(),
+  "period": zod.string().optional()
+})
+
+export const CreateAuditQueryResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "taskId": zod.number().nullish(),
+  "queryNo": zod.string().nullish(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "queryType": zod.string(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "raisedBy": zod.string().nullish(),
+  "assignedTo": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "clientResponse": zod.string().nullish(),
+  "auditorNote": zod.string().nullish(),
+  "period": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get audit query
+ */
+export const GetAuditQueryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAuditQueryResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "taskId": zod.number().nullish(),
+  "queryNo": zod.string().nullish(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "queryType": zod.string(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "raisedBy": zod.string().nullish(),
+  "assignedTo": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "clientResponse": zod.string().nullish(),
+  "auditorNote": zod.string().nullish(),
+  "period": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update audit query
+ */
+export const UpdateAuditQueryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAuditQueryBody = zod.object({
+  "clientId": zod.number(),
+  "taskId": zod.number().optional(),
+  "queryNo": zod.string().optional(),
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "queryType": zod.string().optional(),
+  "status": zod.string().optional(),
+  "priority": zod.string().optional(),
+  "raisedBy": zod.string().optional(),
+  "assignedTo": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "clientResponse": zod.string().optional(),
+  "auditorNote": zod.string().optional(),
+  "period": zod.string().optional()
+})
+
+export const UpdateAuditQueryResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "taskId": zod.number().nullish(),
+  "queryNo": zod.string().nullish(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "queryType": zod.string(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "raisedBy": zod.string().nullish(),
+  "assignedTo": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "clientResponse": zod.string().nullish(),
+  "auditorNote": zod.string().nullish(),
+  "period": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete audit query
+ */
+export const DeleteAuditQueryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAuditQueryResponse = zod.void()
+
+
+/**
+ * @summary List audit working papers
+ */
+export const ListAuditWorkingPapersQueryParams = zod.object({
+  "clientId": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional(),
+  "section": zod.coerce.string().optional()
+})
+
+export const ListAuditWorkingPapersResponseItem = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "wpNo": zod.string().nullish(),
+  "title": zod.string(),
+  "section": zod.string(),
+  "description": zod.string().nullish(),
+  "preparedBy": zod.string().nullish(),
+  "reviewedBy": zod.string().nullish(),
+  "status": zod.string(),
+  "riskArea": zod.string().nullish(),
+  "assertions": zod.string().nullish(),
+  "conclusion": zod.string().nullish(),
+  "period": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAuditWorkingPapersResponse = zod.array(ListAuditWorkingPapersResponseItem)
+
+
+/**
+ * @summary Create audit working paper
+ */
+export const CreateAuditWorkingPaperBody = zod.object({
+  "clientId": zod.number(),
+  "wpNo": zod.string().optional(),
+  "title": zod.string(),
+  "section": zod.string().optional(),
+  "description": zod.string().optional(),
+  "preparedBy": zod.string().optional(),
+  "reviewedBy": zod.string().optional(),
+  "status": zod.string().optional(),
+  "riskArea": zod.string().optional(),
+  "assertions": zod.string().optional(),
+  "conclusion": zod.string().optional(),
+  "period": zod.string().optional()
+})
+
+export const CreateAuditWorkingPaperResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "wpNo": zod.string().nullish(),
+  "title": zod.string(),
+  "section": zod.string(),
+  "description": zod.string().nullish(),
+  "preparedBy": zod.string().nullish(),
+  "reviewedBy": zod.string().nullish(),
+  "status": zod.string(),
+  "riskArea": zod.string().nullish(),
+  "assertions": zod.string().nullish(),
+  "conclusion": zod.string().nullish(),
+  "period": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get working paper
+ */
+export const GetAuditWorkingPaperParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAuditWorkingPaperResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "wpNo": zod.string().nullish(),
+  "title": zod.string(),
+  "section": zod.string(),
+  "description": zod.string().nullish(),
+  "preparedBy": zod.string().nullish(),
+  "reviewedBy": zod.string().nullish(),
+  "status": zod.string(),
+  "riskArea": zod.string().nullish(),
+  "assertions": zod.string().nullish(),
+  "conclusion": zod.string().nullish(),
+  "period": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update working paper
+ */
+export const UpdateAuditWorkingPaperParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAuditWorkingPaperBody = zod.object({
+  "clientId": zod.number(),
+  "wpNo": zod.string().optional(),
+  "title": zod.string(),
+  "section": zod.string().optional(),
+  "description": zod.string().optional(),
+  "preparedBy": zod.string().optional(),
+  "reviewedBy": zod.string().optional(),
+  "status": zod.string().optional(),
+  "riskArea": zod.string().optional(),
+  "assertions": zod.string().optional(),
+  "conclusion": zod.string().optional(),
+  "period": zod.string().optional()
+})
+
+export const UpdateAuditWorkingPaperResponse = zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "clientName": zod.string().nullish(),
+  "wpNo": zod.string().nullish(),
+  "title": zod.string(),
+  "section": zod.string(),
+  "description": zod.string().nullish(),
+  "preparedBy": zod.string().nullish(),
+  "reviewedBy": zod.string().nullish(),
+  "status": zod.string(),
+  "riskArea": zod.string().nullish(),
+  "assertions": zod.string().nullish(),
+  "conclusion": zod.string().nullish(),
+  "period": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete working paper
+ */
+export const DeleteAuditWorkingPaperParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAuditWorkingPaperResponse = zod.void()
+
+

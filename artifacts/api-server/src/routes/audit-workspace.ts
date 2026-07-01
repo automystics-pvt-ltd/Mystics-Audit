@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import {
   auditClientsTable, auditTasksTable,
   auditTaskCommentsTable, complianceEventsTable,
-  auditFindingsTable,
+  auditFindingsTable, auditQueriesTable, auditWorkingPapersTable,
 } from "@workspace/db";
 import { eq, and, desc, ilike, lte, sql } from "drizzle-orm";
 
@@ -369,3 +369,135 @@ router.delete("/audit-findings/:id", async (req, res) => {
 });
 
 export default router;
+
+/* ════════════════════════════════════════
+   AUDIT QUERIES
+════════════════════════════════════════ */
+
+router.get("/audit-queries", async (req, res) => {
+  try {
+    const { clientId, status, priority, queryType } = req.query as Record<string, string>;
+    let rows = await db
+      .select({ q: auditQueriesTable, clientName: auditClientsTable.name })
+      .from(auditQueriesTable)
+      .leftJoin(auditClientsTable, eq(auditQueriesTable.clientId, auditClientsTable.id))
+      .orderBy(desc(auditQueriesTable.createdAt));
+    let result = rows.map(r => ({ ...r.q, clientName: r.clientName }));
+    if (clientId)   result = result.filter(r => r.clientId === Number(clientId));
+    if (status)     result = result.filter(r => r.status === status);
+    if (priority)   result = result.filter(r => r.priority === priority);
+    if (queryType)  result = result.filter(r => r.queryType === queryType);
+    res.json(result);
+  } catch (e: any) { req.log?.error(e); res.status(500).json({ error: e?.message }); }
+});
+
+router.post("/audit-queries", async (req, res) => {
+  try {
+    const { clientId, taskId, queryNo, title, description, queryType,
+            status, priority, raisedBy, assignedTo, dueDate, clientResponse, auditorNote, period } = req.body;
+    if (!clientId || !title) { res.status(400).json({ error: "clientId and title required" }); return; }
+    const [row] = await db.insert(auditQueriesTable).values({
+      clientId: Number(clientId), taskId: taskId ? Number(taskId) : undefined,
+      queryNo, title, description, queryType: queryType ?? "information_request",
+      status: status ?? "raised", priority: priority ?? "medium",
+      raisedBy, assignedTo, dueDate, clientResponse, auditorNote, period,
+    }).returning();
+    res.status(201).json(row);
+  } catch (e: any) { req.log?.error(e); res.status(500).json({ error: e?.message }); }
+});
+
+router.get("/audit-queries/:id", async (req, res) => {
+  try {
+    const [row] = await db.select({ q: auditQueriesTable, clientName: auditClientsTable.name })
+      .from(auditQueriesTable)
+      .leftJoin(auditClientsTable, eq(auditQueriesTable.clientId, auditClientsTable.id))
+      .where(eq(auditQueriesTable.id, Number(req.params.id)));
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
+    res.json({ ...row.q, clientName: row.clientName });
+  } catch (e: any) { res.status(500).json({ error: e?.message }); }
+});
+
+router.put("/audit-queries/:id", async (req, res) => {
+  try {
+    const { title, description, queryType, status, priority, raisedBy, assignedTo,
+            dueDate, clientResponse, auditorNote, period, queryNo } = req.body;
+    const [row] = await db.update(auditQueriesTable)
+      .set({ title, description, queryType, status, priority, raisedBy, assignedTo,
+             dueDate, clientResponse, auditorNote, period, queryNo, updatedAt: new Date() })
+      .where(eq(auditQueriesTable.id, Number(req.params.id)))
+      .returning();
+    res.json(row);
+  } catch (e: any) { res.status(500).json({ error: e?.message }); }
+});
+
+router.delete("/audit-queries/:id", async (req, res) => {
+  try {
+    await db.delete(auditQueriesTable).where(eq(auditQueriesTable.id, Number(req.params.id)));
+    res.status(204).send();
+  } catch (e: any) { res.status(500).json({ error: e?.message }); }
+});
+
+/* ════════════════════════════════════════
+   AUDIT WORKING PAPERS
+════════════════════════════════════════ */
+
+router.get("/audit-working-papers", async (req, res) => {
+  try {
+    const { clientId, status, section } = req.query as Record<string, string>;
+    let rows = await db
+      .select({ wp: auditWorkingPapersTable, clientName: auditClientsTable.name })
+      .from(auditWorkingPapersTable)
+      .leftJoin(auditClientsTable, eq(auditWorkingPapersTable.clientId, auditClientsTable.id))
+      .orderBy(desc(auditWorkingPapersTable.createdAt));
+    let result = rows.map(r => ({ ...r.wp, clientName: r.clientName }));
+    if (clientId) result = result.filter(r => r.clientId === Number(clientId));
+    if (status)   result = result.filter(r => r.status === status);
+    if (section)  result = result.filter(r => r.section === section);
+    res.json(result);
+  } catch (e: any) { req.log?.error(e); res.status(500).json({ error: e?.message }); }
+});
+
+router.post("/audit-working-papers", async (req, res) => {
+  try {
+    const { clientId, wpNo, title, section, description, preparedBy,
+            reviewedBy, status, riskArea, assertions, conclusion, period } = req.body;
+    if (!clientId || !title) { res.status(400).json({ error: "clientId and title required" }); return; }
+    const [row] = await db.insert(auditWorkingPapersTable).values({
+      clientId: Number(clientId), wpNo, title, section: section ?? "planning",
+      description, preparedBy, reviewedBy, status: status ?? "draft",
+      riskArea, assertions, conclusion, period,
+    }).returning();
+    res.status(201).json(row);
+  } catch (e: any) { req.log?.error(e); res.status(500).json({ error: e?.message }); }
+});
+
+router.get("/audit-working-papers/:id", async (req, res) => {
+  try {
+    const [row] = await db.select({ wp: auditWorkingPapersTable, clientName: auditClientsTable.name })
+      .from(auditWorkingPapersTable)
+      .leftJoin(auditClientsTable, eq(auditWorkingPapersTable.clientId, auditClientsTable.id))
+      .where(eq(auditWorkingPapersTable.id, Number(req.params.id)));
+    if (!row) { res.status(404).json({ error: "Not found" }); return; }
+    res.json({ ...row.wp, clientName: row.clientName });
+  } catch (e: any) { res.status(500).json({ error: e?.message }); }
+});
+
+router.put("/audit-working-papers/:id", async (req, res) => {
+  try {
+    const { wpNo, title, section, description, preparedBy, reviewedBy,
+            status, riskArea, assertions, conclusion, period } = req.body;
+    const [row] = await db.update(auditWorkingPapersTable)
+      .set({ wpNo, title, section, description, preparedBy, reviewedBy,
+             status, riskArea, assertions, conclusion, period, updatedAt: new Date() })
+      .where(eq(auditWorkingPapersTable.id, Number(req.params.id)))
+      .returning();
+    res.json(row);
+  } catch (e: any) { res.status(500).json({ error: e?.message }); }
+});
+
+router.delete("/audit-working-papers/:id", async (req, res) => {
+  try {
+    await db.delete(auditWorkingPapersTable).where(eq(auditWorkingPapersTable.id, Number(req.params.id)));
+    res.status(204).send();
+  } catch (e: any) { res.status(500).json({ error: e?.message }); }
+});

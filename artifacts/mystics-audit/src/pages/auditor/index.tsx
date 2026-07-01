@@ -26,7 +26,7 @@ import {
   FileText, FileArchive, FileCheck, FolderOpen, Clock, Send,
   Mail, Download, RefreshCw, ExternalLink, Building2, Phone,
   AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight,
-  ArrowUpRight, MessageSquare, Flag, MoreHorizontal, Eye,
+  ArrowUpRight, MessageSquare, Flag, MoreHorizontal, Eye, BarChart3,
 } from "lucide-react";
 
 /* ── helpers ── */
@@ -102,7 +102,7 @@ const CAT_COLORS: Record<string,string> = {
   supporting:"bg-gray-100 text-gray-800",
 };
 
-type Tab = "dashboard"|"clients"|"tasks"|"calendar"|"packages"|"trail"|"findings";
+type Tab = "dashboard"|"clients"|"tasks"|"calendar"|"packages"|"trail"|"findings"|"workload";
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "dashboard", label: "Dashboard",   icon: <Shield className="w-4 h-4" /> },
   { id: "clients",   label: "Clients",     icon: <Users className="w-4 h-4" /> },
@@ -110,6 +110,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "findings",  label: "Findings",    icon: <Flag className="w-4 h-4" /> },
   { id: "calendar",  label: "Compliance",  icon: <CalendarDays className="w-4 h-4" /> },
   { id: "packages",  label: "Doc Packages",icon: <Package className="w-4 h-4" /> },
+  { id: "workload",  label: "Team Workload",icon: <BarChart3 className="w-4 h-4" /> },
   { id: "trail",     label: "Audit Trail", icon: <Activity className="w-4 h-4" /> },
 ];
 
@@ -1049,6 +1050,109 @@ export default function AuditorWorkspace() {
                 })}
               </div>
             )}
+          </div>
+        );
+      })()}
+
+      {/* ── TEAM WORKLOAD TAB ── */}
+      {tab === "workload" && (() => {
+        const allTasksList = allTasks as any[];
+        /* Group by assignee */
+        const assigneeMap: Record<string, { tasks: any[] }> = {};
+        allTasksList.forEach(t => {
+          const key = t.assignee?.trim() || "Unassigned";
+          if (!assigneeMap[key]) assigneeMap[key] = { tasks: [] };
+          assigneeMap[key].tasks.push(t);
+        });
+        const rows = Object.entries(assigneeMap)
+          .map(([name, { tasks }]) => {
+            const open    = tasks.filter(t => !["completed","archived"].includes(t.status));
+            const done    = tasks.filter(t => t.status === "completed");
+            const overdue = tasks.filter(t => t.dueDate && t.dueDate < today && !["completed","archived"].includes(t.status));
+            const urgent  = tasks.filter(t => t.priority === "urgent" || t.priority === "high");
+            const pct     = tasks.length > 0 ? Math.round((done.length / tasks.length) * 100) : 0;
+            return { name, tasks, open, done, overdue, urgent, pct };
+          })
+          .sort((a,b) => b.open.length - a.open.length);
+        const maxOpen = Math.max(...rows.map(r => r.open.length), 1);
+
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-gray-800">Team Workload</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Task distribution across {rows.length} assignees</p>
+              </div>
+              <div className="flex gap-3 text-xs text-gray-500">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block"/>Open</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block"/>Overdue</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"/>Done</span>
+              </div>
+            </div>
+
+            {rows.length === 0 ? (
+              <Card className="rounded-2xl border-gray-200">
+                <CardContent className="py-16 text-center">
+                  <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-300"/>
+                  <p className="text-sm text-gray-400">No tasks assigned yet. Create tasks with assignee names to see workload distribution.</p>
+                </CardContent>
+              </Card>
+            ) : rows.map(row => (
+              <div key={row.name} className="bg-white border border-gray-200 rounded-2xl shadow-sm px-5 py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                      row.name === "Unassigned" ? "bg-gray-100 text-gray-400" : "bg-violet-100 text-violet-700")}>
+                      {row.name === "Unassigned" ? "–" : row.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{row.name}</p>
+                      <p className="text-xs text-gray-400">{row.tasks.length} task{row.tasks.length !== 1 ? "s" : ""} total</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 text-center shrink-0">
+                    <div><p className="text-base font-bold text-amber-600">{row.open.length}</p><p className="text-[10px] text-gray-400">Open</p></div>
+                    <div><p className="text-base font-bold text-red-500">{row.overdue.length}</p><p className="text-[10px] text-gray-400">Overdue</p></div>
+                    <div><p className="text-base font-bold text-orange-500">{row.urgent.length}</p><p className="text-[10px] text-gray-400">High Priority</p></div>
+                    <div><p className="text-base font-bold text-emerald-600">{row.done.length}</p><p className="text-[10px] text-gray-400">Done</p></div>
+                    <div><p className="text-base font-bold text-violet-600">{row.pct}%</p><p className="text-[10px] text-gray-400">Complete</p></div>
+                  </div>
+                </div>
+                {/* Capacity bar */}
+                <div className="mt-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden flex">
+                      <div className="h-full bg-emerald-400 rounded-l-full" style={{ width:`${(row.done.length/Math.max(row.tasks.length,1))*100}%` }}/>
+                      <div className="h-full bg-amber-400" style={{ width:`${(row.open.filter(t=>!t.dueDate||t.dueDate>=today).length/Math.max(row.tasks.length,1))*100}%` }}/>
+                      <div className="h-full bg-red-400" style={{ width:`${(row.overdue.length/Math.max(row.tasks.length,1))*100}%` }}/>
+                    </div>
+                    <div className="relative w-24 h-2 bg-gray-100 rounded-full shrink-0">
+                      <div className="h-full bg-violet-400 rounded-full" style={{ width:`${(row.open.length/maxOpen)*100}%` }}/>
+                    </div>
+                    <span className="text-[10px] text-gray-400 w-16 text-right shrink-0">Relative load</span>
+                  </div>
+                </div>
+                {/* Recent open tasks for this person */}
+                {row.open.length > 0 && (
+                  <div className="mt-3 space-y-1.5">
+                    {row.open.slice(0,3).map((t:any) => {
+                      const isOverdue = t.dueDate && t.dueDate < today;
+                      return (
+                        <div key={t.id} className={cn("flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg",
+                          isOverdue ? "bg-red-50 border border-red-100" : "bg-gray-50")}>
+                          <span className={cn("w-1.5 h-1.5 rounded-full shrink-0",
+                            t.priority==="urgent"?"bg-red-500":t.priority==="high"?"bg-orange-500":t.priority==="medium"?"bg-amber-400":"bg-green-400")}/>
+                          <span className="flex-1 text-gray-700 truncate">{t.title}</span>
+                          {t.clientName && <span className="text-gray-400 shrink-0">{t.clientName}</span>}
+                          {t.dueDate && <span className={cn("shrink-0", isOverdue ? "text-red-600 font-semibold" : "text-gray-400")}>{t.dueDate}</span>}
+                        </div>
+                      );
+                    })}
+                    {row.open.length > 3 && <p className="text-[10px] text-gray-400 text-right px-3">+{row.open.length-3} more open tasks</p>}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         );
       })()}

@@ -86,13 +86,57 @@ export const auditFindingsTable = pgTable("audit_findings", {
   updatedAt:          timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
-export const insertAuditClientSchema     = createInsertSchema(auditClientsTable).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertAuditTaskSchema       = createInsertSchema(auditTasksTable).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertComplianceEventSchema = createInsertSchema(complianceEventsTable).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertAuditFindingSchema    = createInsertSchema(auditFindingsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const auditQueriesTable = pgTable("audit_queries", {
+  id:             serial("id").primaryKey(),
+  clientId:       integer("client_id").notNull().references(() => auditClientsTable.id),
+  taskId:         integer("task_id"),
+  queryNo:        text("query_no"),
+  title:          text("title").notNull(),
+  description:    text("description"),
+  queryType:      text("query_type").notNull().default("information_request"),
+  status:         text("status").notNull().default("raised"),
+  priority:       text("priority").notNull().default("medium"),
+  raisedBy:       text("raised_by"),
+  assignedTo:     text("assigned_to"),
+  dueDate:        text("due_date"),
+  clientResponse: text("client_response"),
+  auditorNote:    text("auditor_note"),
+  period:         text("period"),
+  orgId:          integer("org_id").notNull().default(1),
+  createdAt:      timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:      timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
 
-export type AuditClient      = typeof auditClientsTable.$inferSelect;
-export type AuditTask        = typeof auditTasksTable.$inferSelect;
-export type AuditTaskComment = typeof auditTaskCommentsTable.$inferSelect;
-export type ComplianceEvent  = typeof complianceEventsTable.$inferSelect;
-export type AuditFinding     = typeof auditFindingsTable.$inferSelect;
+export const auditWorkingPapersTable = pgTable("audit_working_papers", {
+  id:          serial("id").primaryKey(),
+  clientId:    integer("client_id").notNull().references(() => auditClientsTable.id),
+  wpNo:        text("wp_no"),
+  title:       text("title").notNull(),
+  section:     text("section").notNull().default("planning"),
+  description: text("description"),
+  preparedBy:  text("prepared_by"),
+  reviewedBy:  text("reviewed_by"),
+  status:      text("status").notNull().default("draft"),
+  riskArea:    text("risk_area"),
+  assertions:  text("assertions"),
+  conclusion:  text("conclusion"),
+  period:      text("period"),
+  orgId:       integer("org_id").notNull().default(1),
+  createdAt:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:   timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export const insertAuditClientSchema      = createInsertSchema(auditClientsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAuditTaskSchema        = createInsertSchema(auditTasksTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertComplianceEventSchema  = createInsertSchema(complianceEventsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAuditFindingSchema     = createInsertSchema(auditFindingsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAuditQuerySchema       = createInsertSchema(auditQueriesTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAuditWorkingPaperSchema = createInsertSchema(auditWorkingPapersTable).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type AuditClient       = typeof auditClientsTable.$inferSelect;
+export type AuditTask         = typeof auditTasksTable.$inferSelect;
+export type AuditTaskComment  = typeof auditTaskCommentsTable.$inferSelect;
+export type ComplianceEvent   = typeof complianceEventsTable.$inferSelect;
+export type AuditFinding      = typeof auditFindingsTable.$inferSelect;
+export type AuditQuery        = typeof auditQueriesTable.$inferSelect;
+export type AuditWorkingPaper = typeof auditWorkingPapersTable.$inferSelect;

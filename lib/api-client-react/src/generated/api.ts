@@ -35,11 +35,15 @@ import type {
   AuditFinding,
   AuditFindingInput,
   AuditLog,
+  AuditQuery,
+  AuditQueryInput,
   AuditTask,
   AuditTaskComment,
   AuditTaskDetail,
   AuditTaskInput,
   AuditTaskStatusPatch,
+  AuditWorkingPaper,
+  AuditWorkingPaperInput,
   BalanceSheet,
   BankAccount,
   BankAccountInput,
@@ -104,7 +108,9 @@ import type {
   ListAuditClientsParams,
   ListAuditFindingsParams,
   ListAuditLogsParams,
+  ListAuditQueriesParams,
   ListAuditTasksParams,
+  ListAuditWorkingPapersParams,
   ListBillsParams,
   ListBudgetsParams,
   ListComplianceEventsParams,
@@ -8228,5 +8234,749 @@ export const useDeleteAuditFinding = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteAuditFindingMutationOptions(options));
+    }
+
+export const getListAuditQueriesUrl = (params?: ListAuditQueriesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/api/audit-queries?${stringifiedParams}` : `/api/api/audit-queries`
+}
+
+/**
+ * @summary List audit queries
+ */
+export const listAuditQueries = async (params?: ListAuditQueriesParams, options?: RequestInit): Promise<AuditQuery[]> => {
+
+  return customFetch<AuditQuery[]>(getListAuditQueriesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAuditQueriesQueryKey = (params?: ListAuditQueriesParams,) => {
+    return [
+    `/api/api/audit-queries`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAuditQueriesQueryOptions = <TData = Awaited<ReturnType<typeof listAuditQueries>>, TError = ErrorType<unknown>>(params?: ListAuditQueriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAuditQueries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAuditQueriesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAuditQueries>>> = ({ signal }) => listAuditQueries(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAuditQueries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAuditQueriesQueryResult = NonNullable<Awaited<ReturnType<typeof listAuditQueries>>>
+export type ListAuditQueriesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List audit queries
+ */
+
+export function useListAuditQueries<TData = Awaited<ReturnType<typeof listAuditQueries>>, TError = ErrorType<unknown>>(
+ params?: ListAuditQueriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAuditQueries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAuditQueriesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAuditQueryUrl = () => {
+
+
+
+
+  return `/api/api/audit-queries`
+}
+
+/**
+ * @summary Create audit query
+ */
+export const createAuditQuery = async (auditQueryInput: AuditQueryInput, options?: RequestInit): Promise<AuditQuery> => {
+
+  return customFetch<AuditQuery>(getCreateAuditQueryUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(auditQueryInput)
+  }
+);}
+
+
+
+
+export const getCreateAuditQueryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAuditQuery>>, TError,{data: BodyType<AuditQueryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAuditQuery>>, TError,{data: BodyType<AuditQueryInput>}, TContext> => {
+
+const mutationKey = ['createAuditQuery'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAuditQuery>>, {data: BodyType<AuditQueryInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAuditQuery(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAuditQueryMutationResult = NonNullable<Awaited<ReturnType<typeof createAuditQuery>>>
+    export type CreateAuditQueryMutationBody = BodyType<AuditQueryInput>
+    export type CreateAuditQueryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create audit query
+ */
+export const useCreateAuditQuery = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAuditQuery>>, TError,{data: BodyType<AuditQueryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAuditQuery>>,
+        TError,
+        {data: BodyType<AuditQueryInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAuditQueryMutationOptions(options));
+    }
+
+export const getGetAuditQueryUrl = (id: number,) => {
+
+
+
+
+  return `/api/api/audit-queries/${id}`
+}
+
+/**
+ * @summary Get audit query
+ */
+export const getAuditQuery = async (id: number, options?: RequestInit): Promise<AuditQuery> => {
+
+  return customFetch<AuditQuery>(getGetAuditQueryUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAuditQueryQueryKey = (id: number,) => {
+    return [
+    `/api/api/audit-queries/${id}`
+    ] as const;
+    }
+
+
+export const getGetAuditQueryQueryOptions = <TData = Awaited<ReturnType<typeof getAuditQuery>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuditQuery>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAuditQueryQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuditQuery>>> = ({ signal }) => getAuditQuery(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAuditQuery>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAuditQueryQueryResult = NonNullable<Awaited<ReturnType<typeof getAuditQuery>>>
+export type GetAuditQueryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get audit query
+ */
+
+export function useGetAuditQuery<TData = Awaited<ReturnType<typeof getAuditQuery>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuditQuery>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAuditQueryQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateAuditQueryUrl = (id: number,) => {
+
+
+
+
+  return `/api/api/audit-queries/${id}`
+}
+
+/**
+ * @summary Update audit query
+ */
+export const updateAuditQuery = async (id: number,
+    auditQueryInput: AuditQueryInput, options?: RequestInit): Promise<AuditQuery> => {
+
+  return customFetch<AuditQuery>(getUpdateAuditQueryUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(auditQueryInput)
+  }
+);}
+
+
+
+
+export const getUpdateAuditQueryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAuditQuery>>, TError,{id: number;data: BodyType<AuditQueryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAuditQuery>>, TError,{id: number;data: BodyType<AuditQueryInput>}, TContext> => {
+
+const mutationKey = ['updateAuditQuery'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAuditQuery>>, {id: number;data: BodyType<AuditQueryInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAuditQuery(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAuditQueryMutationResult = NonNullable<Awaited<ReturnType<typeof updateAuditQuery>>>
+    export type UpdateAuditQueryMutationBody = BodyType<AuditQueryInput>
+    export type UpdateAuditQueryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update audit query
+ */
+export const useUpdateAuditQuery = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAuditQuery>>, TError,{id: number;data: BodyType<AuditQueryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAuditQuery>>,
+        TError,
+        {id: number;data: BodyType<AuditQueryInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAuditQueryMutationOptions(options));
+    }
+
+export const getDeleteAuditQueryUrl = (id: number,) => {
+
+
+
+
+  return `/api/api/audit-queries/${id}`
+}
+
+/**
+ * @summary Delete audit query
+ */
+export const deleteAuditQuery = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAuditQueryUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAuditQueryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAuditQuery>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAuditQuery>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteAuditQuery'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAuditQuery>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAuditQuery(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAuditQueryMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAuditQuery>>>
+
+    export type DeleteAuditQueryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete audit query
+ */
+export const useDeleteAuditQuery = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAuditQuery>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAuditQuery>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAuditQueryMutationOptions(options));
+    }
+
+export const getListAuditWorkingPapersUrl = (params?: ListAuditWorkingPapersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/api/audit-working-papers?${stringifiedParams}` : `/api/api/audit-working-papers`
+}
+
+/**
+ * @summary List audit working papers
+ */
+export const listAuditWorkingPapers = async (params?: ListAuditWorkingPapersParams, options?: RequestInit): Promise<AuditWorkingPaper[]> => {
+
+  return customFetch<AuditWorkingPaper[]>(getListAuditWorkingPapersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAuditWorkingPapersQueryKey = (params?: ListAuditWorkingPapersParams,) => {
+    return [
+    `/api/api/audit-working-papers`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAuditWorkingPapersQueryOptions = <TData = Awaited<ReturnType<typeof listAuditWorkingPapers>>, TError = ErrorType<unknown>>(params?: ListAuditWorkingPapersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAuditWorkingPapers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAuditWorkingPapersQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAuditWorkingPapers>>> = ({ signal }) => listAuditWorkingPapers(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAuditWorkingPapers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAuditWorkingPapersQueryResult = NonNullable<Awaited<ReturnType<typeof listAuditWorkingPapers>>>
+export type ListAuditWorkingPapersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List audit working papers
+ */
+
+export function useListAuditWorkingPapers<TData = Awaited<ReturnType<typeof listAuditWorkingPapers>>, TError = ErrorType<unknown>>(
+ params?: ListAuditWorkingPapersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAuditWorkingPapers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAuditWorkingPapersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAuditWorkingPaperUrl = () => {
+
+
+
+
+  return `/api/api/audit-working-papers`
+}
+
+/**
+ * @summary Create audit working paper
+ */
+export const createAuditWorkingPaper = async (auditWorkingPaperInput: AuditWorkingPaperInput, options?: RequestInit): Promise<AuditWorkingPaper> => {
+
+  return customFetch<AuditWorkingPaper>(getCreateAuditWorkingPaperUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(auditWorkingPaperInput)
+  }
+);}
+
+
+
+
+export const getCreateAuditWorkingPaperMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAuditWorkingPaper>>, TError,{data: BodyType<AuditWorkingPaperInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAuditWorkingPaper>>, TError,{data: BodyType<AuditWorkingPaperInput>}, TContext> => {
+
+const mutationKey = ['createAuditWorkingPaper'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAuditWorkingPaper>>, {data: BodyType<AuditWorkingPaperInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAuditWorkingPaper(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAuditWorkingPaperMutationResult = NonNullable<Awaited<ReturnType<typeof createAuditWorkingPaper>>>
+    export type CreateAuditWorkingPaperMutationBody = BodyType<AuditWorkingPaperInput>
+    export type CreateAuditWorkingPaperMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create audit working paper
+ */
+export const useCreateAuditWorkingPaper = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAuditWorkingPaper>>, TError,{data: BodyType<AuditWorkingPaperInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAuditWorkingPaper>>,
+        TError,
+        {data: BodyType<AuditWorkingPaperInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAuditWorkingPaperMutationOptions(options));
+    }
+
+export const getGetAuditWorkingPaperUrl = (id: number,) => {
+
+
+
+
+  return `/api/api/audit-working-papers/${id}`
+}
+
+/**
+ * @summary Get working paper
+ */
+export const getAuditWorkingPaper = async (id: number, options?: RequestInit): Promise<AuditWorkingPaper> => {
+
+  return customFetch<AuditWorkingPaper>(getGetAuditWorkingPaperUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAuditWorkingPaperQueryKey = (id: number,) => {
+    return [
+    `/api/api/audit-working-papers/${id}`
+    ] as const;
+    }
+
+
+export const getGetAuditWorkingPaperQueryOptions = <TData = Awaited<ReturnType<typeof getAuditWorkingPaper>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuditWorkingPaper>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAuditWorkingPaperQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuditWorkingPaper>>> = ({ signal }) => getAuditWorkingPaper(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAuditWorkingPaper>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAuditWorkingPaperQueryResult = NonNullable<Awaited<ReturnType<typeof getAuditWorkingPaper>>>
+export type GetAuditWorkingPaperQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get working paper
+ */
+
+export function useGetAuditWorkingPaper<TData = Awaited<ReturnType<typeof getAuditWorkingPaper>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuditWorkingPaper>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAuditWorkingPaperQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateAuditWorkingPaperUrl = (id: number,) => {
+
+
+
+
+  return `/api/api/audit-working-papers/${id}`
+}
+
+/**
+ * @summary Update working paper
+ */
+export const updateAuditWorkingPaper = async (id: number,
+    auditWorkingPaperInput: AuditWorkingPaperInput, options?: RequestInit): Promise<AuditWorkingPaper> => {
+
+  return customFetch<AuditWorkingPaper>(getUpdateAuditWorkingPaperUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(auditWorkingPaperInput)
+  }
+);}
+
+
+
+
+export const getUpdateAuditWorkingPaperMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAuditWorkingPaper>>, TError,{id: number;data: BodyType<AuditWorkingPaperInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAuditWorkingPaper>>, TError,{id: number;data: BodyType<AuditWorkingPaperInput>}, TContext> => {
+
+const mutationKey = ['updateAuditWorkingPaper'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAuditWorkingPaper>>, {id: number;data: BodyType<AuditWorkingPaperInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAuditWorkingPaper(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAuditWorkingPaperMutationResult = NonNullable<Awaited<ReturnType<typeof updateAuditWorkingPaper>>>
+    export type UpdateAuditWorkingPaperMutationBody = BodyType<AuditWorkingPaperInput>
+    export type UpdateAuditWorkingPaperMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update working paper
+ */
+export const useUpdateAuditWorkingPaper = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAuditWorkingPaper>>, TError,{id: number;data: BodyType<AuditWorkingPaperInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAuditWorkingPaper>>,
+        TError,
+        {id: number;data: BodyType<AuditWorkingPaperInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAuditWorkingPaperMutationOptions(options));
+    }
+
+export const getDeleteAuditWorkingPaperUrl = (id: number,) => {
+
+
+
+
+  return `/api/api/audit-working-papers/${id}`
+}
+
+/**
+ * @summary Delete working paper
+ */
+export const deleteAuditWorkingPaper = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAuditWorkingPaperUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAuditWorkingPaperMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAuditWorkingPaper>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAuditWorkingPaper>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteAuditWorkingPaper'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAuditWorkingPaper>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAuditWorkingPaper(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAuditWorkingPaperMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAuditWorkingPaper>>>
+
+    export type DeleteAuditWorkingPaperMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete working paper
+ */
+export const useDeleteAuditWorkingPaper = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAuditWorkingPaper>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAuditWorkingPaper>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAuditWorkingPaperMutationOptions(options));
     }
 

@@ -1442,6 +1442,99 @@ export interface AuditFindingInput {
   assignedTo?: string;
 }
 
+export interface AuditQuery {
+  id: number;
+  clientId: number;
+  /** @nullable */
+  clientName?: string | null;
+  /** @nullable */
+  taskId?: number | null;
+  /** @nullable */
+  queryNo?: string | null;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  queryType: string;
+  status: string;
+  priority: string;
+  /** @nullable */
+  raisedBy?: string | null;
+  /** @nullable */
+  assignedTo?: string | null;
+  /** @nullable */
+  dueDate?: string | null;
+  /** @nullable */
+  clientResponse?: string | null;
+  /** @nullable */
+  auditorNote?: string | null;
+  /** @nullable */
+  period?: string | null;
+  orgId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuditQueryInput {
+  clientId: number;
+  taskId?: number;
+  queryNo?: string;
+  title: string;
+  description?: string;
+  queryType?: string;
+  status?: string;
+  priority?: string;
+  raisedBy?: string;
+  assignedTo?: string;
+  dueDate?: string;
+  clientResponse?: string;
+  auditorNote?: string;
+  period?: string;
+}
+
+export interface AuditWorkingPaper {
+  id: number;
+  clientId: number;
+  /** @nullable */
+  clientName?: string | null;
+  /** @nullable */
+  wpNo?: string | null;
+  title: string;
+  section: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  preparedBy?: string | null;
+  /** @nullable */
+  reviewedBy?: string | null;
+  status: string;
+  /** @nullable */
+  riskArea?: string | null;
+  /** @nullable */
+  assertions?: string | null;
+  /** @nullable */
+  conclusion?: string | null;
+  /** @nullable */
+  period?: string | null;
+  orgId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuditWorkingPaperInput {
+  clientId: number;
+  wpNo?: string;
+  title: string;
+  section?: string;
+  description?: string;
+  preparedBy?: string;
+  reviewedBy?: string;
+  status?: string;
+  riskArea?: string;
+  assertions?: string;
+  conclusion?: string;
+  period?: string;
+}
+
 export type GetDashboardSummaryParams = {
 /**
  * Financial year e.g. 2024-25
@@ -1631,5 +1724,18 @@ clientId?: number;
 status?: string;
 severity?: string;
 category?: string;
+};
+
+export type ListAuditQueriesParams = {
+clientId?: number;
+status?: string;
+priority?: string;
+queryType?: string;
+};
+
+export type ListAuditWorkingPapersParams = {
+clientId?: number;
+status?: string;
+section?: string;
 };
 

@@ -1842,6 +1842,165 @@ paths:
         "204":
           description: Deleted
 
+  /api/audit-queries:
+    get:
+      operationId: listAuditQueries
+      tags: [audit-workspace]
+      summary: List audit queries
+      parameters:
+        - { name: clientId, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+        - { name: queryType, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: List of queries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditQuery"
+    post:
+      operationId: createAuditQuery
+      tags: [audit-workspace]
+      summary: Create audit query
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditQueryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditQuery"
+
+  /api/audit-queries/{id}:
+    get:
+      operationId: getAuditQuery
+      tags: [audit-workspace]
+      summary: Get audit query
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditQuery"
+    put:
+      operationId: updateAuditQuery
+      tags: [audit-workspace]
+      summary: Update audit query
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditQueryInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditQuery"
+    delete:
+      operationId: deleteAuditQuery
+      tags: [audit-workspace]
+      summary: Delete audit query
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204":
+          description: Deleted
+
+  /api/audit-working-papers:
+    get:
+      operationId: listAuditWorkingPapers
+      tags: [audit-workspace]
+      summary: List audit working papers
+      parameters:
+        - { name: clientId, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: section, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: List of working papers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditWorkingPaper"
+    post:
+      operationId: createAuditWorkingPaper
+      tags: [audit-workspace]
+      summary: Create audit working paper
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditWorkingPaperInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditWorkingPaper"
+
+  /api/audit-working-papers/{id}:
+    get:
+      operationId: getAuditWorkingPaper
+      tags: [audit-workspace]
+      summary: Get working paper
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditWorkingPaper"
+    put:
+      operationId: updateAuditWorkingPaper
+      tags: [audit-workspace]
+      summary: Update working paper
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditWorkingPaperInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditWorkingPaper"
+    delete:
+      operationId: deleteAuditWorkingPaper
+      tags: [audit-workspace]
+      summary: Delete working paper
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -3373,4 +3532,86 @@ components:
         resolvedDate: { type: string }
         raisedBy: { type: string }
         assignedTo: { type: string }
+      required: [clientId, title]
+
+    AuditQuery:
+      type: object
+      properties:
+        id: { type: integer }
+        clientId: { type: integer }
+        clientName: { type: ["string", "null"] }
+        taskId: { type: ["integer", "null"] }
+        queryNo: { type: ["string", "null"] }
+        title: { type: string }
+        description: { type: ["string", "null"] }
+        queryType: { type: string }
+        status: { type: string }
+        priority: { type: string }
+        raisedBy: { type: ["string", "null"] }
+        assignedTo: { type: ["string", "null"] }
+        dueDate: { type: ["string", "null"] }
+        clientResponse: { type: ["string", "null"] }
+        auditorNote: { type: ["string", "null"] }
+        period: { type: ["string", "null"] }
+        orgId: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+      required: [id, clientId, title, queryType, status, priority, orgId, createdAt, updatedAt]
+
+    AuditQueryInput:
+      type: object
+      properties:
+        clientId: { type: integer }
+        taskId: { type: integer }
+        queryNo: { type: string }
+        title: { type: string }
+        description: { type: string }
+        queryType: { type: string }
+        status: { type: string }
+        priority: { type: string }
+        raisedBy: { type: string }
+        assignedTo: { type: string }
+        dueDate: { type: string }
+        clientResponse: { type: string }
+        auditorNote: { type: string }
+        period: { type: string }
+      required: [clientId, title]
+
+    AuditWorkingPaper:
+      type: object
+      properties:
+        id: { type: integer }
+        clientId: { type: integer }
+        clientName: { type: ["string", "null"] }
+        wpNo: { type: ["string", "null"] }
+        title: { type: string }
+        section: { type: string }
+        description: { type: ["string", "null"] }
+        preparedBy: { type: ["string", "null"] }
+        reviewedBy: { type: ["string", "null"] }
+        status: { type: string }
+        riskArea: { type: ["string", "null"] }
+        assertions: { type: ["string", "null"] }
+        conclusion: { type: ["string", "null"] }
+        period: { type: ["string", "null"] }
+        orgId: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+      required: [id, clientId, title, section, status, orgId, createdAt, updatedAt]
+
+    AuditWorkingPaperInput:
+      type: object
+      properties:
+        clientId: { type: integer }
+        wpNo: { type: string }
+        title: { type: string }
+        section: { type: string }
+        description: { type: string }
+        preparedBy: { type: string }
+        reviewedBy: { type: string }
+        status: { type: string }
+        riskArea: { type: string }
+        assertions: { type: string }
+        conclusion: { type: string }
+        period: { type: string }
       required: [clientId, title]

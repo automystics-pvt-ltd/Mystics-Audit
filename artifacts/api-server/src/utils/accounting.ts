@@ -6,8 +6,29 @@
 import { db, journalEntriesTable, journalLinesTable, accountsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
-let seq = 9000;
-function nextVoucherNo(prefix: string) {
+let seq = 0;
+let seqInitialized = false;
+
+async function initSeq() {
+  if (seqInitialized) return;
+  seqInitialized = true;
+  try {
+    const rows = await db.execute(
+      "SELECT voucher_no FROM journal_entries WHERE voucher_no ~ '^[A-Z]+-[0-9]+$' ORDER BY id DESC LIMIT 1"
+    );
+    if (rows.rows.length > 0) {
+      const parts = String(rows.rows[0].voucher_no).split("-");
+      const last = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(last)) seq = last;
+    }
+    if (seq < 9000) seq = 9000;
+  } catch {
+    seq = 9000;
+  }
+}
+
+async function nextVoucherNo(prefix: string) {
+  await initSeq();
   seq++;
   return `${prefix}-${String(seq).padStart(6, "0")}`;
 }
@@ -67,7 +88,7 @@ export async function createPostedJournal(opts: {
 
   // 3. Insert journal entry (immediately posted)
   const [entry] = await db.insert(journalEntriesTable).values({
-    voucherNo: nextVoucherNo(voucherPrefix),
+    voucherNo: await nextVoucherNo(voucherPrefix),
     voucherType: voucherPrefix === "RCT" ? "Receipt"
       : voucherPrefix === "PMT" ? "Payment"
       : voucherPrefix === "INV" ? "Sales"

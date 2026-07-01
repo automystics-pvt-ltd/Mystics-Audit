@@ -4,10 +4,25 @@ import { eq, and, desc } from "drizzle-orm";
 
 const router = Router();
 
-let poSeq = 100;
-let grnSeq = 100;
-function nextPoNo() { poSeq++; return `PO-${new Date().getFullYear()}-${String(poSeq).padStart(5, "0")}`; }
-function nextGrnNo() { grnSeq++; return `GRN-${new Date().getFullYear()}-${String(grnSeq).padStart(5, "0")}`; }
+let poSeq = 0;
+let grnSeq = 0;
+let seqInit = false;
+
+async function initSeqs() {
+  if (seqInit) return;
+  seqInit = true;
+  try {
+    const [lastPo]  = await db.execute("SELECT po_no  FROM purchase_orders ORDER BY id DESC LIMIT 1").then((r: any) => r.rows);
+    const [lastGrn] = await db.execute("SELECT grn_no FROM grns            ORDER BY id DESC LIMIT 1").then((r: any) => r.rows);
+    if (lastPo?.po_no)  { const n = parseInt(String(lastPo.po_no).split("-").pop() || "0"); if (!isNaN(n)) poSeq  = n; }
+    if (lastGrn?.grn_no){ const n = parseInt(String(lastGrn.grn_no).split("-").pop() || "0"); if (!isNaN(n)) grnSeq = n; }
+    if (poSeq  < 100) poSeq  = 100;
+    if (grnSeq < 100) grnSeq = 100;
+  } catch { poSeq = 100; grnSeq = 100; }
+}
+
+async function nextPoNo()  { await initSeqs(); poSeq++;  return `PO-${new Date().getFullYear()}-${String(poSeq).padStart(5, "0")}`; }
+async function nextGrnNo() { await initSeqs(); grnSeq++; return `GRN-${new Date().getFullYear()}-${String(grnSeq).padStart(5, "0")}`; }
 
 async function getPoWithLines(id: number) {
   const [po] = await db.select().from(purchaseOrdersTable).where(eq(purchaseOrdersTable.id, id));
@@ -71,7 +86,7 @@ router.post("/purchases/orders", async (req, res) => {
     });
 
     const [po] = await db.insert(purchaseOrdersTable).values({
-      poNo: nextPoNo(),
+      poNo: await nextPoNo(),
       vendorId,
       vendorName: vendor?.name || "Vendor",
       date,
@@ -142,7 +157,7 @@ router.post("/purchases/grn", async (req, res) => {
     if (!po) { res.status(404).json({ error: "PO not found" }); return; }
 
     const [grn] = await db.insert(grnsTable).values({
-      grnNo: nextGrnNo(),
+      grnNo: await nextGrnNo(),
       poId,
       poNo: po.poNo,
       vendorId: po.vendorId,

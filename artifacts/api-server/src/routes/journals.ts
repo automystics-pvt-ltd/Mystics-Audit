@@ -4,11 +4,32 @@ import { eq, and, desc, gte, lte } from "drizzle-orm";
 
 const router = Router();
 
-let voucherSeq = 1000;
-function nextVoucherNo(type: string) {
+let voucherSeq = 0;
+let voucherSeqInit = false;
+
+async function initVoucherSeq() {
+  if (voucherSeqInit) return;
+  voucherSeqInit = true;
+  try {
+    const rows = await db.execute(
+      "SELECT voucher_no FROM journal_entries WHERE voucher_no ~ '^[A-Z]+-[0-9]+$' ORDER BY id DESC LIMIT 1"
+    );
+    if (rows.rows.length > 0) {
+      const parts = String(rows.rows[0].voucher_no).split("-");
+      const last = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(last)) voucherSeq = last;
+    }
+    if (voucherSeq < 9000) voucherSeq = 9000;
+  } catch {
+    voucherSeq = 9000;
+  }
+}
+
+async function nextVoucherNo(type: string) {
+  await initVoucherSeq();
   voucherSeq++;
   const prefix = type === "Payment" ? "PMT" : type === "Receipt" ? "RCT" : type === "Contra" ? "CNT" : "JV";
-  return `${prefix}-${String(voucherSeq).padStart(5, "0")}`;
+  return `${prefix}-${String(voucherSeq).padStart(6, "0")}`;
 }
 
 async function getJournalWithLines(id: number) {
@@ -69,7 +90,7 @@ router.post("/journals", async (req, res) => {
     const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
 
     const [entry] = await db.insert(journalEntriesTable).values({
-      voucherNo: nextVoucherNo(voucherType),
+      voucherNo: await nextVoucherNo(voucherType),
       voucherType,
       date,
       narration,
@@ -140,7 +161,7 @@ router.post("/journals/:id/reverse", async (req, res) => {
     if (!original) { res.status(404).json({ error: "Not found" }); return; }
 
     const [reversal] = await db.insert(journalEntriesTable).values({
-      voucherNo: nextVoucherNo(original.voucherType),
+      voucherNo: await nextVoucherNo(original.voucherType),
       voucherType: original.voucherType,
       date: new Date().toISOString().split("T")[0],
       narration: `Reversal of ${original.voucherNo}`,

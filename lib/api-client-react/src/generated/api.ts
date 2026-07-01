@@ -9151,7 +9151,7 @@ export const getListNotificationsUrl = (params?: ListNotificationsParams,) => {
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/api/notifications?${stringifiedParams}` : `/api/api/notifications`
+  return stringifiedParams.length > 0 ? `/api/notifications?${stringifiedParams}` : `/api/notifications`
 }
 
 /**
@@ -9174,7 +9174,7 @@ export const listNotifications = async (params?: ListNotificationsParams, option
 
 export const getListNotificationsQueryKey = (params?: ListNotificationsParams,) => {
     return [
-    `/api/api/notifications`, ...(params ? [params] : [])
+    `/api/notifications`, ...(params ? [params] : [])
     ] as const;
     }
 
@@ -9228,7 +9228,7 @@ export const getGetNotificationSummaryUrl = () => {
 
 
 
-  return `/api/api/notifications/summary`
+  return `/api/notifications/summary`
 }
 
 /**
@@ -9251,7 +9251,7 @@ export const getNotificationSummary = async ( options?: RequestInit): Promise<No
 
 export const getGetNotificationSummaryQueryKey = () => {
     return [
-    `/api/api/notifications/summary`
+    `/api/notifications/summary`
     ] as const;
     }
 
@@ -9305,7 +9305,7 @@ export const getMarkAllNotificationsReadUrl = () => {
 
 
 
-  return `/api/api/notifications/mark-all-read`
+  return `/api/notifications/mark-all-read`
 }
 
 /**
@@ -9375,7 +9375,7 @@ export const getMarkNotificationReadUrl = (id: number,) => {
 
 
 
-  return `/api/api/notifications/${id}/read`
+  return `/api/notifications/${id}/read`
 }
 
 /**
@@ -9445,7 +9445,7 @@ export const getDismissNotificationUrl = (id: number,) => {
 
 
 
-  return `/api/api/notifications/${id}/dismiss`
+  return `/api/notifications/${id}/dismiss`
 }
 
 /**
@@ -9515,7 +9515,7 @@ export const getDeleteNotificationUrl = (id: number,) => {
 
 
 
-  return `/api/api/notifications/${id}`
+  return `/api/notifications/${id}`
 }
 
 /**
@@ -9592,7 +9592,7 @@ export const getListAutomationRulesUrl = (params?: ListAutomationRulesParams,) =
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/api/automation-rules?${stringifiedParams}` : `/api/api/automation-rules`
+  return stringifiedParams.length > 0 ? `/api/automation-rules?${stringifiedParams}` : `/api/automation-rules`
 }
 
 /**
@@ -9615,7 +9615,7 @@ export const listAutomationRules = async (params?: ListAutomationRulesParams, op
 
 export const getListAutomationRulesQueryKey = (params?: ListAutomationRulesParams,) => {
     return [
-    `/api/api/automation-rules`, ...(params ? [params] : [])
+    `/api/automation-rules`, ...(params ? [params] : [])
     ] as const;
     }
 
@@ -9669,7 +9669,7 @@ export const getCreateAutomationRuleUrl = () => {
 
 
 
-  return `/api/api/automation-rules`
+  return `/api/automation-rules`
 }
 
 /**
@@ -9739,7 +9739,7 @@ export const getUpdateAutomationRuleUrl = (id: number,) => {
 
 
 
-  return `/api/api/automation-rules/${id}`
+  return `/api/automation-rules/${id}`
 }
 
 /**
@@ -9810,7 +9810,7 @@ export const getDeleteAutomationRuleUrl = (id: number,) => {
 
 
 
-  return `/api/api/automation-rules/${id}`
+  return `/api/automation-rules/${id}`
 }
 
 /**
@@ -9880,7 +9880,7 @@ export const getRunAutomationUrl = () => {
 
 
 
-  return `/api/api/automation/run`
+  return `/api/automation/run`
 }
 
 /**
@@ -9957,7 +9957,7 @@ export const getListCollaborationRequestsUrl = (params?: ListCollaborationReques
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/api/collaboration/requests?${stringifiedParams}` : `/api/api/collaboration/requests`
+  return stringifiedParams.length > 0 ? `/api/collaboration/requests?${stringifiedParams}` : `/api/collaboration/requests`
 }
 
 /**
@@ -9980,7 +9980,7 @@ export const listCollaborationRequests = async (params?: ListCollaborationReques
 
 export const getListCollaborationRequestsQueryKey = (params?: ListCollaborationRequestsParams,) => {
     return [
-    `/api/api/collaboration/requests`, ...(params ? [params] : [])
+    `/api/collaboration/requests`, ...(params ? [params] : [])
     ] as const;
     }
 
@@ -10034,7 +10034,7 @@ export const getCreateCollaborationRequestUrl = () => {
 
 
 
-  return `/api/api/collaboration/requests`
+  return `/api/collaboration/requests`
 }
 
 /**
@@ -10104,7 +10104,7 @@ export const getGetCollaborationRequestUrl = (id: number,) => {
 
 
 
-  return `/api/api/collaboration/requests/${id}`
+  return `/api/collaboration/requests/${id}`
 }
 
 /**
@@ -10127,7 +10127,7 @@ export const getCollaborationRequest = async (id: number, options?: RequestInit)
 
 export const getGetCollaborationRequestQueryKey = (id: number,) => {
     return [
-    `/api/api/collaboration/requests/${id}`
+    `/api/collaboration/requests/${id}`
     ] as const;
     }
 
@@ -10181,7 +10181,7 @@ export const getUpdateCollaborationRequestUrl = (id: number,) => {
 
 
 
-  return `/api/api/collaboration/requests/${id}`
+  return `/api/collaboration/requests/${id}`
 }
 
 /**
@@ -10252,7 +10252,7 @@ export const getDeleteCollaborationRequestUrl = (id: number,) => {
 
 
 
-  return `/api/api/collaboration/requests/${id}`
+  return `/api/collaboration/requests/${id}`
 }
 
 /**
@@ -10322,7 +10322,7 @@ export const getListCollaborationMessagesUrl = (id: number,) => {
 
 
 
-  return `/api/api/collaboration/requests/${id}/messages`
+  return `/api/collaboration/requests/${id}/messages`
 }
 
 /**
@@ -10345,7 +10345,7 @@ export const listCollaborationMessages = async (id: number, options?: RequestIni
 
 export const getListCollaborationMessagesQueryKey = (id: number,) => {
     return [
-    `/api/api/collaboration/requests/${id}/messages`
+    `/api/collaboration/requests/${id}/messages`
     ] as const;
     }
 
@@ -10399,7 +10399,7 @@ export const getCreateCollaborationMessageUrl = (id: number,) => {
 
 
 
-  return `/api/api/collaboration/requests/${id}/messages`
+  return `/api/collaboration/requests/${id}/messages`
 }
 
 /**
@@ -10470,7 +10470,7 @@ export const getGetCollaborationSummaryUrl = () => {
 
 
 
-  return `/api/api/collaboration/summary`
+  return `/api/collaboration/summary`
 }
 
 /**
@@ -10493,7 +10493,7 @@ export const getCollaborationSummary = async ( options?: RequestInit): Promise<C
 
 export const getGetCollaborationSummaryQueryKey = () => {
     return [
-    `/api/api/collaboration/summary`
+    `/api/collaboration/summary`
     ] as const;
     }
 

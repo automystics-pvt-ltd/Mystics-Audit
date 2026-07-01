@@ -161,9 +161,12 @@ export default function AuditorWorkspace() {
   /* ── client dialog ── */
   const emptyClient = { name:"", pan:"", gstin:"", contactName:"", contactEmail:"", contactPhone:"", address:"", city:"", state:"", engagementTypes:[] as string[], notes:"" };
   const [clientDlg, setClientDlg] = useState<{ open: boolean; edit?: any; form: typeof emptyClient }>({ open: false, form: emptyClient });
+  const [clientCreatedFor, setClientCreatedFor] = useState<"task"|"event"|null>(null);
 
-  function openNewClient() { setClientDlg({ open: true, form: emptyClient }); }
+  function openNewClient() { setClientCreatedFor(null); setClientDlg({ open: true, form: emptyClient }); }
+  function openNewClientFrom(origin: "task"|"event") { setClientCreatedFor(origin); setClientDlg({ open: true, form: emptyClient }); }
   function openEditClient(c: any) {
+    setClientCreatedFor(null);
     setClientDlg({ open: true, edit: c, form: { ...c, engagementTypes: parseTags(c.engagementTypes ?? "[]") } });
   }
   function saveClient() {
@@ -176,7 +179,15 @@ export default function AuditorWorkspace() {
       });
     } else {
       createClient.mutate({ data } as any, {
-        onSuccess: () => { toast({ title: "Client created" }); setClientDlg(d => ({ ...d, open: false })); invalidate(); },
+        onSuccess: (newClient: any) => {
+          toast({ title: "Client created", description: newClient.name });
+          setClientDlg(d => ({ ...d, open: false }));
+          invalidate();
+          const id = String(newClient.id);
+          if (clientCreatedFor === "task")  setTaskDlg(d => ({ ...d, form: { ...d.form, clientId: id } }));
+          if (clientCreatedFor === "event") setEventDlg(d => ({ ...d, form: { ...d.form, clientId: id } }));
+          setClientCreatedFor(null);
+        },
       });
     }
   }
@@ -841,9 +852,15 @@ export default function AuditorWorkspace() {
           <div className="grid grid-cols-2 gap-3 py-2">
             <div className="col-span-2 space-y-1">
               <Label className="text-xs font-semibold">Client *</Label>
-              <Select value={taskDlg.form.clientId} onValueChange={v=>setTaskDlg(d=>({...d,form:{...d.form,clientId:v}}))}>
+              <Select value={taskDlg.form.clientId} onValueChange={v => { if (v === "__new__") { openNewClientFrom("task"); return; } setTaskDlg(d=>({...d,form:{...d.form,clientId:v}})); }}>
                 <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select client…"/></SelectTrigger>
-                <SelectContent>{clients.map((c:any)=><SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  {clients.map((c:any)=><SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                  {clients.length === 0 && <div className="px-2 py-1.5 text-xs text-gray-400 italic">No clients yet</div>}
+                  <SelectItem value="__new__" className="text-violet-600 font-semibold border-t mt-1">
+                    + Create New Client
+                  </SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div className="col-span-2 space-y-1"><Label className="text-xs font-semibold">Task Title *</Label><Input value={taskDlg.form.title} onChange={e=>setTaskDlg(d=>({...d,form:{...d.form,title:e.target.value}}))} placeholder="e.g. Upload purchase invoices for Q1" className="rounded-xl"/></div>
@@ -888,9 +905,15 @@ export default function AuditorWorkspace() {
             </div>
             <div className="space-y-1">
               <Label className="text-xs font-semibold">Client (optional)</Label>
-              <Select value={eventDlg.form.clientId} onValueChange={v=>setEventDlg(d=>({...d,form:{...d.form,clientId:v}}))}>
+              <Select value={eventDlg.form.clientId} onValueChange={v => { if (v === "__new__") { openNewClientFrom("event"); return; } setEventDlg(d=>({...d,form:{...d.form,clientId:v}})); }}>
                 <SelectTrigger className="rounded-xl"><SelectValue placeholder="All clients"/></SelectTrigger>
-                <SelectContent><SelectItem value="">All clients</SelectItem>{clients.map((c:any)=><SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  <SelectItem value="">All clients</SelectItem>
+                  {clients.map((c:any)=><SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+                  <SelectItem value="__new__" className="text-violet-600 font-semibold border-t mt-1">
+                    + Create New Client
+                  </SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div className="space-y-1"><Label className="text-xs font-semibold">Period (YYYY-MM)</Label><Input value={eventDlg.form.period} onChange={e=>setEventDlg(d=>({...d,form:{...d.form,period:e.target.value}}))} placeholder="2026-07" className="rounded-xl"/></div>

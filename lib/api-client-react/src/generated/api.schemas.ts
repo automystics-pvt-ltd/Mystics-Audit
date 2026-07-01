@@ -1535,6 +1535,62 @@ export interface AuditWorkingPaperInput {
   period?: string;
 }
 
+export interface Notification {
+  id: number;
+  type: string;
+  title: string;
+  /** @nullable */
+  message?: string | null;
+  /** @nullable */
+  entityType?: string | null;
+  /** @nullable */
+  entityId?: number | null;
+  /** @nullable */
+  clientId?: number | null;
+  /** @nullable */
+  clientName?: string | null;
+  status: string;
+  priority: string;
+  /** @nullable */
+  actionUrl?: string | null;
+  orgId: number;
+  createdAt: string;
+}
+
+export interface NotificationSummary {
+  total: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
+export interface AutomationRule {
+  id: number;
+  name: string;
+  ruleType: string;
+  /** @nullable */
+  description?: string | null;
+  config: string;
+  isActive: boolean;
+  /** @nullable */
+  clientId?: number | null;
+  orgId: number;
+  /** @nullable */
+  lastRunAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AutomationRuleInput {
+  name: string;
+  ruleType?: string;
+  description?: string;
+  config?: string;
+  isActive?: boolean;
+  clientId?: number;
+}
+
 export type GetDashboardSummaryParams = {
 /**
  * Financial year e.g. 2024-25
@@ -1737,5 +1793,27 @@ export type ListAuditWorkingPapersParams = {
 clientId?: number;
 status?: string;
 section?: string;
+};
+
+export type ListNotificationsParams = {
+status?: string;
+priority?: string;
+clientId?: number;
+limit?: number;
+};
+
+export type MarkAllNotificationsRead200 = {
+  ok: boolean;
+};
+
+export type ListAutomationRulesParams = {
+ruleType?: string;
+};
+
+export type RunAutomation200Types = {[key: string]: number};
+
+export type RunAutomation200 = {
+  created: number;
+  types: RunAutomation200Types;
 };
 

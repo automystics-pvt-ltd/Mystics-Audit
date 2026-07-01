@@ -8,6 +8,10 @@ import {
   useListComplianceEvents, useCreateComplianceEvent, useUpdateComplianceEvent,
   useListAuditFindings, useCreateAuditFinding, useUpdateAuditFinding, useDeleteAuditFinding,
   useListCustomers, useListVendors,
+  useListNotifications, useGetNotificationSummary,
+  useMarkAllNotificationsRead, useMarkNotificationRead, useDismissNotification,
+  useListAutomationRules, useCreateAutomationRule, useUpdateAutomationRule, useDeleteAutomationRule,
+  useRunAutomation,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +31,7 @@ import {
   Mail, Download, RefreshCw, ExternalLink, Building2, Phone,
   AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight,
   ArrowUpRight, MessageSquare, Flag, MoreHorizontal, Eye, BarChart3,
+  Zap, Bell, BellOff, Play, ToggleLeft, ToggleRight, XCircle,
 } from "lucide-react";
 
 /* ── helpers ── */
@@ -102,7 +107,7 @@ const CAT_COLORS: Record<string,string> = {
   supporting:"bg-gray-100 text-gray-800",
 };
 
-type Tab = "dashboard"|"clients"|"tasks"|"calendar"|"packages"|"trail"|"findings"|"workload";
+type Tab = "dashboard"|"clients"|"tasks"|"calendar"|"packages"|"trail"|"findings"|"workload"|"automation";
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "dashboard", label: "Dashboard",   icon: <Shield className="w-4 h-4" /> },
   { id: "clients",   label: "Clients",     icon: <Users className="w-4 h-4" /> },
@@ -110,8 +115,9 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "findings",  label: "Findings",    icon: <Flag className="w-4 h-4" /> },
   { id: "calendar",  label: "Compliance",  icon: <CalendarDays className="w-4 h-4" /> },
   { id: "packages",  label: "Doc Packages",icon: <Package className="w-4 h-4" /> },
-  { id: "workload",  label: "Team Workload",icon: <BarChart3 className="w-4 h-4" /> },
-  { id: "trail",     label: "Audit Trail", icon: <Activity className="w-4 h-4" /> },
+  { id: "workload",  label: "Team Workload",  icon: <BarChart3 className="w-4 h-4" /> },
+  { id: "automation",label: "Automation Hub", icon: <Zap className="w-4 h-4" /> },
+  { id: "trail",     label: "Audit Trail",   icon: <Activity className="w-4 h-4" /> },
 ];
 
 /* ── findings helpers ── */
@@ -150,12 +156,321 @@ function PriorityBadge({ priority }: { priority: string }) {
 }
 
 /* ══════════════════════════════════════════════════════
+   AUTOMATION HUB COMPONENT
+══════════════════════════════════════════════════════ */
+const PRIORITY_COLORS: Record<string, { ring: string; badge: string; icon: string }> = {
+  critical: { ring: "border-red-300 bg-red-50",      badge: "bg-red-100 text-red-700",    icon: "text-red-500" },
+  high:     { ring: "border-orange-300 bg-orange-50", badge: "bg-orange-100 text-orange-700", icon: "text-orange-500" },
+  medium:   { ring: "border-amber-300 bg-amber-50",   badge: "bg-amber-100 text-amber-700",  icon: "text-amber-500" },
+  low:      { ring: "border-gray-200 bg-gray-50",     badge: "bg-gray-100 text-gray-500",   icon: "text-gray-400" },
+};
+const NOTIF_LABEL: Record<string, string> = {
+  overdue_task:       "Overdue Task",
+  overdue_compliance: "Overdue Compliance",
+  deadline_tomorrow:  "Due Tomorrow",
+  deadline_3days:     "Due in 3 Days",
+  deadline_7days:     "Upcoming Deadline",
+  query_followup:     "Query Follow-up",
+  unassigned_tasks:   "Unassigned Tasks",
+};
+const RULE_TYPE_DESCS: Record<string, string> = {
+  overdue_alert:       "Notify when tasks or deadlines are overdue",
+  deadline_reminder:   "Advance warning before due dates",
+  query_followup:      "Auto-remind on unanswered queries",
+  escalation:          "Escalate priority for critical items",
+  recurring_compliance:"Auto-create recurring compliance tasks",
+};
+const DEFAULT_RULES = [
+  { name: "Overdue Task Alert",       ruleType: "overdue_alert",      description: "Create a notification when any task passes its due date" },
+  { name: "Compliance Deadline (7d)", ruleType: "deadline_reminder",  description: "Warn 7 days before compliance deadlines" },
+  { name: "Compliance Deadline (3d)", ruleType: "deadline_reminder",  description: "Warn 3 days before compliance deadlines" },
+  { name: "Compliance Deadline (1d)", ruleType: "deadline_reminder",  description: "Critical alert 1 day before compliance deadlines" },
+  { name: "Query Follow-up (3d)",     ruleType: "query_followup",     description: "Follow-up when client query has no response for 3+ days" },
+  { name: "Unassigned Task Alert",    ruleType: "escalation",         description: "Alert when tasks remain unassigned after creation" },
+];
+
+function AutomationHub() {
+  const { data: notifData, refetch: refetchNotifs } = useListNotifications({ limit: 50 } as any);
+  const { data: summaryData, refetch: refetchSummary } = useGetNotificationSummary();
+  const { data: rulesData, refetch: refetchRules } = useListAutomationRules({});
+  const markAllRead  = useMarkAllNotificationsRead();
+  const markRead     = useMarkNotificationRead();
+  const dismissNotif = useDismissNotification();
+  const createRule   = useCreateAutomationRule();
+  const updateRule   = useUpdateAutomationRule();
+  const deleteRule   = useDeleteAutomationRule();
+  const runAuto      = useRunAutomation();
+  const { toast }    = useToast();
+
+  const notifs: any[]  = (notifData as any) ?? [];
+  const summary: any   = summaryData ?? {};
+  const rules: any[]   = (rulesData as any) ?? [];
+  const unread         = notifs.filter(n => n.status === "unread");
+
+  function handleRunNow() {
+    runAuto.mutate({} as any, {
+      onSuccess: (r: any) => {
+        toast({ title: `Automation ran — ${r.created ?? 0} new notifications created` });
+        refetchNotifs(); refetchSummary();
+      },
+      onError: () => toast({ title: "Automation run failed", variant: "destructive" }),
+    });
+  }
+
+  function handleMarkAllRead() {
+    markAllRead.mutate({} as any, { onSuccess: () => { refetchNotifs(); refetchSummary(); } });
+  }
+
+  function handleMarkRead(id: number) {
+    markRead.mutate({ id } as any, { onSuccess: () => refetchNotifs() });
+  }
+
+  function handleDismiss(id: number) {
+    dismissNotif.mutate({ id } as any, { onSuccess: () => refetchNotifs() });
+  }
+
+  function toggleRule(rule: any) {
+    updateRule.mutate({ id: rule.id, data: { ...rule, isActive: !rule.isActive } } as any, {
+      onSuccess: () => { toast({ title: `Rule ${rule.isActive ? "paused" : "activated"}` }); refetchRules(); },
+    });
+  }
+
+  function handleDeleteRule(id: number) {
+    deleteRule.mutate({ id } as any, {
+      onSuccess: () => { toast({ title: "Rule deleted" }); refetchRules(); },
+    });
+  }
+
+  function handleInstallDefaults() {
+    let done = 0;
+    DEFAULT_RULES.forEach(r => {
+      createRule.mutate({ data: r } as any, {
+        onSuccess: () => { done++; if (done === DEFAULT_RULES.length) { toast({ title: `${done} default rules installed` }); refetchRules(); } },
+      });
+    });
+  }
+
+  /* bar chart of alert categories */
+  const byType: Record<string, number> = {};
+  notifs.forEach(n => { byType[n.type] = (byType[n.type] ?? 0) + 1; });
+  const sortedByType = Object.entries(byType).sort((a, b) => b[1] - a[1]);
+  const maxCount = sortedByType[0]?.[1] ?? 1;
+
+  return (
+    <div className="space-y-6">
+      {/* Header + run button */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-violet-500" />Intelligent Automation Hub
+          </h2>
+          <p className="text-xs text-gray-400 mt-0.5">Automated monitoring, smart alerts, and compliance scheduling</p>
+        </div>
+        <div className="flex gap-2">
+          {unread.length > 0 && (
+            <Button size="sm" variant="outline" className="rounded-xl" onClick={handleMarkAllRead}>
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1" />Mark All Read
+            </Button>
+          )}
+          <Button size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700" onClick={handleRunNow}
+            disabled={runAuto.isPending}>
+            <Play className="w-3.5 h-3.5 mr-1" />
+            {runAuto.isPending ? "Running…" : "Run Checks Now"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Critical",    count: summary.critical ?? 0, color: "text-red-600",    bg: "bg-red-50 border-red-200" },
+          { label: "High",        count: summary.high     ?? 0, color: "text-orange-600", bg: "bg-orange-50 border-orange-200" },
+          { label: "Medium",      count: summary.medium   ?? 0, color: "text-amber-600",  bg: "bg-amber-50 border-amber-200" },
+          { label: "Total Unread",count: summary.total    ?? 0, color: "text-violet-600", bg: "bg-violet-50 border-violet-200" },
+        ].map(item => (
+          <div key={item.label} className={cn("rounded-xl border px-4 py-3", item.bg)}>
+            <p className={cn("text-2xl font-bold", item.color)}>{item.count}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{item.label} Alerts</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Live Alerts Feed */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+              <Bell className="w-4 h-4 text-violet-500" />Alert Feed
+              {unread.length > 0 && (
+                <span className="bg-red-100 text-red-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {unread.length} unread
+                </span>
+              )}
+            </h3>
+            <span className="text-xs text-gray-400">{notifs.length} total</span>
+          </div>
+
+          {notifs.length === 0 ? (
+            <div className="border-2 border-dashed border-gray-200 rounded-2xl py-12 text-center">
+              <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-400" />
+              <p className="text-sm font-semibold text-gray-600">No Alerts</p>
+              <p className="text-xs text-gray-400 mt-1">Click "Run Checks Now" to scan for issues</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+              {notifs.map((n: any) => {
+                const pc = PRIORITY_COLORS[n.priority] ?? PRIORITY_COLORS.medium;
+                const isUnread = n.status === "unread";
+                return (
+                  <div key={n.id} className={cn("border rounded-xl px-4 py-3 flex items-start gap-3 transition-colors group", pc.ring)}>
+                    <AlertTriangle className={cn("w-4 h-4 mt-0.5 shrink-0", pc.icon)} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                        <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full", pc.badge)}>
+                          {n.priority.toUpperCase()}
+                        </span>
+                        <span className="text-[10px] text-gray-400">{NOTIF_LABEL[n.type] ?? n.type}</span>
+                        {n.clientName && <span className="text-[10px] text-gray-400">· {n.clientName}</span>}
+                        {isUnread && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />}
+                      </div>
+                      <p className="text-xs font-semibold text-gray-800">{n.title}</p>
+                      {n.message && <p className="text-[11px] text-gray-500 mt-0.5">{n.message}</p>}
+                      <p className="text-[10px] text-gray-300 mt-1">
+                        {n.createdAt ? new Date(n.createdAt).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" }) : ""}
+                      </p>
+                    </div>
+                    <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {isUnread && (
+                        <button onClick={() => handleMarkRead(n.id)} title="Mark read"
+                          className="p-1.5 rounded-lg hover:bg-green-100 text-gray-400 hover:text-green-600">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button onClick={() => handleDismiss(n.id)} title="Dismiss"
+                        className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-600">
+                        <XCircle className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Automation Rules */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-violet-500" />Automation Rules
+              <span className="text-gray-400 font-normal">({rules.filter(r => r.isActive).length} active)</span>
+            </h3>
+            {rules.length === 0 && (
+              <Button size="sm" variant="outline"
+                className="rounded-xl h-7 text-xs border-violet-200 text-violet-700 hover:bg-violet-50"
+                onClick={handleInstallDefaults}>
+                <Plus className="w-3 h-3 mr-1" />Install Defaults
+              </Button>
+            )}
+          </div>
+
+          {rules.length === 0 ? (
+            <div className="border-2 border-dashed border-gray-200 rounded-2xl py-12 text-center">
+              <Zap className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+              <p className="text-sm font-semibold text-gray-600">No Automation Rules</p>
+              <p className="text-xs text-gray-400 mt-1 mb-3">Install default rules to get started</p>
+              <Button size="sm" onClick={handleInstallDefaults} className="rounded-xl bg-violet-600 hover:bg-violet-700">
+                <Plus className="w-3.5 h-3.5 mr-1" />Install Default Rules
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {rules.map((rule: any) => (
+                <div key={rule.id} className={cn(
+                  "border rounded-xl px-4 py-3 flex items-start gap-3",
+                  rule.isActive ? "border-violet-200 bg-violet-50/30" : "border-gray-200 bg-gray-50 opacity-60"
+                )}>
+                  <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0",
+                    rule.isActive ? "bg-emerald-500" : "bg-gray-300")} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-gray-800">{rule.name}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      {RULE_TYPE_DESCS[rule.ruleType] ?? rule.description ?? rule.ruleType}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={() => toggleRule(rule)}
+                      className={cn("text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors",
+                        rule.isActive
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                          : "bg-gray-100 text-gray-500 border-gray-200 hover:bg-violet-50 hover:text-violet-700 hover:border-violet-200"
+                      )}>
+                      {rule.isActive ? "Active" : "Paused"}
+                    </button>
+                    <button onClick={() => handleDeleteRule(rule.id)}
+                      className="p-1 rounded hover:bg-red-100 text-gray-300 hover:text-red-500">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <Button size="sm" variant="outline"
+                className="w-full rounded-xl border-dashed text-gray-400 hover:border-violet-300 hover:text-violet-600"
+                onClick={handleInstallDefaults}>
+                <Plus className="w-3.5 h-3.5 mr-1" />Re-install Default Rules
+              </Button>
+            </div>
+          )}
+
+          {/* How It Works */}
+          <div className="mt-2 bg-violet-50 border border-violet-100 rounded-xl p-4">
+            <p className="text-xs font-semibold text-violet-800 mb-2">How Automation Works</p>
+            <div className="space-y-1.5">
+              {[
+                "Runs every 5 minutes automatically",
+                "Checks overdue tasks and compliance deadlines",
+                "Generates smart notifications for auditors",
+                "Tracks query follow-ups and unassigned tasks",
+                "Deduplicates — no repeated alerts for the same issue",
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 text-[11px] text-violet-700">
+                  <CheckCircle2 className="w-3 h-3 text-violet-500 shrink-0" />{item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Category breakdown bar chart */}
+      {sortedByType.length > 0 && (
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-gray-700 mb-4">Alert Breakdown by Category</h3>
+          <div className="space-y-2">
+            {sortedByType.map(([type, count]) => (
+              <div key={type} className="flex items-center gap-3">
+                <span className="text-xs text-gray-500 w-44 shrink-0">{NOTIF_LABEL[type] ?? type}</span>
+                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-violet-400 rounded-full" style={{ width: `${(count / maxCount) * 100}%` }} />
+                </div>
+                <span className="text-xs font-bold text-gray-600 w-8 text-right shrink-0">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════════════════════════ */
 export default function AuditorWorkspace() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const [tab, setTab] = useState<Tab>("dashboard");
+  const initialTab = (new URLSearchParams(window.location.search).get("tab") ?? "dashboard") as Tab;
+  const [tab, setTab] = useState<Tab>(TABS.some(t => t.id === initialTab) ? initialTab : "dashboard");
 
   /* ── queries ── */
   const { data: clients = [], refetch: refetchClients }   = useListAuditClients({});
@@ -1156,6 +1471,9 @@ export default function AuditorWorkspace() {
           </div>
         );
       })()}
+
+      {/* ── AUTOMATION HUB TAB ── */}
+      {tab === "automation" && <AutomationHub />}
 
       {/* ── AUDIT TRAIL TAB ── */}
       {tab === "trail" && (

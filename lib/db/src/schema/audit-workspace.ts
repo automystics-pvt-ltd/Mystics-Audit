@@ -140,3 +140,36 @@ export type ComplianceEvent   = typeof complianceEventsTable.$inferSelect;
 export type AuditFinding      = typeof auditFindingsTable.$inferSelect;
 export type AuditQuery        = typeof auditQueriesTable.$inferSelect;
 export type AuditWorkingPaper = typeof auditWorkingPapersTable.$inferSelect;
+
+export const notificationsTable = pgTable("notifications", {
+  id:          serial("id").primaryKey(),
+  type:        text("type").notNull().default("info"),
+  title:       text("title").notNull(),
+  message:     text("message"),
+  entityType:  text("entity_type"),
+  entityId:    integer("entity_id"),
+  clientId:    integer("client_id"),
+  clientName:  text("client_name"),
+  status:      text("status").notNull().default("unread"),
+  priority:    text("priority").notNull().default("medium"),
+  actionUrl:   text("action_url"),
+  orgId:       integer("org_id").notNull().default(1),
+  createdAt:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const automationRulesTable = pgTable("automation_rules", {
+  id:          serial("id").primaryKey(),
+  name:        text("name").notNull(),
+  ruleType:    text("rule_type").notNull().default("reminder"),
+  description: text("description"),
+  config:      text("config").notNull().default("{}"),
+  isActive:    boolean("is_active").notNull().default(true),
+  clientId:    integer("client_id"),
+  orgId:       integer("org_id").notNull().default(1),
+  lastRunAt:   timestamp("last_run_at", { withTimezone: true }),
+  createdAt:   timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:   timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
+export type Notification    = typeof notificationsTable.$inferSelect;
+export type AutomationRule  = typeof automationRulesTable.$inferSelect;

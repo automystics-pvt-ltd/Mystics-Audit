@@ -3958,3 +3958,209 @@ export const DeleteAuditWorkingPaperParams = zod.object({
 export const DeleteAuditWorkingPaperResponse = zod.void()
 
 
+/**
+ * @summary List notifications
+ */
+export const ListNotificationsQueryParams = zod.object({
+  "status": zod.coerce.string().optional(),
+  "priority": zod.coerce.string().optional(),
+  "clientId": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListNotificationsResponseItem = zod.object({
+  "id": zod.number(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "message": zod.string().nullish(),
+  "entityType": zod.string().nullish(),
+  "entityId": zod.number().nullish(),
+  "clientId": zod.number().nullish(),
+  "clientName": zod.string().nullish(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "actionUrl": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string()
+})
+export const ListNotificationsResponse = zod.array(ListNotificationsResponseItem)
+
+
+/**
+ * @summary Get unread notification counts by priority
+ */
+export const GetNotificationSummaryResponse = zod.object({
+  "total": zod.number(),
+  "critical": zod.number(),
+  "high": zod.number(),
+  "medium": zod.number(),
+  "low": zod.number()
+})
+
+
+/**
+ * @summary Mark all notifications as read
+ */
+export const MarkAllNotificationsReadResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Mark notification as read
+ */
+export const MarkNotificationReadParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const MarkNotificationReadResponse = zod.object({
+  "id": zod.number(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "message": zod.string().nullish(),
+  "entityType": zod.string().nullish(),
+  "entityId": zod.number().nullish(),
+  "clientId": zod.number().nullish(),
+  "clientName": zod.string().nullish(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "actionUrl": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Dismiss notification
+ */
+export const DismissNotificationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DismissNotificationResponse = zod.object({
+  "id": zod.number(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "message": zod.string().nullish(),
+  "entityType": zod.string().nullish(),
+  "entityId": zod.number().nullish(),
+  "clientId": zod.number().nullish(),
+  "clientName": zod.string().nullish(),
+  "status": zod.string(),
+  "priority": zod.string(),
+  "actionUrl": zod.string().nullish(),
+  "orgId": zod.number(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete notification
+ */
+export const DeleteNotificationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteNotificationResponse = zod.void()
+
+
+/**
+ * @summary List automation rules
+ */
+export const ListAutomationRulesQueryParams = zod.object({
+  "ruleType": zod.coerce.string().optional()
+})
+
+export const ListAutomationRulesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "ruleType": zod.string(),
+  "description": zod.string().nullish(),
+  "config": zod.string(),
+  "isActive": zod.boolean(),
+  "clientId": zod.number().nullish(),
+  "orgId": zod.number(),
+  "lastRunAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAutomationRulesResponse = zod.array(ListAutomationRulesResponseItem)
+
+
+/**
+ * @summary Create automation rule
+ */
+export const CreateAutomationRuleBody = zod.object({
+  "name": zod.string(),
+  "ruleType": zod.string().optional(),
+  "description": zod.string().optional(),
+  "config": zod.string().optional(),
+  "isActive": zod.boolean().optional(),
+  "clientId": zod.number().optional()
+})
+
+export const CreateAutomationRuleResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "ruleType": zod.string(),
+  "description": zod.string().nullish(),
+  "config": zod.string(),
+  "isActive": zod.boolean(),
+  "clientId": zod.number().nullish(),
+  "orgId": zod.number(),
+  "lastRunAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update automation rule
+ */
+export const UpdateAutomationRuleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAutomationRuleBody = zod.object({
+  "name": zod.string(),
+  "ruleType": zod.string().optional(),
+  "description": zod.string().optional(),
+  "config": zod.string().optional(),
+  "isActive": zod.boolean().optional(),
+  "clientId": zod.number().optional()
+})
+
+export const UpdateAutomationRuleResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "ruleType": zod.string(),
+  "description": zod.string().nullish(),
+  "config": zod.string(),
+  "isActive": zod.boolean(),
+  "clientId": zod.number().nullish(),
+  "orgId": zod.number(),
+  "lastRunAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete automation rule
+ */
+export const DeleteAutomationRuleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAutomationRuleResponse = zod.void()
+
+
+/**
+ * @summary Manually trigger automation checks
+ */
+export const RunAutomationResponse = zod.object({
+  "created": zod.number(),
+  "types": zod.record(zod.string(), zod.number())
+})
+
+

@@ -2001,6 +2001,179 @@ paths:
         "204":
           description: Deleted
 
+  /api/notifications:
+    get:
+      operationId: listNotifications
+      tags: [automation]
+      summary: List notifications
+      parameters:
+        - { name: status,   in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+        - { name: clientId, in: query, schema: { type: integer } }
+        - { name: limit,    in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /api/notifications/summary:
+    get:
+      operationId: getNotificationSummary
+      tags: [automation]
+      summary: Get unread notification counts by priority
+      responses:
+        "200":
+          description: Summary counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSummary"
+
+  /api/notifications/mark-all-read:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [automation]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                required: [ok]
+
+  /api/notifications/{id}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [automation]
+      summary: Mark notification as read
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /api/notifications/{id}/dismiss:
+    post:
+      operationId: dismissNotification
+      tags: [automation]
+      summary: Dismiss notification
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /api/notifications/{id}:
+    delete:
+      operationId: deleteNotification
+      tags: [automation]
+      summary: Delete notification
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204":
+          description: Deleted
+
+  /api/automation-rules:
+    get:
+      operationId: listAutomationRules
+      tags: [automation]
+      summary: List automation rules
+      parameters:
+        - { name: ruleType, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: List of rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AutomationRule"
+    post:
+      operationId: createAutomationRule
+      tags: [automation]
+      summary: Create automation rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutomationRuleInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationRule"
+
+  /api/automation-rules/{id}:
+    put:
+      operationId: updateAutomationRule
+      tags: [automation]
+      summary: Update automation rule
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutomationRuleInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationRule"
+    delete:
+      operationId: deleteAutomationRule
+      tags: [automation]
+      summary: Delete automation rule
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204":
+          description: Deleted
+
+  /api/automation/run:
+    post:
+      operationId: runAutomation
+      tags: [automation]
+      summary: Manually trigger automation checks
+      responses:
+        "200":
+          description: Result summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created: { type: integer }
+                  types:
+                    type: object
+                    additionalProperties: { type: integer }
+                required: [created, types]
+
 components:
   schemas:
     HealthStatus:
@@ -3615,3 +3788,58 @@ components:
         conclusion: { type: string }
         period: { type: string }
       required: [clientId, title]
+
+    Notification:
+      type: object
+      properties:
+        id:         { type: integer }
+        type:       { type: string }
+        title:      { type: string }
+        message:    { type: ["string", "null"] }
+        entityType: { type: ["string", "null"] }
+        entityId:   { type: ["integer", "null"] }
+        clientId:   { type: ["integer", "null"] }
+        clientName: { type: ["string", "null"] }
+        status:     { type: string }
+        priority:   { type: string }
+        actionUrl:  { type: ["string", "null"] }
+        orgId:      { type: integer }
+        createdAt:  { type: string }
+      required: [id, type, title, status, priority, orgId, createdAt]
+
+    NotificationSummary:
+      type: object
+      properties:
+        total:    { type: integer }
+        critical: { type: integer }
+        high:     { type: integer }
+        medium:   { type: integer }
+        low:      { type: integer }
+      required: [total, critical, high, medium, low]
+
+    AutomationRule:
+      type: object
+      properties:
+        id:          { type: integer }
+        name:        { type: string }
+        ruleType:    { type: string }
+        description: { type: ["string", "null"] }
+        config:      { type: string }
+        isActive:    { type: boolean }
+        clientId:    { type: ["integer", "null"] }
+        orgId:       { type: integer }
+        lastRunAt:   { type: ["string", "null"] }
+        createdAt:   { type: string }
+        updatedAt:   { type: string }
+      required: [id, name, ruleType, config, isActive, orgId, createdAt, updatedAt]
+
+    AutomationRuleInput:
+      type: object
+      properties:
+        name:        { type: string }
+        ruleType:    { type: string }
+        description: { type: string }
+        config:      { type: string }
+        isActive:    { type: boolean }
+        clientId:    { type: integer }
+      required: [name]

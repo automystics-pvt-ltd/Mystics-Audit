@@ -11,7 +11,11 @@ import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useFY } from "@/contexts/fy-context";
 import { useAuth, MODULE_ACCESS } from "@/contexts/auth-context";
-import { useGetRecentActivity } from "@workspace/api-client-react";
+import {
+  useGetRecentActivity,
+  useListNotifications, useGetNotificationSummary,
+  useMarkAllNotificationsRead, useMarkNotificationRead, useDismissNotification,
+} from "@workspace/api-client-react";
 
 /* ─────────────────────────────────────────────────────── */
 /* Nav definition                                          */
@@ -358,21 +362,61 @@ function timeAgo(ts: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+const PRIORITY_CFG: Record<string, { dot: string; badge: string }> = {
+  critical: { dot: "bg-red-500",    badge: "bg-red-100 text-red-700" },
+  high:     { dot: "bg-orange-500", badge: "bg-orange-100 text-orange-700" },
+  medium:   { dot: "bg-amber-400",  badge: "bg-amber-100 text-amber-700" },
+  low:      { dot: "bg-gray-300",   badge: "bg-gray-100 text-gray-500" },
+};
+const NOTIF_TYPE_ICON: Record<string, { icon: typeof AlertCircle; color: string }> = {
+  overdue_task:       { icon: AlertCircle, color: "#ef4444" },
+  overdue_compliance: { icon: AlertCircle, color: "#dc2626" },
+  deadline_tomorrow:  { icon: Clock,       color: "#f97316" },
+  deadline_3days:     { icon: Clock,       color: "#f59e0b" },
+  deadline_7days:     { icon: Clock,       color: "#3b82f6" },
+  query_followup:     { icon: MessageSquare, color: "#7c3aed" },
+  unassigned_tasks:   { icon: User,        color: "#6b7280" },
+};
+
 function NotifBell() {
   const { fy } = useFY();
   const [open, setOpen] = useState(false);
+
+  /* Real notifications from automation system */
+  const { data: notifData, refetch: refetchNotifs } = useListNotifications({ status: "unread", limit: 20 } as any);
+  const { data: summaryData } = useGetNotificationSummary();
+  const markAllRead = useMarkAllNotificationsRead();
+  const markRead    = useMarkNotificationRead();
+  const dismiss     = useDismissNotification();
+
+  const notifs: any[] = (notifData as any) ?? [];
+  const summary: any  = summaryData ?? {};
+  const unreadCount   = Math.min(summary.total ?? 0, 99);
+
+  /* Fallback to recent activity if no automation notifications yet */
   const { data: activity } = useGetRecentActivity({ fy: fy.value });
-  const items: any[] = (activity as any) ?? [];
-  const unread = Math.min(items.length, 9);
+  const activityItems: any[] = (activity as any) ?? [];
+
+  function handleMarkAllRead() {
+    markAllRead.mutate({} as any, { onSuccess: () => refetchNotifs() });
+  }
+
+  function handleMarkRead(id: number) {
+    markRead.mutate({ id } as any, { onSuccess: () => refetchNotifs() });
+  }
+
+  function handleDismiss(id: number) {
+    dismiss.mutate({ id } as any, { onSuccess: () => refetchNotifs() });
+  }
 
   return (
     <div className="relative">
       <button onClick={() => setOpen(o => !o)}
         className="relative p-2 rounded-xl hover:bg-violet-50 transition-colors">
         <Bell className="h-5 w-5 text-gray-500" />
-        {unread > 0 && (
+        {unreadCount > 0 && (
           <span className="absolute top-1 right-1 min-w-[14px] h-[14px] rounded-full bg-red-500 flex items-center justify-center text-white text-[9px] font-bold px-0.5">
-            {unread}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
@@ -380,41 +424,102 @@ function NotifBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-11 z-50 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
+          <div className="absolute right-0 top-11 z-50 w-96 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
               <div>
                 <p className="text-sm font-semibold text-gray-800">Notifications</p>
-                <p className="text-[11px] text-gray-400">Recent activity · {fy.label}</p>
+                <p className="text-[11px] text-gray-400">
+                  {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}
+                  {summary.critical > 0 && <span className="ml-1.5 text-red-600 font-semibold">· {summary.critical} critical</span>}
+                </p>
               </div>
-              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <button onClick={handleMarkAllRead}
+                    className="text-[11px] text-violet-600 hover:text-violet-700 font-medium">Mark all read</button>
+                )}
+                <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+              </div>
             </div>
-            <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
-              {items.slice(0, 8).map((item: any, i: number) => {
-                const kind = item.entityType?.toLowerCase() ?? "default";
-                const { icon: Icon, color } = NOTIF_ICONS[kind] ?? NOTIF_ICONS.default;
+
+            <div className="max-h-96 overflow-y-auto divide-y divide-gray-50">
+              {/* Automation notifications */}
+              {notifs.slice(0, 12).map((n: any) => {
+                const pc  = PRIORITY_CFG[n.priority] ?? PRIORITY_CFG.medium;
+                const cfg = NOTIF_TYPE_ICON[n.type] ?? NOTIF_TYPE_ICON.overdue_task;
+                const Icon = cfg.icon;
                 return (
-                  <div key={i} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                  <div key={n.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors group">
                     <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                      style={{ background: `${color}18` }}>
-                      <Icon className="w-3.5 h-3.5" style={{ color }} />
+                      style={{ background: `${cfg.color}18` }}>
+                      <Icon className="w-3.5 h-3.5" style={{ color: cfg.color }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-800 leading-snug line-clamp-2">{item.description}</p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">{timeAgo(item.timestamp)}</p>
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full", pc.badge)}>
+                          {n.priority.toUpperCase()}
+                        </span>
+                        {n.clientName && <span className="text-[10px] text-gray-400">{n.clientName}</span>}
+                      </div>
+                      <p className="text-xs font-medium text-gray-800 leading-snug">{n.title}</p>
+                      {n.message && <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{n.message}</p>}
+                      <p className="text-[10px] text-gray-300 mt-0.5">{timeAgo(n.createdAt)}</p>
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <button onClick={() => handleMarkRead(n.id)} title="Mark read"
+                        className="p-1 rounded hover:bg-green-100 text-gray-400 hover:text-green-600">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => handleDismiss(n.id)} title="Dismiss"
+                        className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 );
               })}
-              {items.length === 0 && (
-                <div className="px-4 py-8 text-center text-sm text-gray-400">No recent activity</div>
+
+              {/* Divider + recent activity feed when no automation notifs */}
+              {notifs.length === 0 && activityItems.length > 0 && (
+                <>
+                  <div className="px-4 py-2 text-[10px] text-gray-400 font-semibold uppercase tracking-wide bg-gray-50">Recent Activity</div>
+                  {activityItems.slice(0, 5).map((item: any, i: number) => {
+                    const kind = item.entityType?.toLowerCase() ?? "default";
+                    const { icon: Icon, color } = NOTIF_ICONS[kind] ?? NOTIF_ICONS.default;
+                    return (
+                      <div key={i} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                          style={{ background: `${color}18` }}>
+                          <Icon className="w-3.5 h-3.5" style={{ color }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-800 leading-snug line-clamp-2">{item.description}</p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">{timeAgo(item.timestamp)}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {notifs.length === 0 && activityItems.length === 0 && (
+                <div className="px-4 py-8 text-center">
+                  <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-400" />
+                  <p className="text-sm text-gray-400">All caught up!</p>
+                  <p className="text-[11px] text-gray-300 mt-0.5">No pending alerts or notifications</p>
+                </div>
               )}
             </div>
-            <div className="px-4 py-2.5 border-t border-gray-100">
-              <Link href="/audit-logs">
+
+            <div className="px-4 py-2.5 border-t border-gray-100 flex items-center justify-between">
+              <Link href="/auditor?tab=automation">
                 <div onClick={() => setOpen(false)} className="text-xs text-violet-600 hover:text-violet-700 font-medium cursor-pointer flex items-center gap-1">
-                  View all activity <ArrowRight className="w-3 h-3" />
+                  View Automation Hub <ArrowRight className="w-3 h-3" />
+                </div>
+              </Link>
+              <Link href="/audit-logs">
+                <div onClick={() => setOpen(false)} className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer flex items-center gap-1">
+                  Audit trail <ArrowRight className="w-3 h-3" />
                 </div>
               </Link>
             </div>

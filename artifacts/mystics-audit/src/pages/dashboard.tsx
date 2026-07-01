@@ -126,10 +126,10 @@ function MiniStat({ icon: Icon, label, value, color, href }: {
         <Icon className="w-5 h-5" style={{ color }} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-400 font-medium">{label}</p>
-        <p className="text-lg font-extrabold text-gray-900">{value}</p>
+        <p className="text-xs text-gray-400 font-medium leading-tight">{label}</p>
+        <p className="text-sm font-extrabold text-gray-900 mt-0.5">{value}</p>
       </div>
-      {href && <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-violet-500 transition-colors" />}
+      {href && <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-violet-500 transition-colors flex-shrink-0" />}
     </div>
   );
   return href ? <Link href={href}>{inner}</Link> : inner;
@@ -141,11 +141,11 @@ function QuickAction({ icon: Icon, label, color, href }: {
 }) {
   return (
     <Link href={href}>
-      <div className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-100 hover:border-violet-200 hover:shadow-sm transition-all cursor-pointer group">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}15` }}>
+      <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 hover:border-violet-200 hover:shadow-sm transition-all cursor-pointer group h-full">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
           <Icon className="w-5 h-5" style={{ color }} />
         </div>
-        <p className="text-xs font-semibold text-gray-600 group-hover:text-violet-700 text-center leading-tight">{label}</p>
+        <p className="text-xs font-semibold text-gray-600 group-hover:text-violet-700 text-center leading-tight line-clamp-2 h-8 flex items-center justify-center">{label}</p>
       </div>
     </Link>
   );

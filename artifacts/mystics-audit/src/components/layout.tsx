@@ -16,17 +16,19 @@ import {
   useListNotifications, useGetNotificationSummary,
   useMarkAllNotificationsRead, useMarkNotificationRead, useDismissNotification,
 } from "@workspace/api-client-react";
+import React from "react";
+import { navigate } from "wouter/use-browser-location";
 
 /* ─────────────────────────────────────────────────────── */
 /* Nav definition                                          */
 /* ─────────────────────────────────────────────────────── */
 type NavChild = { name: string; path: string };
-type NavLeaf  = { name: string; path: string; icon: React.FC<{ className?: string }>; module?: string };
-type NavGroup = { name: string; icon: React.FC<{ className?: string }>; module?: string; children: NavChild[] };
+type NavLeaf  = { name: string; path: string; icon: React.FC<{ className?: string }>; module?: string; section?: string };
+type NavGroup = { name: string; icon: React.FC<{ className?: string }>; module?: string; children: NavChild[]; section?: string };
 type NavEntry = NavLeaf | NavGroup;
 
 const NAV: NavEntry[] = [
-  { name: "Dashboard",  path: "/dashboard",  icon: LayoutDashboard, module: "dashboard" },
+  { name: "Dashboard",  path: "/dashboard",  icon: LayoutDashboard, module: "dashboard", section: "CORE" },
   { name: "Accounting", icon: BookOpen, module: "accounting", children: [
     { name: "Chart of Accounts", path: "/accounts" },
     { name: "Journal Entries",   path: "/journals" },
@@ -45,19 +47,19 @@ const NAV: NavEntry[] = [
     { name: "Goods Receipts",  path: "/purchases/grn" },
     { name: "AP Aging",        path: "/vendors/ap-aging" },
   ]},
-  { name: "Banking",   path: "/bank",            icon: Landmark,           module: "banking"   },
+  { name: "Banking",   path: "/bank",            icon: Landmark,           module: "banking", section: "OPERATIONS" },
   { name: "Expenses",  path: "/expenses",        icon: ReceiptIndianRupee, module: "expenses"  },
   { name: "Inventory", path: "/inventory",       icon: PackageSearch,      module: "inventory" },
   { name: "Documents", path: "/documents",       icon: BookOpen,           module: "accounting" },
-  { name: "Financial Tracking", path: "/finance/overview", icon: PieChart, module: "reports" },
-  { name: "Auditor", path: "/auditor",           icon: Shield,             module: "reports" },
-  { name: "GST", icon: Calculator, module: "gst", children: [
+  { name: "GST", icon: Calculator, module: "gst", section: "COMPLIANCE", children: [
     { name: "GST Documents",  path: "/gst/documents" },
     { name: "ITC Ledger",     path: "/gst/itc-ledger" },
     { name: "GSTR-1",         path: "/gst/gstr1" },
     { name: "GSTR-3B",        path: "/gst/gstr3b" },
     { name: "Reconciliation", path: "/gst/reconciliation" },
   ]},
+  { name: "Auditor", path: "/auditor",           icon: Shield,             module: "reports" },
+  { name: "Financial Tracking", path: "/finance/overview", icon: PieChart, module: "reports", section: "ANALYTICS" },
   { name: "Budgets", path: "/budgets", icon: PiggyBank, module: "budgets" },
   { name: "Reports", icon: PieChart, module: "reports", children: [
     { name: "Profit & Loss",          path: "/reports/profit-loss" },
@@ -71,7 +73,7 @@ const NAV: NavEntry[] = [
     { name: "Customer Collections",   path: "/reports/customer-collections" },
     { name: "Budget Variance",        path: "/reports/budget-variance" },
   ]},
-  { name: "Settings", icon: Settings, module: "users", children: [
+  { name: "Settings", icon: Settings, module: "users", section: "ADMIN", children: [
     { name: "Company Profile",  path: "/settings" },
     { name: "Users",            path: "/users" },
     { name: "Billing",          path: "/billing" },
@@ -140,7 +142,7 @@ function NavItem({ item, currentPath }: { item: NavEntry; currentPath: string })
         <div className={cn(
           "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer transition-colors mx-1 mb-0.5 group",
           active
-            ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
+            ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium border-l-2 border-sidebar-primary-foreground/40"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         )}>
           <Icon className={cn("w-4 h-4 flex-shrink-0 transition-colors",
@@ -174,7 +176,7 @@ function NavItem({ item, currentPath }: { item: NavEntry; currentPath: string })
         <span className="flex-1 text-left truncate">{group.name}</span>
         <ChevronDown className={cn("w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 text-sidebar-foreground/30", open && "rotate-180")} />
       </button>
-      {open && (
+      <div className={cn("overflow-hidden transition-all duration-200", open ? "max-h-96" : "max-h-0")}>
         <div className="ml-5 mt-0.5 pl-3 border-l border-sidebar-border/50 space-y-0.5 mb-1">
           {group.children.map(child => {
             const childActive = currentPath === child.path || currentPath.startsWith(child.path + "/");
@@ -183,7 +185,7 @@ function NavItem({ item, currentPath }: { item: NavEntry; currentPath: string })
                 <div className={cn(
                   "flex items-center gap-2 px-3 py-2 rounded-md text-[13px] cursor-pointer transition-colors",
                   childActive
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium border-l-2 border-sidebar-primary-foreground/40"
                     : "text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 )}>
                   <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0",
@@ -195,7 +197,7 @@ function NavItem({ item, currentPath }: { item: NavEntry; currentPath: string })
             );
           })}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -797,7 +799,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       )}>
 
         {/* Brand */}
-        <div className="flex items-center gap-2.5 px-5 py-5 border-b border-sidebar-border flex-shrink-0">
+        <div className="flex items-center gap-2.5 px-5 py-5 border-b border-sidebar-border flex-shrink-0 cursor-pointer" onClick={() => navigate("/dashboard")}>
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sidebar-primary flex-shrink-0">
             <Shield className="w-4 h-4 text-sidebar-primary-foreground" />
           </div>
@@ -819,8 +821,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-3 px-2 sidebar-scroll">
-          {visibleNav.map(item => <NavItem key={item.name} item={item} currentPath={location} />)}
+        <nav className="flex-1 overflow-y-auto py-3 px-2 sidebar-scroll space-y-1">
+          {visibleNav.map((item, index) => {
+            const showSection = item.section && (index === 0 || visibleNav[index - 1].section !== item.section);
+            return (
+              <React.Fragment key={item.name}>
+                {showSection && (
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/30 px-4 pt-3 pb-1">
+                    {item.section}
+                  </p>
+                )}
+                <NavItem item={item} currentPath={location} />
+              </React.Fragment>
+            );
+          })}
         </nav>
 
         {/* Bottom user card */}
@@ -869,7 +883,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto bg-background p-4 sm:p-6 lg:p-8 page-enter">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

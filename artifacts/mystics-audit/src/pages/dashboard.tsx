@@ -5,6 +5,8 @@ import {
   useGetAgingSummary,
   useGetRecentActivity,
 } from "@workspace/api-client-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { SkeletonRows } from "@/components/ui/skeleton-rows";
 import { formatCurrency, formatPercentage } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useLocation } from "wouter";
@@ -187,11 +189,8 @@ export default function Dashboard() {
     <div className="space-y-5">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Welcome back, John — here's {fy.label} at a glance.</p>
-        </div>
+      <div className="flex items-center justify-between animate-in fade-in duration-300">
+        <PageHeader title="Dashboard" subtitle={`Welcome back, John — here's ${fy.label} at a glance.`} />
         <div className="text-xs text-gray-400 font-medium">{fy.from} → {fy.to}</div>
       </div>
 

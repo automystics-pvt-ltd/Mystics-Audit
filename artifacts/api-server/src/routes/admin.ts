@@ -251,6 +251,32 @@ router.patch("/admin/tenants/:id/modules", async (req, res) => {
   } catch (e) { err(res, e); }
 });
 
+/* ── Tenant custom pricing ── */
+router.get("/admin/tenants/:id/custom-pricing", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [t] = await db.select({ customPricing: tenantsTable.customPricing, plan: tenantsTable.plan })
+      .from(tenantsTable).where(eq(tenantsTable.id, id));
+    if (!t) { res.status(404).json({ error: "Not found" }); return; }
+    ok(res, t.customPricing ?? { enabled: false, plans: {} });
+  } catch (e) { err(res, e); }
+});
+
+router.put("/admin/tenants/:id/custom-pricing", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { enabled, plans } = req.body as {
+      enabled: boolean;
+      plans: Record<string, { monthlyPrice: number; annualPrice: number }>;
+    };
+    const customPricing = { enabled: !!enabled, plans: plans ?? {} };
+    const [t] = await db.update(tenantsTable).set({ customPricing }).where(eq(tenantsTable.id, id)).returning();
+    if (!t) { res.status(404).json({ error: "Not found" }); return; }
+    await auditLog("platform@mystics.app", "super_admin", "CUSTOM_PRICING_UPDATE", "tenant", id, t.orgName, { enabled, plans });
+    ok(res, t.customPricing);
+  } catch (e) { err(res, e); }
+});
+
 /* ── Tenant users ── */
 router.get("/admin/tenants/:id/users", async (req, res) => {
   try {

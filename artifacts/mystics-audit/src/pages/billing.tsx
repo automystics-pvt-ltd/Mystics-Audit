@@ -87,7 +87,15 @@ export default function BillingPage() {
   const usersCount = data?.usersCount ?? 0;
   const statusCfg = STATUS_CONFIG[sub?.status ?? "trial"] ?? STATUS_CONFIG.trial;
 
-  const chosenPlan = PLANS.find(p => p.slug === (selectedPlan ?? sub?.planSlug)) ?? PLANS[0];
+  /* Effective plan list — merged with custom pricing from server */
+  const pricingConfig: Record<string, any> = data?.pricingConfig ?? {};
+  const effectivePlans = PLANS.map(p => {
+    const override = pricingConfig[p.slug];
+    if (!override) return p;
+    return { ...p, monthlyPrice: override.monthlyPrice, annualPrice: override.annualPrice, isCustom: override.isCustom };
+  });
+
+  const chosenPlan = effectivePlans.find(p => p.slug === (selectedPlan ?? sub?.planSlug)) ?? effectivePlans[0];
   const chosenPrice = billingCycle === "annual" ? chosenPlan.annualPrice : chosenPlan.monthlyPrice;
   const chosenTax   = Math.round(chosenPrice * 0.18);
   const chosenTotal = chosenPrice + chosenTax;
@@ -97,7 +105,7 @@ export default function BillingPage() {
     setPayError(null);
     try {
       const planSlug = selectedPlan ?? sub?.planSlug ?? "starter";
-      const plan = PLANS.find(p => p.slug === planSlug) ?? PLANS[0];
+      const plan = effectivePlans.find(p => p.slug === planSlug) ?? effectivePlans[0];
       const amount = billingCycle === "annual" ? plan.annualPrice : plan.monthlyPrice;
 
       // 1. Create order on server
@@ -241,7 +249,7 @@ export default function BillingPage() {
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              {PLANS.map(p => {
+              {effectivePlans.map(p => {
                 const price = billingCycle === "annual" ? p.annualPrice : p.monthlyPrice;
                 const isCurrentPlan = sub?.planSlug === p.slug;
                 const isSelected = selectedPlan === p.slug;
@@ -252,13 +260,17 @@ export default function BillingPage() {
                       isSelected ? "border-violet-500 bg-violet-50 shadow-violet-100 shadow-lg" :
                         isCurrentPlan ? "border-gray-200 bg-gray-50" : "border-gray-100 bg-white hover:border-violet-200"
                     )}>
-                    {p.badge && (
-                      <span className="inline-block text-[10px] font-bold text-violet-600 bg-violet-100 px-2 py-0.5 rounded-full mb-2">{p.badge}</span>
-                    )}
-                    {isCurrentPlan && !p.badge && (
-                      <span className="inline-block text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full mb-2">Current Plan</span>
-                    )}
-                    {!p.badge && !isCurrentPlan && <div className="h-5 mb-2" />}
+                    <div className="flex items-center gap-1.5 flex-wrap mb-2 min-h-5">
+                      {p.badge && (
+                        <span className="text-[10px] font-bold text-violet-600 bg-violet-100 px-2 py-0.5 rounded-full">{p.badge}</span>
+                      )}
+                      {isCurrentPlan && (
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">Current Plan</span>
+                      )}
+                      {(p as any).isCustom && (
+                        <span className="text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Custom Price</span>
+                      )}
+                    </div>
                     <h3 className="font-bold text-gray-900 text-lg">{p.label}</h3>
                     <div className="mt-2 mb-4">
                       <span className="text-2xl font-extrabold text-gray-900">{fmt(price)}</span>

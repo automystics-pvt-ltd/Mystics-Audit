@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Building2, Users, CreditCard, Shield, Lock, Unlock, KeyRound,
   AlertTriangle, CheckCircle2, Clock, Ban, LayoutGrid, Plus, Eye, EyeOff,
-  RefreshCw, Zap, Mail, ToggleLeft, ToggleRight,
+  RefreshCw, Zap, Mail, Tag, Save,
 } from "lucide-react";
 
 const ALL_MODULES = ["dashboard","accounts","invoicing","gst","receivables","payables","bank","expenses","purchases","inventory","reports","audit","budgets","users","settings"];
@@ -52,6 +52,14 @@ export default function TenantDetail() {
   const [tempPass, setTempPass] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [resetUserId, setResetUserId] = useState<number|null>(null);
+
+  /* Custom pricing state */
+  const [cpEnabled, setCpEnabled] = useState<boolean | null>(null);
+  const [cpPlans, setCpPlans] = useState<Record<string, { monthlyPrice: string; annualPrice: string }>>({
+    starter:      { monthlyPrice: "", annualPrice: "" },
+    professional: { monthlyPrice: "", annualPrice: "" },
+    enterprise:   { monthlyPrice: "", annualPrice: "" },
+  });
 
   const { data: tenant, isLoading } = useQuery({
     queryKey: ["admin-tenant", id],
@@ -129,6 +137,23 @@ export default function TenantDetail() {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  /* Custom pricing query + mutation */
+  const { data: customPricingData, refetch: refetchCp } = useQuery({
+    queryKey: ["admin-tenant-custom-pricing", id],
+    queryFn: () => api.get<any>(`/admin/tenants/${id}/custom-pricing`),
+    enabled: !!id,
+  });
+
+  const cpMut = useMutation({
+    mutationFn: (body: any) => api.put(`/admin/tenants/${id}/custom-pricing`, body),
+    onSuccess: () => { refetchCp(); toast({ title: "Custom pricing saved" }); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  /* Sync server data → local state once loaded */
+  const serverCpEnabled = customPricingData?.enabled ?? false;
+  const isEnabled = cpEnabled ?? serverCpEnabled;
+
   const provisionMut = useMutation({
     mutationFn: (body: any) => api.post<any>(`/admin/tenants/${id}/users`, body),
     onSuccess: (d) => {
@@ -195,6 +220,7 @@ export default function TenantDetail() {
         <TabsList className="h-8">
           <TabsTrigger value="license" className="text-xs h-7">License & Modules</TabsTrigger>
           <TabsTrigger value="users" className="text-xs h-7">Users ({usersData?.users?.length ?? 0})</TabsTrigger>
+          <TabsTrigger value="pricing" className="text-xs h-7">Custom Pricing</TabsTrigger>
           <TabsTrigger value="email" className="text-xs h-7">Email Config</TabsTrigger>
           <TabsTrigger value="info" className="text-xs h-7">Details</TabsTrigger>
         </TabsList>
@@ -322,6 +348,124 @@ export default function TenantDetail() {
                 </tbody>
               </table>
             </div>
+          </Card>
+        </TabsContent>
+
+        {/* Custom Pricing Tab */}
+        <TabsContent value="pricing" className="mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Tag className="w-4 h-4 text-primary" />Custom Pricing for {tenant.orgName}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <p className="text-sm text-muted-foreground">
+                Override standard plan prices for this tenant. When enabled, they will see and pay these custom amounts instead of the global pricing. Leave a field blank to keep the standard price for that plan.
+              </p>
+
+              {/* Enable toggle */}
+              <div className="flex items-center justify-between p-4 border rounded-xl bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isEnabled ? "bg-amber-100" : "bg-gray-200"}`}>
+                    <Tag className={`w-5 h-5 ${isEnabled ? "text-amber-600" : "text-gray-400"}`} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Custom Pricing</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isEnabled ? "Tenant sees custom prices below" : "Tenant sees standard global prices"}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={isEnabled}
+                  onCheckedChange={v => setCpEnabled(v)}
+                />
+              </div>
+
+              {/* Per-plan price inputs */}
+              {([
+                { slug: "starter", label: "Starter", stdMonthly: 2999, stdAnnual: 28790 },
+                { slug: "professional", label: "Professional", stdMonthly: 7999, stdAnnual: 76790 },
+                { slug: "enterprise", label: "Enterprise", stdMonthly: 19999, stdAnnual: 191990 },
+              ] as const).map(plan => {
+                const serverOverride = customPricingData?.plans?.[plan.slug];
+                const localVals = cpPlans[plan.slug];
+                const monthlyVal = localVals.monthlyPrice !== "" ? localVals.monthlyPrice : (serverOverride?.monthlyPrice ?? "");
+                const annualVal  = localVals.annualPrice  !== "" ? localVals.annualPrice  : (serverOverride?.annualPrice  ?? "");
+                return (
+                  <div key={plan.slug} className={`border rounded-xl p-4 space-y-3 ${!isEnabled ? "opacity-40 pointer-events-none" : ""}`}>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold">{plan.label}</p>
+                      {serverOverride && (
+                        <span className="text-[10px] bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">Custom active</span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Monthly Price (₹)</Label>
+                        <div className="relative mt-1">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₹</span>
+                          <Input type="number" min={0} className="h-8 text-sm pl-6"
+                            placeholder={`${plan.stdMonthly} (standard)`}
+                            value={monthlyVal}
+                            onChange={e => setCpPlans(prev => ({ ...prev, [plan.slug]: { ...prev[plan.slug], monthlyPrice: e.target.value } }))} />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Annual Price (₹)</Label>
+                        <div className="relative mt-1">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₹</span>
+                          <Input type="number" min={0} className="h-8 text-sm pl-6"
+                            placeholder={`${plan.stdAnnual} (standard)`}
+                            value={annualVal}
+                            onChange={e => setCpPlans(prev => ({ ...prev, [plan.slug]: { ...prev[plan.slug], annualPrice: e.target.value } }))} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Save */}
+              <Button
+                className="w-full gap-2"
+                disabled={cpMut.isPending}
+                onClick={() => {
+                  const serverPlans = customPricingData?.plans ?? {};
+                  const merged: Record<string, { monthlyPrice: number; annualPrice: number }> = {};
+                  for (const slug of ["starter", "professional", "enterprise"]) {
+                    const lv = cpPlans[slug];
+                    const sv = serverPlans[slug] ?? {};
+                    const mp = lv.monthlyPrice !== "" ? Number(lv.monthlyPrice) : (sv.monthlyPrice ?? null);
+                    const ap = lv.annualPrice  !== "" ? Number(lv.annualPrice)  : (sv.annualPrice  ?? null);
+                    if (mp !== null && ap !== null) merged[slug] = { monthlyPrice: mp, annualPrice: ap };
+                    else if (mp !== null) merged[slug] = { monthlyPrice: mp, annualPrice: sv.annualPrice ?? mp * 9.6 };
+                    else if (ap !== null) merged[slug] = { monthlyPrice: sv.monthlyPrice ?? Math.round(ap / 9.6), annualPrice: ap };
+                    else if (sv.monthlyPrice !== undefined) merged[slug] = sv;
+                  }
+                  cpMut.mutate({ enabled: isEnabled, plans: merged });
+                }}>
+                {cpMut.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Save Custom Pricing
+              </Button>
+
+              {/* Current state summary */}
+              {customPricingData && (
+                <div className="text-xs text-muted-foreground space-y-1 pt-1 border-t">
+                  <p className="font-semibold mb-1">Saved overrides</p>
+                  {Object.entries(customPricingData.plans ?? {}).length === 0
+                    ? <p>No overrides saved yet.</p>
+                    : Object.entries(customPricingData.plans as Record<string, { monthlyPrice: number; annualPrice: number }>).map(([slug, vals]) => (
+                        <div key={slug} className="flex justify-between">
+                          <span className="capitalize">{slug}</span>
+                          <span>₹{vals.monthlyPrice?.toLocaleString("en-IN")}/mo · ₹{vals.annualPrice?.toLocaleString("en-IN")}/yr</span>
+                        </div>
+                      ))
+                  }
+                </div>
+              )}
+            </CardContent>
           </Card>
         </TabsContent>
 

@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import {
   organizationsTable, usersTable,
   subscriptionsTable, paymentsTable, platformInvoicesTable,
+  tenantsTable,
 } from "@workspace/db";
 import { eq, desc, count, sql } from "drizzle-orm";
 
@@ -384,7 +385,25 @@ router.get("/billing/current", async (req, res) => {
       .where(eq(paymentsTable.orgId, orgId)).orderBy(desc(paymentsTable.createdAt));
     const users = await db.select({ n: count() }).from(usersTable).where(eq(usersTable.orgId, orgId));
     const plan = sub ? (PLAN_CONFIG[sub.planSlug] ?? PLAN_CONFIG.trial) : PLAN_CONFIG.trial;
-    res.json({ sub, org, plan, invoices, payments, usersCount: Number(users[0]?.n ?? 0) });
+
+    /* Fetch custom pricing for this tenant (tenants.id = orgId in this setup) */
+    const [tenantRow] = await db.select({ customPricing: tenantsTable.customPricing })
+      .from(tenantsTable).where(eq(tenantsTable.id, orgId));
+    const cp = tenantRow?.customPricing;
+
+    /* Build effective per-plan pricing: merge custom overrides over standard config */
+    const pricingConfig: Record<string, { label: string; monthlyPrice: number; annualPrice: number; maxUsers: number; maxModules: number; features: string[]; isCustom: boolean }> = {};
+    for (const [slug, def] of Object.entries(PLAN_CONFIG)) {
+      const override = cp?.enabled ? (cp.plans[slug] ?? null) : null;
+      pricingConfig[slug] = {
+        ...def,
+        monthlyPrice: override?.monthlyPrice ?? def.monthlyPrice,
+        annualPrice:  override?.annualPrice  ?? def.annualPrice,
+        isCustom:     !!override,
+      };
+    }
+
+    res.json({ sub, org, plan, invoices, payments, usersCount: Number(users[0]?.n ?? 0), pricingConfig, customPricingEnabled: cp?.enabled ?? false });
   } catch (err) { req.log.error(err); res.status(500).json({ error: "Failed" }); }
 });
 

@@ -31,6 +31,10 @@ export const tenantsTable = pgTable("tenants", {
   totalUsers:      integer("total_users").default(0),
   enabledModules:  jsonb("enabled_modules").$type<string[]>().default([]),
   featureOverrides:jsonb("feature_overrides").$type<Record<string,boolean>>().default({}),
+  customPricing:   jsonb("custom_pricing").$type<{
+    enabled: boolean;
+    plans: Record<string, { monthlyPrice: number; annualPrice: number }>;
+  }>().default({ enabled: false, plans: {} }),
   adminEmail:      text("admin_email"),
   notes:           text("notes"),
   trialEnd:        timestamp("trial_end", { withTimezone: true }),

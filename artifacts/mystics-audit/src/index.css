@@ -108,15 +108,15 @@
   --chart-4: 43 74% 66%;
   --chart-5: 27 87% 67%;
 
-  /* Sidebar — white background, violet active */
-  --sidebar: 0 0% 100%;
-  --sidebar-foreground: 222 25% 35%;
-  --sidebar-border: 220 20% 93%;
-  --sidebar-primary: 263 70% 50%;
+  /* Sidebar — dark navy (matches Platform Admin design) */
+  --sidebar: 222 47% 14%;
+  --sidebar-foreground: 220 14% 90%;
+  --sidebar-border: 222 47% 21%;
+  --sidebar-primary: 263 70% 56%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 263 50% 96%;
-  --sidebar-accent-foreground: 263 60% 42%;
-  --sidebar-ring: 263 70% 50%;
+  --sidebar-accent: 222 47% 22%;
+  --sidebar-accent-foreground: 220 14% 96%;
+  --sidebar-ring: 263 70% 56%;
 
   --button-outline: rgba(0,0,0, 0.10);
   --badge-outline: rgba(0,0,0, 0.05);

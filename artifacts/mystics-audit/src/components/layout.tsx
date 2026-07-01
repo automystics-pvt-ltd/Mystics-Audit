@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, BookOpen, FileText, ShoppingCart, Landmark,
   ReceiptIndianRupee, PackageSearch, Calculator, PiggyBank, PieChart,
-  Settings, ChevronDown, Menu, Bell, Search, HelpCircle, Shield,
+  Settings, ChevronDown, ChevronRight, Menu, Bell, Search, HelpCircle, Shield,
   LogOut, ExternalLink, X, Plus, ArrowRight, Keyboard, LifeBuoy,
   BookOpen as DocIcon, MessageSquare, Activity, Clock, CheckCircle2,
   AlertCircle, User,
@@ -134,11 +134,18 @@ function NavItem({ item, currentPath }: { item: NavEntry; currentPath: string })
     return (
       <Link href={item.path}>
         <div className={cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all duration-150 mx-1 mb-0.5",
-          active ? "text-white shadow-md" : "text-gray-500 hover:bg-violet-50 hover:text-violet-700",
-        )} style={active ? { background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)" } : undefined}>
-          <Icon className={cn("h-[18px] w-[18px] flex-shrink-0", active ? "text-white" : "text-violet-500")} />
+          "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer transition-colors mx-1 mb-0.5 group",
+          active
+            ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        )}>
+          <Icon className={cn("w-4 h-4 flex-shrink-0 transition-colors",
+            active
+              ? "text-sidebar-primary-foreground"
+              : "text-sidebar-foreground/50 group-hover:text-sidebar-accent-foreground",
+          )} />
           <span className="flex-1 truncate">{item.name}</span>
+          {active && <ChevronRight className="w-3 h-3 opacity-60 flex-shrink-0" />}
         </div>
       </Link>
     );
@@ -150,24 +157,34 @@ function NavItem({ item, currentPath }: { item: NavEntry; currentPath: string })
     <div className="mb-0.5">
       <button onClick={() => setOpen(o => !o)}
         className={cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 mx-1 hover:bg-violet-50 hover:text-violet-700",
-          hasActiveChild ? "text-violet-700 bg-violet-50" : "text-gray-500",
+          "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors mx-1 group",
+          hasActiveChild
+            ? "text-sidebar-accent-foreground bg-sidebar-accent/60 font-medium"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         )} style={{ width: "calc(100% - 8px)" }}>
-        <GroupIcon className={cn("h-[18px] w-[18px] flex-shrink-0", hasActiveChild ? "text-violet-600" : "text-violet-500")} />
+        <GroupIcon className={cn("w-4 h-4 flex-shrink-0 transition-colors",
+          hasActiveChild
+            ? "text-sidebar-accent-foreground"
+            : "text-sidebar-foreground/50 group-hover:text-sidebar-accent-foreground",
+        )} />
         <span className="flex-1 text-left truncate">{group.name}</span>
-        <ChevronDown className={cn("h-3.5 w-3.5 flex-shrink-0 transition-transform duration-200 text-gray-400", open && "rotate-180")} />
+        <ChevronDown className={cn("w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 text-sidebar-foreground/30", open && "rotate-180")} />
       </button>
       {open && (
-        <div className="ml-5 mt-0.5 pl-3 border-l-2 border-violet-100 space-y-0.5 mb-1">
+        <div className="ml-5 mt-0.5 pl-3 border-l border-sidebar-border/50 space-y-0.5 mb-1">
           {group.children.map(child => {
             const childActive = currentPath === child.path || currentPath.startsWith(child.path + "/");
             return (
               <Link key={child.path} href={child.path}>
                 <div className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] cursor-pointer transition-all duration-150",
-                  childActive ? "font-semibold text-white shadow-sm" : "text-gray-500 hover:bg-violet-50 hover:text-violet-700 font-medium",
-                )} style={childActive ? { background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)" } : undefined}>
-                  <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", childActive ? "bg-white" : "bg-violet-300")} />
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-[13px] cursor-pointer transition-colors",
+                  childActive
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
+                    : "text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                )}>
+                  <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0",
+                    childActive ? "bg-sidebar-primary-foreground/70" : "bg-sidebar-foreground/20",
+                  )} />
                   {child.name}
                 </div>
               </Link>
@@ -575,7 +592,7 @@ function HeaderProfile() {
 function SidebarFYLabel() {
   const { fy } = useFY();
   return (
-    <p className="text-[10px] text-gray-300 text-center mt-2 font-medium">
+    <p className="text-[10px] text-sidebar-foreground/30 text-center mt-2 font-medium">
       Mystics Audit · {fy.label}
     </p>
   );
@@ -592,37 +609,42 @@ function UserMenu() {
 
   return (
     <div className="relative">
-      <button onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-3 p-2.5 rounded-xl cursor-pointer hover:bg-violet-50 transition-colors">
-        <div className="h-9 w-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-          style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-sidebar-accent transition-colors cursor-pointer group"
+        title="Account options"
+      >
+        <div className="w-7 h-7 rounded-full bg-sidebar-primary flex items-center justify-center text-xs font-semibold text-sidebar-primary-foreground flex-shrink-0">
           {user?.avatar ?? "JD"}
         </div>
         <div className="flex-1 min-w-0 text-left">
-          <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{user?.name ?? "John Doe"}</p>
-          <p className="text-[11px] text-gray-400 truncate">{user?.role ?? "Super Admin"}</p>
+          <p className="text-xs font-medium text-sidebar-accent-foreground truncate leading-snug">{user?.name ?? "John Doe"}</p>
+          <p className="text-[10px] text-sidebar-foreground/50 truncate">{user?.email ?? ""}</p>
         </div>
-        <ChevronDown className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+        <LogOut className="w-3.5 h-3.5 text-sidebar-foreground/40 group-hover:text-red-400 transition-colors flex-shrink-0" />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-full left-0 right-0 mb-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-1 overflow-hidden">
-            <div className="px-3 py-2 border-b border-gray-100">
-              <p className="text-xs font-semibold text-gray-700">{user?.orgName}</p>
-              <p className="text-[11px] text-gray-400">{user?.email}</p>
+          <div className="absolute bottom-full left-0 right-0 mb-2 z-50 bg-white border border-gray-200 rounded-xl shadow-xl py-1 overflow-hidden">
+            <div className="px-3 py-2.5 border-b border-gray-100 bg-gray-50/60">
+              <p className="text-xs font-semibold text-gray-800">{user?.name}</p>
+              <p className="text-[11px] text-gray-500">{user?.orgName}</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{user?.email}</p>
             </div>
             {user?.isPlatformAdmin && (
               <Link href="/platform-admin">
-                <div onClick={() => setOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 cursor-pointer font-medium">
-                  <Shield className="w-3.5 h-3.5" /> Platform Admin
+                <div onClick={() => setOpen(false)} className="flex items-center gap-2 px-3 py-2.5 text-sm text-indigo-600 hover:bg-indigo-50 cursor-pointer font-medium transition-colors">
+                  <Shield className="w-3.5 h-3.5" />
+                  Platform Admin
                   <ExternalLink className="w-3 h-3 ml-auto" />
                 </div>
               </Link>
             )}
             <button onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
-              <LogOut className="w-3.5 h-3.5" /> Sign Out
+              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+              <LogOut className="w-3.5 h-3.5" />
+              Sign Out
             </button>
           </div>
         </>
@@ -663,42 +685,41 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* ── Sidebar ── */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 flex flex-col bg-white transition-transform duration-300",
-        "w-60 border-r border-gray-100",
+        "fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar border-r border-sidebar-border transition-transform duration-300",
+        "w-60",
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         "md:relative md:flex",
-      )} style={{ boxShadow: "4px 0 24px 0 rgba(109,40,217,0.06)" }}>
+      )}>
 
-        {/* Logo */}
-        <div className="flex items-center gap-3 h-16 px-5 border-b border-gray-100 flex-shrink-0">
-          <div className="h-9 w-9 rounded-xl flex items-center justify-center font-extrabold text-white text-lg flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)" }}>
-            M
+        {/* Brand */}
+        <div className="flex items-center gap-2.5 px-5 py-5 border-b border-sidebar-border flex-shrink-0">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sidebar-primary flex-shrink-0">
+            <Shield className="w-4 h-4 text-sidebar-primary-foreground" />
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-gray-800 text-sm leading-tight truncate">Mystics Audit</p>
-            <p className="text-[10px] text-violet-500 font-semibold tracking-wide">ENTERPRISE</p>
+            <p className="text-sm font-semibold text-sidebar-accent-foreground leading-none truncate">Mystics Audit</p>
+            <p className="text-[10px] text-sidebar-foreground/50 mt-0.5">ENTERPRISE</p>
           </div>
         </div>
 
         {/* Role badge */}
         {user && (
-          <div className="px-4 py-2 border-b border-gray-50 bg-violet-50/50">
+          <div className="px-4 py-2 border-b border-sidebar-border/50">
             <div className="flex items-center gap-1.5">
-              <Shield className="w-3 h-3 text-violet-500" />
-              <span className="text-[11px] font-semibold text-violet-600">{user.role}</span>
-              <span className="text-[10px] text-gray-400 ml-auto">{user.orgName.split(" ")[0]}</span>
+              <Shield className="w-3 h-3 text-sidebar-foreground/50" />
+              <span className="text-[11px] font-semibold text-sidebar-foreground/70">{user.role}</span>
+              <span className="text-[10px] text-sidebar-foreground/30 ml-auto">{user.orgName.split(" ")[0]}</span>
             </div>
           </div>
         )}
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-3 px-1 sidebar-scroll">
+        <nav className="flex-1 overflow-y-auto py-3 px-2 sidebar-scroll">
           {visibleNav.map(item => <NavItem key={item.name} item={item} currentPath={location} />)}
         </nav>
 
         {/* Bottom user card */}
-        <div className="flex-shrink-0 p-3 border-t border-gray-100">
+        <div className="flex-shrink-0 px-3 py-3 border-t border-sidebar-border">
           <UserMenu />
           <SidebarFYLabel />
         </div>

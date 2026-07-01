@@ -1,0 +1,44 @@
+# Business Scope & Product Direction
+
+The application is designed primarily for **IT services, software development, SaaS products, project management, and software consulting businesses**. It is **not** intended for businesses that primarily sell physical products, hardware, devices, or retail inventory.
+
+The system should be optimized for a software company's day-to-day operations, including:
+
+* Project Management
+* Software Development Lifecycle (SDLC)
+* SaaS Subscription Management
+* IT Service Delivery
+* Software Sales
+* Software Licensing
+* Annual Maintenance Contracts (AMC)
+* Support & Helpdesk
+* Customer Relationship Management (CRM)
+* Lead & Opportunity Management
+* Proposal and Quotation Management
+* Contract Management
+* Resource & Employee Management
+* Time Tracking & Timesheets
+* Billing & Invoicing
+* Expense Management
+* Purchase of IT Software, SaaS subscriptions, cloud services, domains, SSL certificates, hosting, development tools, and other IT-related services
+* Vendor Management for software and technology service providers
+* Financial management aligned with service-based businesses
+
+The Purchasing module should be tailored for **software and service procurement**, such as:
+
+* Software Licenses
+* SaaS Subscriptions
+* Cloud Services
+* Development Tools
+* API Services
+* Third-Party Integrations
+* Security Software
+* IT Consulting Services
+* Hosting & Infrastructure Services
+* Digital Assets
+
+While the application should support inventory concepts where necessary (for example, software licenses or digital assets), the primary business model is **service-oriented**, not product-oriented. The workflows, terminology, dashboards, reports, and business processes should reflect the operational needs of an IT company rather than a manufacturing, trading, or retail business.
+
+The platform should be built as a **multi-tenant SaaS application**, allowing multiple organizations to use the system independently while maintaining complete data isolation, subscription management, role-based access control, and tenant-specific configurations.
+
+The architecture should also be **future-ready and extensible**. Although the initial focus is on IT services and software businesses, the design should allow additional business verticals, product categories, and industry-specific workflows to be introduced later without requiring major architectural changes. New modules and business processes should be configurable and integrate seamlessly with the existing platform.

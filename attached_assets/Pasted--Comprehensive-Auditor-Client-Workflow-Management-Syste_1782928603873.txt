@@ -1,0 +1,386 @@
+# Comprehensive Auditor & Client Workflow Management System (God Mode)
+
+Build a complete, enterprise-grade **Audit Practice Management System** that supports the day-to-day operations of Chartered Accountants, Auditors, Tax Consultants, and Accounting Firms managing multiple clients.
+
+The system should allow an audit firm to manage hundreds of clients simultaneously, where each client has independent workflows, compliance requirements, statutory filings, document requests, pending tasks, approvals, reminders, and communication history.
+
+## Core Objective
+
+Design a centralized platform where an Auditor can create, assign, track, monitor, approve, and complete every compliance-related activity for each client from a single dashboard.
+
+The application should support end-to-end audit lifecycle management with complete visibility, accountability, and document tracking.
+
+---
+
+# Client Management
+
+Each client should have:
+
+* Company Profile
+* GST Details
+* PAN/TAN
+* CIN
+* Directors/Partners
+* Branches
+* Contact Persons
+* Authorized Users
+* Business Type
+* Financial Year
+* Subscription Status
+* Compliance Calendar
+* Engagement Status
+* Assigned Auditor
+* Assigned Team Members
+* Client Portal Access
+
+---
+
+# Auditor Dashboard
+
+Provide a professional dashboard showing:
+
+* Today's Tasks
+* Pending Tasks
+* Overdue Tasks
+* Upcoming Compliance
+* GST Status
+* TDS Status
+* Income Tax Status
+* ROC Filings
+* Audit Progress
+* Client-wise Workload
+* Employee Workload
+* Document Pending
+* Approval Pending
+* High Priority Items
+* Calendar View
+* Activity Timeline
+* Notifications
+* Recent Communications
+
+---
+
+# Generic Task Management
+
+The Auditor should be able to create any type of task.
+
+Examples:
+
+* Upload Purchase Bills
+* Upload Sales Bills
+* Bank Statement Required
+* Stock Report
+* Payroll Details
+* Salary Register
+* Expense Bills
+* Vendor Confirmation
+* Customer Confirmation
+* GST Working
+* TDS Working
+* Ledger Confirmation
+* Trial Balance
+* Balance Sheet Review
+* Profit & Loss Review
+* Audit Evidence
+* Compliance Documents
+* Legal Documents
+* Agreement Copy
+* Invoice Submission
+* Tax Payment
+* Any Custom Task
+
+The task engine should be completely configurable.
+
+---
+
+# Client Task Requests
+
+The Auditor should be able to:
+
+* Create a task
+* Assign it to one or more client users
+* Set priority
+* Define due date
+* Attach documents
+* Add instructions
+* Add checklist
+* Request approvals
+* Request additional information
+* Request corrections
+* Request document resubmission
+
+Clients should receive notifications immediately.
+
+---
+
+# Client Portal
+
+Clients should be able to:
+
+* View assigned tasks
+* Upload requested documents
+* Reply to queries
+* Ask questions
+* Submit explanations
+* Track task status
+* View pending compliances
+* Download reports
+* View completed tasks
+* Receive reminders
+* View communication history
+
+---
+
+# Workflow Management
+
+Each task should support a configurable workflow.
+
+Example:
+
+Task Created
+
+↓
+
+Assigned
+
+↓
+
+Client Acknowledged
+
+↓
+
+In Progress
+
+↓
+
+Document Uploaded
+
+↓
+
+Under Review
+
+↓
+
+Changes Requested
+
+↓
+
+Resubmitted
+
+↓
+
+Approved
+
+↓
+
+Completed
+
+↓
+
+Archived
+
+Every stage should maintain complete history.
+
+---
+
+# Compliance Management
+
+Support:
+
+* GST Return Filing
+* GSTR-1
+* GSTR-3B
+* GSTR-9
+* GSTR-9C
+* TDS Returns
+* Income Tax Returns
+* Advance Tax
+* ROC Filings
+* MCA Compliance
+* PF Compliance
+* ESI Compliance
+* Professional Tax
+* Labour Compliance
+* Statutory Audit
+* Internal Audit
+* Tax Audit
+* Company Audit
+* LLP Compliance
+* Partnership Compliance
+
+All compliance activities should be configurable.
+
+---
+
+# Document Management
+
+Maintain:
+
+* Version History
+* Approval Status
+* Uploaded By
+* Uploaded Date
+* Document Categories
+* Expiry Dates
+* OCR Ready
+* Preview
+* Download
+* Replace Document
+* Digital Signature Support
+* Audit Trail
+
+---
+
+# Follow-up Management
+
+The system should automatically follow up on pending work.
+
+Features:
+
+* Automatic reminders
+* WhatsApp reminders (future ready)
+* Email reminders
+* SMS reminders
+* Escalations
+* Follow-up history
+* Reminder frequency configuration
+* Client response tracking
+
+---
+
+# Communication Center
+
+Maintain complete communication history.
+
+Include:
+
+* Internal Notes
+* Client Comments
+* Attachments
+* Email History
+* Reminder History
+* Approval History
+* Discussion Timeline
+
+Nothing should be lost.
+
+---
+
+# Audit Trail
+
+Track every action.
+
+Capture:
+
+* Created By
+* Modified By
+* Deleted By
+* Approved By
+* Date & Time
+* IP Address (optional)
+* Device
+* Previous Value
+* New Value
+* Activity Log
+
+Maintain a complete audit history.
+
+---
+
+# Calendar & Scheduler
+
+Provide:
+
+* Daily Planner
+* Weekly Planner
+* Monthly Calendar
+* Compliance Calendar
+* Reminder Calendar
+* Due Date Tracking
+* Holiday Calendar
+
+---
+
+# Reports & Analytics
+
+Generate reports for:
+
+* Client-wise Pending Tasks
+* Employee Productivity
+* Compliance Status
+* Overdue Tasks
+* Document Pending
+* Filing Status
+* Task Completion Rate
+* Audit Progress
+* Team Performance
+* Client Performance
+* Workload Distribution
+* Revenue by Client
+* Time Tracking
+
+---
+
+# Permissions & Roles
+
+Support role-based access.
+
+Examples:
+
+* Platform Admin
+* Firm Owner
+* Senior Auditor
+* Auditor
+* Tax Consultant
+* Accountant
+* Client Admin
+* Client Employee
+* Reviewer
+* Approver
+
+Permissions should be fully configurable.
+
+---
+
+# Notifications
+
+Provide real-time notifications for:
+
+* New Task
+* Due Today
+* Overdue
+* Document Uploaded
+* Approval Required
+* Task Completed
+* Compliance Due
+* Reminder Sent
+* Escalation Triggered
+
+---
+
+# User Experience
+
+The application should feel like a modern enterprise SaaS product.
+
+Requirements:
+
+* Professional UI/UX
+* Dashboard-first design
+* Responsive layout
+* Easy navigation
+* Minimal clicks
+* Powerful search
+* Advanced filters
+* Global search
+* Timeline views
+* Activity feeds
+* Kanban, List, and Calendar views
+* Bulk actions
+* Quick task creation
+* Keyboard-friendly interactions
+
+---
+
+# Final Objective
+
+Develop a complete **Audit Practice Management Platform** where auditors can efficiently manage multiple clients, assign any type of compliance or document request, monitor progress, automate reminders, track approvals, and maintain a complete audit trail from a single system. The platform should provide a seamless collaboration experience between the audit firm and its clients, ensuring every compliance activity, document request, follow-up, approval, and statutory filing is tracked end-to-end. The solution should be scalable, highly configurable, enterprise-grade, and ready for real-world production use without disrupting existing business logic or workflows.

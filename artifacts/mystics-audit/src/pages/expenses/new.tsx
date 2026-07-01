@@ -1,4 +1,4 @@
-import { useCreateExpense, getListExpensesQueryKey } from "@workspace/api-client-react";
+import { useCreateExpense, useListVendors, getListExpensesQueryKey } from "@workspace/api-client-react";
 import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -7,6 +7,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EntityCombobox } from "@/components/EntityCombobox";
 import { formatCurrency } from "@/lib/format";
 import { Plus, Trash2, ArrowLeft, Receipt, Building2, FolderOpen, MapPin, Users2, Briefcase, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,15 @@ export default function NewExpense() {
   const qc = useQueryClient();
   const mutation = useCreateExpense();
 
+  const { data: vendorsData } = useListVendors({});
+  const vendors: any[] = vendorsData ?? [];
+  const vendorOptions = vendors.map((v: any) => ({
+    id: v.id,
+    label: v.name,
+    sublabel: v.gstin || undefined,
+    meta: v.city || undefined,
+  }));
+
   // Header fields
   const [employeeName, setEmployeeName] = useState("John Doe");
   const [submittedDate, setSubmittedDate] = useState(new Date().toISOString().split("T")[0]);
@@ -68,6 +78,18 @@ export default function NewExpense() {
   const [clientName, setClientName] = useState("");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState<ExpLine[]>([blankLine()]);
+
+  const selectVendor = (i: number, opt: { id: number; label: string; sublabel?: string }) => {
+    setLines(prev => prev.map((l, idx) =>
+      idx === i ? { ...l, vendorName: opt.label, vendorGstin: opt.sublabel ?? "" } : l,
+    ));
+  };
+
+  const clearVendor = (i: number) => {
+    setLines(prev => prev.map((l, idx) =>
+      idx === i ? { ...l, vendorName: "", vendorGstin: "" } : l,
+    ));
+  };
 
   const updateLine = (i: number, field: keyof ExpLine, value: string | boolean) => {
     setLines(prev => prev.map((l, idx) => {
@@ -254,11 +276,24 @@ export default function NewExpense() {
                   <div className="grid grid-cols-4 gap-3 items-end">
                     <div className="space-y-1">
                       <Label className="text-xs text-gray-400 whitespace-nowrap">Vendor Name</Label>
-                      <Input className="text-sm" value={l.vendorName} onChange={e => updateLine(i, "vendorName", e.target.value)} placeholder="Supplier / store..." />
+                      <EntityCombobox
+                        options={vendorOptions}
+                        selectedId={vendorOptions.find(v => v.label === l.vendorName)?.id ?? null}
+                        onSelect={opt => selectVendor(i, opt)}
+                        onClear={() => clearVendor(i)}
+                        placeholder="Search vendor…"
+                        searchPlaceholder="Search by name or GSTIN…"
+                        emptyText="No vendors found"
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-gray-400 whitespace-nowrap">Vendor GSTIN</Label>
-                      <Input className="text-sm font-mono" value={l.vendorGstin} onChange={e => updateLine(i, "vendorGstin", e.target.value)} placeholder="22AAAAA0000A1Z5" />
+                      <Input
+                        className="text-sm font-mono"
+                        value={l.vendorGstin}
+                        onChange={e => updateLine(i, "vendorGstin", e.target.value)}
+                        placeholder="22AAAAA0000A1Z5"
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-gray-400 whitespace-nowrap">HSN / SAC Code</Label>

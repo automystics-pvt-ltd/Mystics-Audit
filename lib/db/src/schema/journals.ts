@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, boolean, numeric, integer, date } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, boolean, numeric, integer, date, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { accountsTable } from "./accounts";
@@ -16,7 +16,11 @@ export const journalEntriesTable = pgTable("journal_entries", {
   reversalOf: integer("reversal_of"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}, (t) => [
+  index("idx_journal_entries_status").on(t.status),
+  index("idx_journal_entries_date").on(t.date),
+  index("idx_journal_entries_status_date").on(t.status, t.date),
+]);
 
 export const journalLinesTable = pgTable("journal_lines", {
   id: serial("id").primaryKey(),
@@ -28,7 +32,10 @@ export const journalLinesTable = pgTable("journal_lines", {
   partyName: text("party_name"),
   costCenter: text("cost_center"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => [
+  index("idx_journal_lines_journal_id").on(t.journalId),
+  index("idx_journal_lines_account_id").on(t.accountId),
+]);
 
 export const insertJournalSchema = createInsertSchema(journalEntriesTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertJournalLineSchema = createInsertSchema(journalLinesTable).omit({ id: true, createdAt: true });

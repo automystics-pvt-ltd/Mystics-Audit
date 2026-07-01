@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, receiptsTable, receiptAllocationsTable, bankAccountsTable, invoicesTable } from "@workspace/db";
-import { eq, and, desc, gte, lte } from "drizzle-orm";
+import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
 import { createPostedJournal, round2, type JournalLine } from "../utils/accounting";
 
 const router = Router();
@@ -153,12 +153,20 @@ router.post("/receipts", async (req, res) => {
         }))
       );
 
-      // Update each invoice's paidAmount
+      // Batch-fetch all invoices referenced by allocations (avoid N+1)
+      const invoiceIds = allocations
+        .map((a: any) => Number(a.invoiceId))
+        .filter((id: number) => id > 0);
+      const fetchedInvoices = invoiceIds.length
+        ? await db.select().from(invoicesTable).where(inArray(invoicesTable.id, invoiceIds))
+        : [];
+      const invMap = new Map(fetchedInvoices.map(i => [i.id, i]));
+
+      // Validate and update each invoice's paidAmount
       for (const alloc of allocations) {
         const allocated = round2(Number(alloc.allocatedAmount));
         if (!alloc.invoiceId || allocated <= 0) continue;
-        const [inv] = await db.select().from(invoicesTable)
-          .where(eq(invoicesTable.id, alloc.invoiceId));
+        const inv = invMap.get(Number(alloc.invoiceId));
         if (!inv) continue;
         const outstanding = round2(Number(inv.totalAmount) - Number(inv.paidAmount));
         if (allocated > outstanding + 0.01) {

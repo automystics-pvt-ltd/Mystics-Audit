@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, boolean, numeric, integer, date } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, boolean, numeric, integer, date, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { customersTable } from "./customers";
@@ -27,7 +27,12 @@ export const invoicesTable = pgTable("invoices", {
   notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}, (t) => [
+  index("idx_invoices_customer_id").on(t.customerId),
+  index("idx_invoices_status").on(t.status),
+  index("idx_invoices_date").on(t.date),
+  index("idx_invoices_status_date").on(t.status, t.date),
+]);
 
 export const invoiceLinesTable = pgTable("invoice_lines", {
   id: serial("id").primaryKey(),
@@ -46,7 +51,9 @@ export const invoiceLinesTable = pgTable("invoice_lines", {
   igst: numeric("igst", { precision: 18, scale: 2 }).notNull().default("0"),
   lineTotal: numeric("line_total", { precision: 18, scale: 2 }).notNull().default("0"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => [
+  index("idx_invoice_lines_invoice_id").on(t.invoiceId),
+]);
 
 export const insertInvoiceSchema = createInsertSchema(invoicesTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertInvoiceLineSchema = createInsertSchema(invoiceLinesTable).omit({ id: true, createdAt: true });

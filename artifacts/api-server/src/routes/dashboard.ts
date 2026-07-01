@@ -37,72 +37,60 @@ router.get("/dashboard/summary", async (req, res) => {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
     const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
 
-    // Revenue + overdue stats for the selected FY
-    const [invoiceStats] = await db
-      .select({
+    // Run all independent DB queries in parallel
+    const [
+      [invoiceStats], [mtdStats], [billStats], [expStats],
+      banks, [custCount], [vendCount], budgets, revenueRows, expenseRows,
+    ] = await Promise.all([
+      db.select({
         revenueYtd:    sql<number>`coalesce(sum(case when status != 'draft' then total_amount else 0 end), 0)`,
         collectedYtd:  sql<number>`coalesce(sum(paid_amount), 0)`,
         outputTax:     sql<number>`coalesce(sum(case when status != 'draft' then cgst + sgst + igst else 0 end), 0)`,
         overdueAmount: sql<number>`coalesce(sum(case when status = 'posted' and due_date < current_date then (total_amount - paid_amount) else 0 end), 0)`,
         overdueCount:  sql<number>`coalesce(count(case when status = 'posted' and due_date < current_date then 1 end), 0)`,
         totalCount:    sql<number>`count(*)`,
-      })
-      .from(invoicesTable)
-      .where(and(gte(invoicesTable.date, fyFrom), lte(invoicesTable.date, fyTo)));
+      }).from(invoicesTable).where(and(gte(invoicesTable.date, fyFrom), lte(invoicesTable.date, fyTo))),
 
-    // MTD revenue (always current calendar month)
-    const [mtdStats] = await db
-      .select({
+      db.select({
         revenueMtd:   sql<number>`coalesce(sum(case when status != 'draft' then total_amount else 0 end), 0)`,
         collectedMtd: sql<number>`coalesce(sum(paid_amount), 0)`,
-      })
-      .from(invoicesTable)
-      .where(and(gte(invoicesTable.date, monthStart), lte(invoicesTable.date, monthEnd)));
+      }).from(invoicesTable).where(and(gte(invoicesTable.date, monthStart), lte(invoicesTable.date, monthEnd))),
 
-    // Input tax (ITC) from bills in the FY
-    const [billStats] = await db
-      .select({
+      db.select({
         pendingAmount: sql<number>`coalesce(sum(case when status = 'draft' then total_amount else 0 end), 0)`,
         pendingCount:  sql<number>`coalesce(count(case when status = 'draft' then 1 end), 0)`,
         inputTax:      sql<number>`coalesce(sum(cgst + sgst + igst), 0)`,
-      })
-      .from(vendorBillsTable)
-      .where(and(gte(vendorBillsTable.date, fyFrom), lte(vendorBillsTable.date, fyTo)));
+      }).from(vendorBillsTable).where(and(gte(vendorBillsTable.date, fyFrom), lte(vendorBillsTable.date, fyTo))),
 
-    // Pending expenses filtered by FY (using submitted_date)
-    const [expStats] = await db
-      .select({
+      db.select({
         pendingAmount: sql<number>`coalesce(sum(case when status in ('submitted','draft') then total_amount else 0 end), 0)`,
         pendingCount:  sql<number>`coalesce(count(case when status in ('submitted','draft') then 1 end), 0)`,
         mtdTotal:      sql<number>`coalesce(sum(case when submitted_date >= ${monthStart} and submitted_date <= ${monthEnd} then total_amount else 0 end), 0)`,
-      })
-      .from(expenseClaimsTable)
-      .where(and(gte(expenseClaimsTable.submittedDate, fyFrom), lte(expenseClaimsTable.submittedDate, fyTo)));
+      }).from(expenseClaimsTable).where(and(gte(expenseClaimsTable.submittedDate, fyFrom), lte(expenseClaimsTable.submittedDate, fyTo))),
 
-    // Bank balances (always current — balance is a live figure)
-    const banks = await db.select({ balance: bankAccountsTable.balance }).from(bankAccountsTable).where(eq(bankAccountsTable.isActive, true));
+      db.select({ balance: bankAccountsTable.balance }).from(bankAccountsTable).where(eq(bankAccountsTable.isActive, true)),
+
+      db.select({ n: count() }).from(customersTable),
+      db.select({ n: count() }).from(vendorsTable),
+      db.select().from(budgetsTable),
+
+      db.select({
+        m:   sql<number>`extract(month from date::date)`,
+        val: sql<number>`coalesce(sum(case when status != 'draft' then total_amount else 0 end), 0)`,
+      }).from(invoicesTable).where(and(gte(invoicesTable.date, fyFrom), lte(invoicesTable.date, fyTo))).groupBy(sql`extract(month from date::date)`),
+
+      db.select({
+        m:   sql<number>`extract(month from date::date)`,
+        val: sql<number>`coalesce(sum(total_amount), 0)`,
+      }).from(vendorBillsTable).where(and(gte(vendorBillsTable.date, fyFrom), lte(vendorBillsTable.date, fyTo))).groupBy(sql`extract(month from date::date)`),
+    ]);
+
     const totalCashBank = banks.reduce((s, b) => s + Number(b.balance), 0);
 
-    // Customers & vendors (total counts, not FY-specific)
-    const [custCount] = await db.select({ n: count() }).from(customersTable);
-    const [vendCount] = await db.select({ n: count() }).from(vendorsTable);
-
-    // Budget utilisation for the FY
-    const budgets = await db.select().from(budgetsTable);
     const fyBudget = budgets.find(b => b.fiscalYear === fy) ?? budgets[0];
     const budgetUtilizationPct = fyBudget
       ? Math.round((Number(fyBudget.totalActual ?? 0) / (Number(fyBudget.totalBudget ?? 1))) * 100)
       : 0;
-
-    // Monthly revenue chart from real invoice data (grouped by calendar month)
-    const revenueRows = await db
-      .select({
-        m:   sql<number>`extract(month from date::date)`,
-        val: sql<number>`coalesce(sum(case when status != 'draft' then total_amount else 0 end), 0)`,
-      })
-      .from(invoicesTable)
-      .where(and(gte(invoicesTable.date, fyFrom), lte(invoicesTable.date, fyTo)))
-      .groupBy(sql`extract(month from date::date)`);
 
     const revenueByMonth: Record<number, number> = {};
     revenueRows.forEach(r => { revenueByMonth[Number(r.m)] = Number(r.val); });
@@ -111,16 +99,6 @@ router.get("/dashboard/summary", async (req, res) => {
       month,
       value: revenueByMonth[FY_MONTH_NUMS[i]] ?? 0,
     }));
-
-    // Monthly expense chart from real bill data (grouped by calendar month)
-    const expenseRows = await db
-      .select({
-        m:   sql<number>`extract(month from date::date)`,
-        val: sql<number>`coalesce(sum(total_amount), 0)`,
-      })
-      .from(vendorBillsTable)
-      .where(and(gte(vendorBillsTable.date, fyFrom), lte(vendorBillsTable.date, fyTo)))
-      .groupBy(sql`extract(month from date::date)`);
 
     const expenseByMonth: Record<number, number> = {};
     expenseRows.forEach(r => { expenseByMonth[Number(r.m)] = Number(r.val); });

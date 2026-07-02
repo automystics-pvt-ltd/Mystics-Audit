@@ -159,6 +159,8 @@ if $RESTART_ONLY; then
   info "Skip: pnpm install (--restart mode)"
 else
   step "Installing dependencies"
+  # Approve esbuild build script (required on first install on a new server)
+  pnpm approve-builds --yes 2>/dev/null || true
   pnpm install --frozen-lockfile 2>&1 | tee -a "$LOG"
 fi
 

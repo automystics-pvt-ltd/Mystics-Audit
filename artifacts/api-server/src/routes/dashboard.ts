@@ -11,16 +11,38 @@ import { eq, gte, lte, and, desc, sum, count, sql, lt } from "drizzle-orm";
 
 const router = Router();
 
-function parseFY(fy?: string): { fyFrom: string; fyTo: string; fyStartYear: number } {
+function parseFY(fy?: string): { fyFrom: string; fyTo: string; fyStartYear: number; mtdFrom: string; mtdTo: string } {
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+
+  let fyFrom: string, fyTo: string, fyStartYear: number;
   if (fy && /^\d{4}-\d{2}$/.test(fy)) {
-    const startYear = parseInt(fy.split("-")[0]);
-    return {
-      fyFrom:       `${startYear}-04-01`,
-      fyTo:         `${startYear + 1}-03-31`,
-      fyStartYear:  startYear,
-    };
+    fyStartYear = parseInt(fy.split("-")[0]);
+    fyFrom = `${fyStartYear}-04-01`;
+    fyTo   = `${fyStartYear + 1}-03-31`;
+  } else {
+    fyStartYear = 2024;
+    fyFrom = "2024-04-01";
+    fyTo   = "2025-03-31";
   }
-  return { fyFrom: "2024-04-01", fyTo: "2025-03-31", fyStartYear: 2024 };
+
+  // MTD window: current calendar month if we're inside the FY; otherwise the
+  // last month of a past FY, or the first month of a future FY.
+  let mtdFrom: string, mtdTo: string;
+  if (today >= fyFrom && today <= fyTo) {
+    mtdFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    mtdTo   = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
+  } else if (today > fyTo) {
+    // Past FY — use March of end year
+    mtdFrom = `${fyStartYear + 1}-03-01`;
+    mtdTo   = `${fyStartYear + 1}-03-31`;
+  } else {
+    // Future FY — use April of start year
+    mtdFrom = `${fyStartYear}-04-01`;
+    mtdTo   = `${fyStartYear}-04-30`;
+  }
+
+  return { fyFrom, fyTo, fyStartYear, mtdFrom, mtdTo };
 }
 
 // Indian FY months in display order Apr→Mar
@@ -31,11 +53,7 @@ const FY_MONTH_NUMS = [4,5,6,7,8,9,10,11,12,1,2,3];
 router.get("/dashboard/summary", async (req, res) => {
   try {
     const { fy } = req.query as Record<string, string>;
-    const { fyFrom, fyTo } = parseFY(fy);
-
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-    const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
+    const { fyFrom, fyTo, mtdFrom, mtdTo } = parseFY(fy);
 
     // Run all independent DB queries in parallel
     const [
@@ -54,7 +72,7 @@ router.get("/dashboard/summary", async (req, res) => {
       db.select({
         revenueMtd:   sql<number>`coalesce(sum(case when status != 'draft' then total_amount else 0 end), 0)`,
         collectedMtd: sql<number>`coalesce(sum(paid_amount), 0)`,
-      }).from(invoicesTable).where(and(gte(invoicesTable.date, monthStart), lte(invoicesTable.date, monthEnd))),
+      }).from(invoicesTable).where(and(gte(invoicesTable.date, mtdFrom), lte(invoicesTable.date, mtdTo))),
 
       db.select({
         pendingAmount: sql<number>`coalesce(sum(case when status = 'draft' then total_amount else 0 end), 0)`,
@@ -65,7 +83,7 @@ router.get("/dashboard/summary", async (req, res) => {
       db.select({
         pendingAmount: sql<number>`coalesce(sum(case when status in ('submitted','draft') then total_amount else 0 end), 0)`,
         pendingCount:  sql<number>`coalesce(count(case when status in ('submitted','draft') then 1 end), 0)`,
-        mtdTotal:      sql<number>`coalesce(sum(case when submitted_date >= ${monthStart} and submitted_date <= ${monthEnd} then total_amount else 0 end), 0)`,
+        mtdTotal:      sql<number>`coalesce(sum(case when submitted_date >= ${mtdFrom} and submitted_date <= ${mtdTo} then total_amount else 0 end), 0)`,
       }).from(expenseClaimsTable).where(and(gte(expenseClaimsTable.submittedDate, fyFrom), lte(expenseClaimsTable.submittedDate, fyTo))),
 
       db.select({ balance: bankAccountsTable.balance }).from(bankAccountsTable).where(eq(bankAccountsTable.isActive, true)),

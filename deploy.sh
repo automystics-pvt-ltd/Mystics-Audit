@@ -100,7 +100,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=
 SMTP_PASS=
-SMTP_FROM=Mystics Audit <noreply@automystics.com>
+SMTP_FROM="Mystics Audit <noreply@automystics.com>"
 ENV
     info ".env.production created at $ENV_FILE"
   else

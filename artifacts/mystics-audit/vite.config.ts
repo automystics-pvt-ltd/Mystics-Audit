@@ -60,19 +60,27 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom") || id.includes("node_modules/wouter")) {
-            return "vendor-react";
-          }
-          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-") || id.includes("node_modules/victory-")) {
-            return "vendor-charts";
-          }
-          if (id.includes("node_modules/@tanstack")) {
-            return "vendor-query";
-          }
-          if (id.includes("node_modules/@radix-ui") || id.includes("node_modules/lucide-react") || id.includes("node_modules/class-variance-authority") || id.includes("node_modules/clsx") || id.includes("node_modules/tailwind-merge")) {
-            return "vendor-ui";
-          }
           if (id.includes("node_modules/")) {
+            // Keep all React and React-dependent UI libs in ONE chunk
+            // to avoid forwardRef/createContext initialization order errors
+            if (
+              id.includes("node_modules/react") ||
+              id.includes("node_modules/react-dom") ||
+              id.includes("node_modules/wouter") ||
+              id.includes("node_modules/@radix-ui") ||
+              id.includes("node_modules/lucide-react") ||
+              id.includes("node_modules/class-variance-authority") ||
+              id.includes("node_modules/clsx") ||
+              id.includes("node_modules/tailwind-merge")
+            ) {
+              return "vendor-react";
+            }
+            if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-")) {
+              return "vendor-charts";
+            }
+            if (id.includes("node_modules/@tanstack")) {
+              return "vendor-query";
+            }
             return "vendor-misc";
           }
         },

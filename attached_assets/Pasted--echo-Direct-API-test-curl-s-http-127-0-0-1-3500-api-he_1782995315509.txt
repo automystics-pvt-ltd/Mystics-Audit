@@ -1,0 +1,36 @@
+
+echo "=== Direct API test ===" && curl -s http://127.0.0.1:3500/api/healthz || echo "3500 FAILED"
+curl -s http://127.0.0.1:8080/api/healthz || echo "8080 FAILED"
+=== API_PORT in env ===
+API_PORT=3500
+=== PM2 status ===
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 37 │ erp-automystics       │ default     │ N/A     │ fork    │ 1881397  │ 0s     │ 9647 │ online    │ 100%     │ 90.8mb   │ root     │ disabled │
+│ 0  │ fitro360              │ default     │ 1.0.0   │ fork    │ 265038   │ 7h     │ 33   │ online    │ 0%       │ 111.0mb  │ root     │ disabled │
+│ 1  │ kalvicore-api         │ default     │ 0.0.0   │ fork    │ 265045   │ 7h     │ 33   │ online    │ 0%       │ 115.9mb  │ root     │ disabled │
+│ 54 │ mmwear-erp            │ default     │ 0.0.0   │ fork    │ 498211   │ 6h     │ 57   │ online    │ 0%       │ 352.2mb  │ root     │ disabled │
+│ 58 │ mystics-audit         │ default     │ 0.0.0   │ fork    │ 1875392  │ 105s   │ 0    │ online    │ 0%       │ 221.4mb  │ root     │ disabled │
+│ 18 │ mysticscivil-api      │ default     │ N/A     │ fork    │ 265145   │ 7h     │ 17   │ online    │ 0%       │ 233.5mb  │ root     │ disabled │
+│ 11 │ mysticshr-api         │ default     │ 0.0.0   │ fork    │ 265114   │ 7h     │ 1196 │ online    │ 0%       │ 272.1mb  │ root     │ disabled │
+│ 39 │ mysticsinventory      │ default     │ N/A     │ fork    │ 0        │ 0      │ 5003 │ errored   │ 0%       │ 0b       │ root     │ disabled │
+│ 4  │ people-connect-api    │ default     │ 0.0.0   │ fork    │ 265083   │ 7h     │ 34   │ online    │ 0%       │ 200.2mb  │ root     │ disabled │
+│ 23 │ solarnexus-api        │ default     │ 0.0.0   │ fork    │ 265185   │ 7h     │ 17   │ online    │ 0%       │ 132.4mb  │ root     │ disabled │
+│ 6  │ tkprabhu-api          │ default     │ 0.0.0   │ fork    │ 265091   │ 7h     │ 55   │ online    │ 0%       │ 199.6mb  │ root     │ disabled │
+│ 32 │ ungalrajeev-api       │ default     │ N/A     │ fork    │ 1881261  │ 2s     │ 167… │ online    │ 0%       │ 138.6mb  │ root     │ disabled │
+│ 25 │ ungaludan-sarath      │ default     │ 0.0.0   │ fork    │ 265166   │ 7h     │ 15   │ online    │ 0%       │ 204.2mb  │ root     │ disabled │
+│ 33 │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 1881233  │ 3s     │ 358… │ online    │ 0%       │ 137.0mb  │ root     │ disabled │
+│ 34 │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 1881255  │ 2s     │ 238… │ online    │ 0%       │ 137.3mb  │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+=== What's on port 3500 ===
+LISTEN 0      511                *:3500             *:*    users:(("node /home/auto",pid=1875392,fd=22))                                                                                                     
+=== What's on port 8080 ===
+LISTEN 0      511                *:8080             *:*    users:(("node",pid=378270,fd=22))                                                                                                                 
+=== Nginx config files for this domain ===
+/etc/nginx/sites-enabled/mysticsaudit.automystics.tech.conf
+=== mystics-audit logs ===
+[TAILING] Tailing last 5 lines for [mystics-audit] process (change the value with --lines option)
+/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/logs/api-error.log last 5 lines:
+/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/logs/api-out.log last 5 lines:
+58|mystics | t_tasks\".\"priority\", \"audit_tasks\".\"due_date\", \"audit_tasks\".\"assignee\", \"audit_tasks\".\"checklist\", \"audit_tasks\".\"created_by\", \"audit_tasks\".\"org_id\", \"audit_tasks\".\"created_at\", \"audit_tasks\".\"updated_at\", \"audit_clients\".\"id\", \"audit_clients\".\"name\", \"audit_clients\".\"pan\", \"audit_clients\".\"gstin\", \"audit_clients\".\"contact_name\", \"audit_clients\".\"contact_email\", \"audit_clients\".\"contact_phone\", \"audit_clients\".\"address\", \"audit_clients\".\"city\", \"audit_clients\".\"state\", \"audit_clients\".\"engagement_types\", \"audit_clients\".\"engagement_phase\", \"audit_clients\".\"status\", \"audit_clients\".\"notes\", \"audit_clients\".\"org_id\", \"audit_clients\".\"created_at\", \"audit_clients\".\"updated_at\" from \"audit_tasks\" left join \"audit_clients\" on \"audit_tasks\".\"client_id\" = \"audit_clients\".\"id\" where \"audit_tasks\".\"due_date\" <= $1","params":["2026-07-02"]},"msg":"Automation scheduler run failed"}

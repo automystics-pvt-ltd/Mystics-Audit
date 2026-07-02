@@ -6,8 +6,26 @@
 //   pm2 startup   (auto-start on server reboot)
 //   pm2 save
 
+const fs   = require("fs");
 const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, ".env.production") });
+
+// Read and parse .env.production using only built-in modules (no dotenv needed)
+const envFile = path.join(__dirname, ".env.production");
+const env = {};
+
+if (fs.existsSync(envFile)) {
+  fs.readFileSync(envFile, "utf8")
+    .split("\n")
+    .forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) return;
+      const idx = trimmed.indexOf("=");
+      if (idx === -1) return;
+      const key = trimmed.slice(0, idx).trim();
+      const val = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, "");
+      env[key] = val;
+    });
+}
 
 module.exports = {
   apps: [
@@ -15,36 +33,31 @@ module.exports = {
       name: "mystics-api",
       script: "./artifacts/api-server/dist/index.mjs",
 
-      // Run from repo root so relative paths resolve correctly
-      cwd: "/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech",
+      cwd: __dirname,
 
-      // Cluster mode — one process per CPU core (remove if DB connections spike)
       instances: 1,
       exec_mode: "fork",
 
-      // Environment — values must also be set in .env.production
       env: {
         NODE_ENV: "production",
-        PORT: process.env.API_PORT || "8080",
-        DATABASE_URL: process.env.DATABASE_URL,
-        SESSION_SECRET: process.env.SESSION_SECRET,
-        SMTP_HOST: process.env.SMTP_HOST || "",
-        SMTP_PORT: process.env.SMTP_PORT || "587",
-        SMTP_USER: process.env.SMTP_USER || "",
-        SMTP_PASS: process.env.SMTP_PASS || "",
-        SMTP_FROM: process.env.SMTP_FROM || "",
+        PORT:           env.API_PORT      || "8080",
+        DATABASE_URL:   env.DATABASE_URL  || "",
+        SESSION_SECRET: env.SESSION_SECRET|| "",
+        SMTP_HOST:      env.SMTP_HOST     || "",
+        SMTP_PORT:      env.SMTP_PORT     || "587",
+        SMTP_USER:      env.SMTP_USER     || "",
+        SMTP_PASS:      env.SMTP_PASS     || "",
+        SMTP_FROM:      env.SMTP_FROM     || "",
       },
 
-      // Restart policy
       autorestart: true,
       watch: false,
       max_memory_restart: "512M",
       restart_delay: 3000,
 
-      // Logs
-      out_file: "./logs/api-out.log",
-      error_file: "./logs/api-error.log",
-      merge_logs: true,
+      out_file:        "./logs/api-out.log",
+      error_file:      "./logs/api-error.log",
+      merge_logs:      true,
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
     },
   ],

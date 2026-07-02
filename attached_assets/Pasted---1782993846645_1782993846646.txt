@@ -1,0 +1,24 @@
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 2  │ automystics-api       │ default     │ 0.0.0   │ fork    │ 265055   │ 6h     │ 33   │ online    │ 0%       │ 94.6mb   │ root     │ disabled │
+│ 37 │ erp-automystics       │ default     │ N/A     │ fork    │ 1788233  │ 1s     │ 9184 │ online    │ 0%       │ 116.9mb  │ root     │ disabled │
+│ 0  │ fitro360              │ default     │ 1.0.0   │ fork    │ 265038   │ 6h     │ 33   │ online    │ 0%       │ 110.9mb  │ root     │ disabled │
+│ 1  │ kalvicore-api         │ default     │ 0.0.0   │ fork    │ 265045   │ 6h     │ 33   │ online    │ 0%       │ 115.7mb  │ root     │ disabled │
+│ 54 │ mmwear-erp            │ default     │ 0.0.0   │ fork    │ 498211   │ 5h     │ 57   │ online    │ 0%       │ 351.4mb  │ root     │ disabled │
+│ 18 │ mysticscivil-api      │ default     │ N/A     │ fork    │ 265145   │ 6h     │ 17   │ online    │ 0%       │ 233.5mb  │ root     │ disabled │
+│ 11 │ mysticshr-api         │ default     │ 0.0.0   │ fork    │ 265114   │ 6h     │ 1196 │ online    │ 0%       │ 271.9mb  │ root     │ disabled │
+│ 39 │ mysticsinventory      │ default     │ N/A     │ fork    │ 0        │ 0      │ 5003 │ errored   │ 0%       │ 0b       │ root     │ disabled │
+│ 4  │ people-connect-api    │ default     │ 0.0.0   │ fork    │ 265083   │ 6h     │ 34   │ online    │ 0%       │ 199.8mb  │ root     │ disabled │
+│ 23 │ solarnexus-api        │ default     │ 0.0.0   │ fork    │ 265185   │ 6h     │ 17   │ online    │ 0%       │ 131.9mb  │ root     │ disabled │
+│ 6  │ tkprabhu-api          │ default     │ 0.0.0   │ fork    │ 265091   │ 6h     │ 55   │ online    │ 0%       │ 199.2mb  │ root     │ disabled │
+│ 32 │ ungalrajeev-api       │ default     │ N/A     │ fork    │ 1788174  │ 1s     │ 167… │ online    │ 0%       │ 138.2mb  │ root     │ disabled │
+│ 25 │ ungaludan-sarath      │ default     │ 0.0.0   │ fork    │ 265166   │ 6h     │ 15   │ online    │ 0%       │ 204.1mb  │ root     │ disabled │
+│ 33 │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 1788218  │ 1s     │ 358… │ online    │ 0%       │ 137.0mb  │ root     │ disabled │
+│ 34 │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 1788173  │ 1s     │ 237… │ online    │ 0%       │ 137.4mb  │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+{"status":"ok"}root@srv1609330:/home/automystics-mysticsaudit/htdocs/mysticsaudit.aut
+root@srv1609330:/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech# git pull
+error: cannot pull with rebase: You have unstaged changes.
+error: Please commit or stash them.
+root@srv1609330:/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech# git pull

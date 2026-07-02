@@ -1,0 +1,82 @@
+ls artifacts/api-server/dist/index.mjs
+ls artifacts/mystics-audit/dist/public/index.html
+
+# 2. Check PM2 status
+pm2 list
+
+# 3. Check what port mystics-audit is on now
+pm2 env 58 | grep PORT
+
+# 4. Confirm nginx now points to 3500
+grep proxy_pass /etc/nginx/sites-enabled/mysticsaudit.automystics.tech.conf
+
+# 5. Direct test
+curl -s http://127.0.0.1:3500/api/healthz
+curl -s http://127.0.0.1:3500/ | head -5
+artifacts/api-server/dist/index.mjs
+artifacts/mystics-audit/dist/public/index.html
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 37 │ erp-automystics       │ default     │ N/A     │ fork    │ 1910243  │ 2s     │ 9797 │ online    │ 0%       │ 135.6mb  │ root     │ disabled │
+│ 0  │ fitro360              │ default     │ 1.0.0   │ fork    │ 265038   │ 7h     │ 33   │ online    │ 0%       │ 111.0mb  │ root     │ disabled │
+│ 1  │ kalvicore-api         │ default     │ 0.0.0   │ fork    │ 265045   │ 7h     │ 33   │ online    │ 0%       │ 116.1mb  │ root     │ disabled │
+│ 54 │ mmwear-erp            │ default     │ 0.0.0   │ fork    │ 498211   │ 6h     │ 57   │ online    │ 0%       │ 352.2mb  │ root     │ disabled │
+│ 58 │ mystics-audit         │ default     │ 0.0.0   │ fork    │ 1910102  │ 0      │ 32   │  │ 0%       │ 0b       │ root     │ disabled │
+│ 18 │ mysticscivil-api      │ default     │ N/A     │ fork    │ 265145   │ 7h     │ 17   │ online    │ 0%       │ 233.5mb  │ root     │ disabled │
+│ 11 │ mysticshr-api         │ default     │ 0.0.0   │ fork    │ 265114   │ 7h     │ 1196 │ online    │ 0%       │ 273.2mb  │ root     │ disabled │
+│ 39 │ mysticsinventory      │ default     │ N/A     │ fork    │ 0        │ 0      │ 5003 │ errored   │ 0%       │ 0b       │ root     │ disabled │
+│ 4  │ people-connect-api    │ default     │ 0.0.0   │ fork    │ 265083   │ 7h     │ 34   │ online    │ 0%       │ 200.3mb  │ root     │ disabled │
+│ 23 │ solarnexus-api        │ default     │ 0.0.0   │ fork    │ 265185   │ 7h     │ 17   │ online    │ 0%       │ 132.4mb  │ root     │ disabled │
+│ 6  │ tkprabhu-api          │ default     │ 0.0.0   │ fork    │ 265091   │ 7h     │ 55   │ online    │ 0%       │ 199.6mb  │ root     │ disabled │
+│ 32 │ ungalrajeev-api       │ default     │ N/A     │ fork    │ 1910051  │ 5s     │ 167… │ online    │ 0%       │ 138.5mb  │ root     │ disabled │
+│ 25 │ ungaludan-sarath      │ default     │ 0.0.0   │ fork    │ 265166   │ 7h     │ 15   │ online    │ 0%       │ 204.2mb  │ root     │ disabled │
+│ 33 │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 1910395  │ 0s     │ 359… │ online    │ 0%       │ 36.4mb   │ root     │ disabled │
+│ 34 │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 1910323  │ 1s     │ 238… │ online    │ 0%       │ 137.5mb  │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+SMTP_PORT: 587
+PORT: 3500
+    proxy_pass http://127.0.0.1:3500/;
+    proxy_pass_request_headers on;
+root@srv1609330:/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech# echo "--- NGINX PROXY ---" && grep proxy_pass /etc/nginx/sites-enabled/mysticsaudit.automystics.tech.conf
+
+echo "--- PM2 STATUS ---" && pm2 list
+
+echo "--- API BUILD ---" && ls -la artifacts/api-server/dist/index.mjs 2>/dev/null || echo "MISSING"
+
+echo "--- FRONTEND BUILD ---" && ls artifacts/mystics-audit/dist/public/index.html 2>/dev/null || echo "MISSING"
+
+echo "--- PORT 3500 ---" && curl -s http://127.0.0.1:3500/api/healthz || echo "NOT RESPONDING"
+
+echo "--- PORT 3010 ---" && curl -s http://127.0.0.1:3010/api/healthz || echo "NOT RESPONDING"
+--- NGINX PROXY ---
+    proxy_pass http://127.0.0.1:3500/;
+    proxy_pass_request_headers on;
+--- PM2 STATUS ---
+┌────┬───────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                  │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 37 │ erp-automystics       │ default     │ N/A     │ fork    │ 1916683  │ 0s     │ 9830 │ online    │ 0%       │ 95.2mb   │ root     │ disabled │
+│ 0  │ fitro360              │ default     │ 1.0.0   │ fork    │ 265038   │ 7h     │ 33   │ online    │ 0%       │ 111.0mb  │ root     │ disabled │
+│ 1  │ kalvicore-api         │ default     │ 0.0.0   │ fork    │ 265045   │ 7h     │ 33   │ online    │ 0%       │ 116.1mb  │ root     │ disabled │
+│ 54 │ mmwear-erp            │ default     │ 0.0.0   │ fork    │ 498211   │ 6h     │ 57   │ online    │ 0%       │ 352.2mb  │ root     │ disabled │
+│ 58 │ mystics-audit         │ default     │ 0.0.0   │ fork    │ 1916415  │ 0      │ 48   │  │ 0%       │ 0b       │ root     │ disabled │
+│ 18 │ mysticscivil-api      │ default     │ N/A     │ fork    │ 265145   │ 7h     │ 17   │ online    │ 0%       │ 233.5mb  │ root     │ disabled │
+│ 11 │ mysticshr-api         │ default     │ 0.0.0   │ fork    │ 265114   │ 7h     │ 1196 │ online    │ 0%       │ 273.2mb  │ root     │ disabled │
+│ 39 │ mysticsinventory      │ default     │ N/A     │ fork    │ 0        │ 0      │ 5003 │ errored   │ 0%       │ 0b       │ root     │ disabled │
+│ 4  │ people-connect-api    │ default     │ 0.0.0   │ fork    │ 265083   │ 7h     │ 34   │ online    │ 0%       │ 200.3mb  │ root     │ disabled │
+│ 23 │ solarnexus-api        │ default     │ 0.0.0   │ fork    │ 265185   │ 7h     │ 17   │ online    │ 0%       │ 132.4mb  │ root     │ disabled │
+│ 6  │ tkprabhu-api          │ default     │ 0.0.0   │ fork    │ 265091   │ 7h     │ 55   │ online    │ 0%       │ 199.6mb  │ root     │ disabled │
+│ 32 │ ungalrajeev-api       │ default     │ N/A     │ fork    │ 1916636  │ 1s     │ 167… │ online    │ 0%       │ 137.1mb  │ root     │ disabled │
+│ 25 │ ungaludan-sarath      │ default     │ 0.0.0   │ fork    │ 265166   │ 7h     │ 15   │ online    │ 0%       │ 204.2mb  │ root     │ disabled │
+│ 33 │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 1916513  │ 3s     │ 359… │ online    │ 0%       │ 138.8mb  │ root     │ disabled │
+│ 34 │ ungalvignesh-api      │ default     │ N/A     │ fork    │ 1916675  │ 0s     │ 238… │ online    │ 0%       │ 87.9mb   │ root     │ disabled │
+└────┴───────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+--- API BUILD ---
+-rw-rw-r-- 1 root root 3651309 Jul  2 12:32 artifacts/api-server/dist/index.mjs
+--- FRONTEND BUILD ---
+artifacts/mystics-audit/dist/public/index.html
+--- PORT 3500 ---
+NOT RESPONDING
+--- PORT 3010 ---
+NOT RESPONDING

@@ -6,7 +6,8 @@
 //   pm2 startup   (auto-start on server reboot)
 //   pm2 save
 
-require("dotenv").config({ path: ".env.production" });
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env.production") });
 
 module.exports = {
   apps: [

@@ -40,7 +40,7 @@ module.exports = {
 
       env: {
         NODE_ENV: "production",
-        PORT:           env.API_PORT      || "8080",
+        PORT:           env.API_PORT      || "3500",
         DATABASE_URL:   env.DATABASE_URL  || "",
         SESSION_SECRET: env.SESSION_SECRET|| "",
         SMTP_HOST:      env.SMTP_HOST     || "",

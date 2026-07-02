@@ -14,7 +14,7 @@ set -euo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────────────
 DEPLOY_DIR="/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech"
-REPO_URL="https://github.com/YOUR_ORG/YOUR_REPO.git"   # ← change this
+REPO_URL="https://github.com/automystics-pvt-ltd/Mystics-Audit.git"
 BRANCH="main"
 
 FRONTEND_DIST="$DEPLOY_DIR/artifacts/mystics-audit/dist/public"

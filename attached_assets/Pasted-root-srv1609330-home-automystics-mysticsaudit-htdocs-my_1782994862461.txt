@@ -1,0 +1,44 @@
+root@srv1609330:/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech# # See what script/port mystics-api was using
+pm2 describe 55
+
+# See why mystics-audit keeps crashing
+pm2 logs mystics-audit --lines 20 --nostream
+ Describing process with id 55 - name mystics-api 
+┌────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ status             │ waiting restart                                                                                         │
+│ name               │ mystics-api                                                                                             │
+│ namespace          │ default                                                                                                 │
+│ version            │ 0.0.0                                                                                                   │
+│ restarts           │ 195                                                                                                     │
+│ max memory restart │ 536870912                                                                                               │
+│ uptime             │ 0                                                                                                       │
+│ script path        │ /home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/artifacts/api-server/dist/index.mjs │
+│ script args        │ N/A                                                                                                     │
+│ error log path     │ /home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/logs/api-error.log                  │
+│ out log path       │ /home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/logs/api-out.log                    │
+│ pid path           │ /root/.pm2/pids/mystics-api-55.pid                                                                      │
+│ interpreter        │ /usr/bin/node                                                                                           │
+│ interpreter args   │ N/A                                                                                                     │
+│ script id          │ 55                                                                                                      │
+│ exec cwd           │ /home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech                                     │
+│ exec mode          │ fork_mode                                                                                               │
+│ node.js version    │ 24.16.0                                                                                                 │
+│ node env           │ production                                                                                              │
+│ watch & reload     │ ✘                                                                                                       │
+│ unstable restarts  │ 0                                                                                                       │
+│ created at         │ 2026-07-02T12:11:45.520Z                                                                                │
+└────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+ Divergent env variables from local env 
+
+
+ Add your own code metrics: http://bit.ly/code-metrics
+ Use `pm2 logs mystics-api [--lines 1000]` to display logs
+ Use `pm2 env 55` to display environment variables
+ Use `pm2 monit` to monitor CPU and Memory usage mystics-api
+[TAILING] Tailing last 20 lines for [mystics-audit] process (change the value with --lines option)
+/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/logs/api-error.log last 20 lines:
+/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/logs/api-out.log last 20 lines:
+56|mystics | d":1852485,"hostname":"srv1609330","err":{"type":"Error","message":"listen EADDRINUSE: address already in use :::8080","stack":"Error: listen EADDRINUSE: address already in use :::8080\n    at Server.setupListenHandle [as _listen2] (node:net:2008:16)\n    at listenInCluster (node:net:2065:12)\n    at Server.listen (node:net:2170:7)\n    at app2.listen (/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/node_modules/.pnpm/express@5.2.1/node_modules/express/lib/application.js:605:24)\n    at <anonymous> (/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/artifacts/api-server/src/index.ts:19:5)\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async node:internal/modules/esm/loader:633:26","code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":8080},"msg":"Error listening on port"}
+56|mystics | 2026-07-02 12:20:16 +00:00: {"level":50,"time":1782994816021,"pid":1852575,"hostname":"srv1609330","err":{"type":"Error","message":"listen EADDRINUSE: address already in use :::8080","stack":"Error: listen EADDRINUSE: address already in use :::8080\n    at Server.setupListenHandle [as _listen2] (node:net:2008:16)\n    at listenInCluster (node:net:2065:12)\n    at Server.listen (node:net:2170:7)\n    at app2.listen (/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/node_modules/.pnpm/express@5.2.1/node_modules/express/lib/application.js:605:24)\n    at <anonymous> (/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/artifacts/api-server/src/index.ts:19:5)\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async node:internal/modules/esm/loader:633:26","code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":8080},"msg":"Error listening on port"}
+56|mystics | 2026-07-02 12:20:19 +00:00: {"level":50,"time":1782994819411,"pid":1852780,"hostname":"srv1609330","err":{"type":"Error","message":"listen EADDRINUSE: address already in use :::8080","stack":"Error: listen EADDRINUSE: address already in use :::8080\n    at Server.setupListenHandle [as _listen2] (node:net:2008:16)\n    at listenInCluster (node:net:2065:12)\n    at Server.listen (node:net:2170:7)\n    at app2.listen (/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/node_modules/.pnpm/express@5.2.1/node_modules/express/lib/application.js:605:24)\n    at <anonymous> (/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/artifacts/api-server/src/index.ts:19:5)\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async node:internal/modules/esm/loader:633:26","code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":8080},"msg":"Error listening on port"}
+56|mystics | 2026-07-02 12:20:20 +00:00: {"level":50,"time":1782994820706,"pid":1852869,"hostname":"srv1609330","err":{"type":"Error","message":"listen EADDRINUSE: address already in use :::8080","stack":"Error: listen EADDRINUSE: address already in use :::8080\n    at Server.setupListenHandle [as _listen2] (node:net:2008:16)\n    at listenInCluster (node:net:2065:12)\n    at Server.listen (node:net:2170:7)\n    at app2.listen (/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/node_modules/.pnpm/express@5.2.1/node_modules/express/lib/application.js:605:24)\n    at <anonymous> (/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/artifacts/api-server/src/index.ts:19:5)\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async node:internal/modules/esm/loader:633:26","code":"EADDRINUSE","errno":-98,"syscall":"listen","address":"::","port":8080},"msg":"Error listening on port"}

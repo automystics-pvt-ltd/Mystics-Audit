@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, expenseClaimsTable, expenseLinesTable, expenseApprovalLogsTable } from "@workspace/db";
-import { eq, and, desc, gte, lte, ilike } from "drizzle-orm";
+import { db, expenseClaimsTable, expenseLinesTable, expenseApprovalLogsTable, documentsTable } from "@workspace/db";
+import { eq, and, desc, gte, lte, ilike, inArray } from "drizzle-orm";
 
 const router = Router();
 
@@ -15,12 +15,19 @@ async function getClaimWithLines(id: number) {
   if (!claim) return null;
   const lines = await db.select().from(expenseLinesTable).where(eq(expenseLinesTable.claimId, id)).orderBy(expenseLinesTable.id);
   const logs  = await db.select().from(expenseApprovalLogsTable).where(eq(expenseApprovalLogsTable.claimId, id)).orderBy(expenseApprovalLogsTable.createdAt);
+  const docs  = await db.select().from(documentsTable).where(
+    and(
+      eq(documentsTable.linkedEntityType, "expense"),
+      eq(documentsTable.linkedEntityId, id)
+    )
+  );
   return {
     ...claim,
     totalAmount: Number(claim.totalAmount),
     approvedAmount: claim.approvedAmount ? Number(claim.approvedAmount) : null,
     lines: lines.map(l => ({ ...l, amount: Number(l.amount), gstAmount: Number(l.gstAmount), gstRate: l.gstRate ? Number(l.gstRate) : null })),
     approvalLogs: logs.map(lg => ({ ...lg, amount: lg.amount ? Number(lg.amount) : null })),
+    documents: docs,
   };
 }
 
@@ -58,6 +65,7 @@ router.post("/expenses", async (req, res) => {
     const {
       employeeName, submittedDate, status, currentApprover, notes, lines,
       project, department, branch, costCenter, clientName, paymentMethod,
+      documentIds,
     } = req.body;
     const totalAmount = (lines || []).reduce((s: number, l: any) => s + Number(l.amount || 0), 0);
     const policyViolations = (lines || []).filter((l: any) => l.policyViolation).length;
@@ -99,6 +107,17 @@ router.post("/expenses", async (req, res) => {
       );
     }
 
+    // Link any pre-uploaded documents to this claim
+    if (documentIds?.length) {
+      await db.update(documentsTable)
+        .set({
+          linkedEntityType: "expense",
+          linkedEntityId: claim.id,
+          linkedEntityRef: claim.claimNo,
+        })
+        .where(inArray(documentsTable.id, documentIds.map(Number)));
+    }
+
     // Log submission
     await db.insert(expenseApprovalLogsTable).values({
       claimId: claim.id, level: 0, action: "submitted",
@@ -124,7 +143,6 @@ router.get("/expenses/analytics", async (req, res) => {
     const totalRejected = claims.filter(c => c.status === "rejected").reduce((s, c) => s + Number(c.totalAmount), 0);
     const totalReimbursed = claims.filter(c => c.status === "reimbursed").reduce((s, c) => s + Number(c.totalAmount), 0);
 
-    // Aggregate by department
     const deptMap: Record<string, number> = {};
     for (const c of claims) {
       const d = c.department || "General";
@@ -135,7 +153,6 @@ router.get("/expenses/analytics", async (req, res) => {
       budget: amount * 1.3, utilizationPct: Math.round((amount / (amount * 1.3)) * 100),
     }));
 
-    // Aggregate by project
     const projMap: Record<string, number> = {};
     for (const c of claims) {
       const p = c.project || "No Project";
@@ -143,7 +160,6 @@ router.get("/expenses/analytics", async (req, res) => {
     }
     const byProject = Object.entries(projMap).map(([project, amount]) => ({ project, amount }));
 
-    // Aggregate by status
     const byStatus = [
       { status: "Submitted", count: claims.filter(c => c.status === "submitted").length, amount: totalPending },
       { status: "Approved",  count: claims.filter(c => c.status === "approved").length,  amount: totalApproved },
@@ -152,7 +168,6 @@ router.get("/expenses/analytics", async (req, res) => {
       { status: "Paid",      count: claims.filter(c => c.status === "paid").length,      amount: claims.filter(c=>c.status==="paid").reduce((s,c)=>s+Number(c.totalAmount),0) },
     ];
 
-    // Category breakdown from lines
     const lines = await db.select().from(expenseLinesTable);
     const catMap: Record<string, { amount: number; count: number }> = {};
     for (const l of lines) {
@@ -225,16 +240,53 @@ router.get("/expenses/:id", async (req, res) => {
   }
 });
 
+/* ── Attach documents to a claim ── */
+router.post("/expenses/:id/documents", async (req, res) => {
+  try {
+    const claimId = Number(req.params.id);
+    const [claim] = await db.select({ id: expenseClaimsTable.id, claimNo: expenseClaimsTable.claimNo })
+      .from(expenseClaimsTable).where(eq(expenseClaimsTable.id, claimId));
+    if (!claim) { res.status(404).json({ error: "Not found" }); return; }
+
+    const { documentIds } = req.body as { documentIds: number[] };
+    if (!documentIds?.length) { res.status(400).json({ error: "documentIds required" }); return; }
+
+    await db.update(documentsTable)
+      .set({
+        linkedEntityType: "expense",
+        linkedEntityId: claim.id,
+        linkedEntityRef: claim.claimNo,
+      })
+      .where(inArray(documentsTable.id, documentIds.map(Number)));
+
+    const docs = await db.select().from(documentsTable).where(
+      and(eq(documentsTable.linkedEntityType, "expense"), eq(documentsTable.linkedEntityId, claim.id))
+    );
+    res.json(docs);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to attach documents" });
+  }
+});
+
 /* ── Approve / Reject / Forward ── */
 router.post("/expenses/:id/approve", async (req, res) => {
   try {
-    const { action, comment, adjustedAmount, actorName, level } = req.body;
+    const { action, comment, adjustedAmount, actorName, actorRole, actorLevel, level } = req.body;
+
+    // RBAC guard: only Manager (level ≤ 3) and above may approve/reject/reimburse/pay
+    const APPROVER_LEVEL_THRESHOLD = 3;
+    if (typeof actorLevel === "number" && actorLevel > APPROVER_LEVEL_THRESHOLD) {
+      res.status(403).json({ error: "Insufficient permissions to perform this action" });
+      return;
+    }
+
     let newStatus: string;
-    if (action === "approve")  newStatus = "approved";
-    else if (action === "reject")   newStatus = "rejected";
+    if (action === "approve")    newStatus = "approved";
+    else if (action === "reject")    newStatus = "rejected";
     else if (action === "reimburse") newStatus = "reimbursed";
-    else if (action === "pay")      newStatus = "paid";
-    else if (action === "forward")  newStatus = "submitted"; // stays submitted, moves to next level
+    else if (action === "pay")       newStatus = "paid";
+    else if (action === "forward")   newStatus = "submitted";
     else newStatus = "submitted";
 
     const updateData: Partial<typeof expenseClaimsTable.$inferInsert> = {
@@ -242,6 +294,7 @@ router.post("/expenses/:id/approve", async (req, res) => {
       updatedAt: new Date(),
     };
     if (adjustedAmount) updateData.approvedAmount = String(adjustedAmount);
+    if (newStatus === "approved" || newStatus === "reimbursed") updateData.reviewedBy = actorName || actorRole || "Manager";
     if (newStatus === "reimbursed") updateData.reimbursementStatus = "reimbursed";
     if (newStatus === "paid") updateData.reimbursementStatus = "reimbursed";
     if (action === "forward" && level) updateData.approvalLevel = Number(level) + 1;
@@ -256,7 +309,7 @@ router.post("/expenses/:id/approve", async (req, res) => {
       claimId: claim.id,
       level: level ? Number(level) : 1,
       action,
-      actorName: actorName || "Manager",
+      actorName: actorName || actorRole || "Manager",
       comment: comment || null,
       amount: adjustedAmount ? String(adjustedAmount) : null,
     });

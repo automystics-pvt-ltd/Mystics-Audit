@@ -9,11 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context";
 import {
   Plus, AlertTriangle, Search, Filter, BarChart3,
   CheckCircle2, Clock, RefreshCw,
   Building2, FolderOpen, MapPin, Briefcase,
-  ThumbsUp, ThumbsDown, CreditCard, ChevronDown,
+  ThumbsUp, ThumbsDown, CreditCard,
 } from "lucide-react";
 
 const STATUSES = [
@@ -25,7 +26,6 @@ const STATUSES = [
   { value: "paid",        label: "Paid" },
 ];
 
-
 const DEPARTMENTS = ["Sales", "Engineering", "Finance", "Operations", "HR", "Marketing", "Administration"];
 const BRANCHES    = ["Head Office", "Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad", "Pune"];
 const PROJECTS    = ["Project Alpha", "Project Beta", "Infra Upgrade", "Client Delivery", "Internal", "R&D"];
@@ -33,6 +33,7 @@ const PROJECTS    = ["Project Alpha", "Project Beta", "Infra Upgrade", "Client D
 export default function ExpensesList() {
   const { fy } = useFY();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [status, setStatus]         = useState("");
   const [department, setDepartment] = useState("");
   const [project, setProject]       = useState("");
@@ -40,6 +41,9 @@ export default function ExpensesList() {
   const [search, setSearch]         = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+  // RBAC: Manager (roleLevel ≤ 3) and above can approve / reject / reimburse
+  const canApprove = !!user && user.roleLevel <= 3;
 
   const params: Record<string, any> = { from: fy.from, to: fy.to };
   if (status)     params.status = status;
@@ -69,9 +73,21 @@ export default function ExpensesList() {
   const clearFilters = () => { setDepartment(""); setProject(""); setBranch(""); setSearch(""); };
 
   function doAction(id: number, action: "approve" | "reject" | "reimburse") {
+    if (!canApprove) {
+      toast({ title: "Insufficient permissions", description: "Only Managers and above can approve expenses.", variant: "destructive" });
+      return;
+    }
     setActionLoading(id);
     approveMutation.mutate(
-      { id, data: { action } as any },
+      {
+        id,
+        data: {
+          action,
+          actorName: user?.name ?? "Manager",
+          actorRole: user?.role ?? "Manager",
+          actorLevel: user?.roleLevel ?? 3,
+        } as any
+      },
       {
         onSuccess: () => {
           toast({ title: action === "approve" ? "Approved" : action === "reject" ? "Rejected" : "Marked as reimbursed" });
@@ -89,7 +105,14 @@ export default function ExpensesList() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Expense Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{allExpenses.length} claims · {formatCurrency(total)} total</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {allExpenses.length} claims · {formatCurrency(total)} total
+            {canApprove && (
+              <span className="ml-2 inline-flex items-center gap-1 text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">
+                <CheckCircle2 className="w-3 h-3" />{user?.role} — can approve
+              </span>
+            )}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => refetch()}><RefreshCw className="w-4 h-4 mr-1.5" />Refresh</Button>
@@ -113,6 +136,17 @@ export default function ExpensesList() {
           </div>
         ))}
       </div>
+
+      {/* Pending approval alert for managers */}
+      {canApprove && allExpenses.filter(e => e.status === "submitted").length > 0 && (
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+          <p className="text-sm text-amber-800">
+            <span className="font-semibold">{allExpenses.filter(e => e.status === "submitted").length} claim{allExpenses.filter(e => e.status === "submitted").length !== 1 ? "s" : ""}</span> pending your approval.
+          </p>
+          <button className="ml-auto text-xs text-amber-700 underline" onClick={() => setStatus("submitted")}>View pending</button>
+        </div>
+      )}
 
       {/* Status tabs */}
       <div className="flex items-center gap-1.5 flex-wrap">
@@ -222,7 +256,7 @@ export default function ExpensesList() {
                 </TableCell>
               </TableRow>
             ) : filtered.map((e: any) => {
-              const isLoading = actionLoading === e.id;
+              const rowLoading = actionLoading === e.id;
               return (
                 <TableRow key={e.id} className="hover:bg-gray-50/60 transition-colors">
                   <TableCell>
@@ -263,17 +297,18 @@ export default function ExpensesList() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      {e.status === "submitted" && (
+                      {/* Approve/Reject — only for Managers and above */}
+                      {e.status === "submitted" && canApprove && (
                         <>
                           <button
-                            disabled={isLoading}
+                            disabled={rowLoading}
                             onClick={() => doAction(e.id, "approve")}
                             className="h-7 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 flex items-center gap-1 disabled:opacity-50 transition-colors"
                           >
                             <ThumbsUp className="w-3 h-3" />Approve
                           </button>
                           <button
-                            disabled={isLoading}
+                            disabled={rowLoading}
                             onClick={() => doAction(e.id, "reject")}
                             className="h-7 px-2.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold border border-red-200 flex items-center gap-1 disabled:opacity-50 transition-colors"
                           >
@@ -281,9 +316,16 @@ export default function ExpensesList() {
                           </button>
                         </>
                       )}
-                      {e.status === "approved" && (
+                      {/* Pending badge for non-approvers */}
+                      {e.status === "submitted" && !canApprove && (
+                        <span className="flex items-center gap-1 text-amber-600 text-xs">
+                          <Clock className="w-3 h-3" />Pending
+                        </span>
+                      )}
+                      {/* Reimburse — only for Managers and above */}
+                      {e.status === "approved" && canApprove && (
                         <button
-                          disabled={isLoading}
+                          disabled={rowLoading}
                           onClick={() => doAction(e.id, "reimburse")}
                           className="h-7 px-2.5 rounded-lg bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-semibold border border-violet-200 flex items-center gap-1 disabled:opacity-50 transition-colors"
                         >

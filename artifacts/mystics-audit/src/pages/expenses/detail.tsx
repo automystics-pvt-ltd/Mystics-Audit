@@ -10,10 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
+import { useAuth } from "@/contexts/auth-context";
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Building2,
   FolderOpen, MapPin, Users2, Briefcase, Banknote, CreditCard,
-  Clock, ChevronRight, Receipt, FileText,
+  Clock, ChevronRight, Receipt, FileText, Paperclip, Lock,
+  ShieldAlert,
 } from "lucide-react";
 
 const ACTION_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -25,16 +27,26 @@ const ACTION_CONFIG: Record<string, { label: string; color: string; icon: React.
   paid:       { label: "Paid",       color: "text-emerald-600",icon: <CheckCircle2 className="w-4 h-4" /> },
 };
 
+function docIcon(fileType: string) {
+  if (fileType === "image") return "🖼️";
+  if (fileType === "pdf") return "📄";
+  if (fileType === "excel") return "📊";
+  return "📎";
+}
+
 export default function ExpenseDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
+  const { user } = useAuth();
   const { data: expense, isLoading } = useGetExpense(Number(id));
   const approveMutation = useApproveExpense();
   const [comment, setComment] = useState("");
-  const [actorName, setActorName] = useState("Finance Manager");
   const [adjustedAmount, setAdjustedAmount] = useState("");
   const [openDialog, setOpenDialog] = useState<string | null>(null);
   const e = expense as any;
+
+  // RBAC: Manager (roleLevel ≤ 3) and above can approve / reject / reimburse
+  const canApprove = !!user && user.roleLevel <= 3;
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: getGetExpenseQueryKey(Number(id)) });
@@ -45,7 +57,11 @@ export default function ExpenseDetail() {
     approveMutation.mutate({
       id: Number(id),
       data: {
-        action, comment, actorName,
+        action,
+        comment,
+        actorName: user?.name ?? "Manager",
+        actorRole: user?.role ?? "Manager",
+        actorLevel: user?.roleLevel ?? 3,
         level: 1,
         ...(adjustedAmount && { adjustedAmount: parseFloat(adjustedAmount) }),
       }
@@ -59,8 +75,11 @@ export default function ExpenseDetail() {
 
   const logs: any[] = e.approvalLogs ?? [];
   const lines: any[] = e.lines ?? [];
+  const documents: any[] = e.documents ?? [];
   const totalGst = lines.reduce((s: number, l: any) => s + (l.gstAmount ?? 0), 0);
   const isActionable = ["submitted","approved"].includes(e.status);
+  // Receipt URLs from expense lines (legacy string receipts)
+  const receiptLines = lines.filter((l: any) => l.receiptUrl);
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -77,8 +96,8 @@ export default function ExpenseDetail() {
           </div>
         </div>
 
-        {/* Action buttons */}
-        {isActionable && (
+        {/* Action buttons — only for approvers */}
+        {isActionable && canApprove && (
           <div className="flex items-center gap-2">
             {e.status === "submitted" && (
               <>
@@ -94,9 +113,13 @@ export default function ExpenseDetail() {
                         <p className="text-sm font-semibold text-blue-800">{e.claimNo} — {e.employeeName}</p>
                         <p className="text-2xl font-bold text-blue-700 mt-1">{formatCurrency(e.totalAmount)}</p>
                       </div>
-                      <div className="space-y-1"><Label>Approved By</Label><Input value={actorName} onChange={ev => setActorName(ev.target.value)} /></div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
+                        <ShieldAlert className="w-4 h-4 text-indigo-500 shrink-0" />
+                        Approving as <span className="font-semibold ml-1">{user?.name}</span>
+                        <span className="ml-auto text-xs text-gray-400 bg-white px-2 py-0.5 rounded-full border">{user?.role}</span>
+                      </div>
                       <div className="space-y-1">
-                        <Label>Adjusted Amount (leave blank to approve full amount)</Label>
+                        <Label>Adjusted Amount <span className="text-gray-400 font-normal">(leave blank to approve full amount)</span></Label>
                         <Input value={adjustedAmount} onChange={ev => setAdjustedAmount(ev.target.value)} placeholder={formatCurrency(e.totalAmount)} className="font-mono" />
                       </div>
                       <div className="space-y-1"><Label>Comment</Label><Input value={comment} onChange={ev => setComment(ev.target.value)} placeholder="Approval note…" /></div>
@@ -115,8 +138,12 @@ export default function ExpenseDetail() {
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader><DialogTitle>Reject Expense Claim</DialogTitle></DialogHeader>
                     <div className="space-y-4 pt-2">
-                      <div className="space-y-1"><Label>Rejected By</Label><Input value={actorName} onChange={ev => setActorName(ev.target.value)} /></div>
-                      <div className="space-y-1"><Label>Reason for Rejection *</Label><Input value={comment} onChange={ev => setComment(ev.target.value)} placeholder="Reason for rejection…" /></div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
+                        <ShieldAlert className="w-4 h-4 text-red-500 shrink-0" />
+                        Rejecting as <span className="font-semibold ml-1">{user?.name}</span>
+                        <span className="ml-auto text-xs text-gray-400 bg-white px-2 py-0.5 rounded-full border">{user?.role}</span>
+                      </div>
+                      <div className="space-y-1"><Label>Reason for Rejection <span className="text-red-500">*</span></Label><Input value={comment} onChange={ev => setComment(ev.target.value)} placeholder="Reason for rejection…" /></div>
                       <Button variant="destructive" className="w-full" onClick={() => doAction("reject")} disabled={!comment || approveMutation.isPending}>
                         {approveMutation.isPending ? "Rejecting…" : "Reject Claim"}
                       </Button>
@@ -140,7 +167,11 @@ export default function ExpenseDetail() {
                         <p className="text-sm font-semibold text-violet-800">Reimbursement Amount</p>
                         <p className="text-2xl font-bold text-violet-700 mt-1">{formatCurrency(e.approvedAmount ?? e.totalAmount)}</p>
                       </div>
-                      <div className="space-y-1"><Label>Processed By</Label><Input value={actorName} onChange={ev => setActorName(ev.target.value)} /></div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
+                        <ShieldAlert className="w-4 h-4 text-violet-500 shrink-0" />
+                        Processing as <span className="font-semibold ml-1">{user?.name}</span>
+                        <span className="ml-auto text-xs text-gray-400 bg-white px-2 py-0.5 rounded-full border">{user?.role}</span>
+                      </div>
                       <div className="space-y-1"><Label>Reference / UTR</Label><Input value={comment} onChange={ev => setComment(ev.target.value)} placeholder="Bank transfer UTR or reference…" /></div>
                       <Button className="w-full bg-violet-600 hover:bg-violet-700" onClick={() => doAction("reimburse")} disabled={approveMutation.isPending}>
                         {approveMutation.isPending ? "Processing…" : "Confirm Reimbursement"}
@@ -157,7 +188,11 @@ export default function ExpenseDetail() {
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader><DialogTitle>Mark as Paid</DialogTitle></DialogHeader>
                     <div className="space-y-4 pt-2">
-                      <div className="space-y-1"><Label>Paid By</Label><Input value={actorName} onChange={ev => setActorName(ev.target.value)} /></div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
+                        <ShieldAlert className="w-4 h-4 text-emerald-500 shrink-0" />
+                        Marking as paid by <span className="font-semibold ml-1">{user?.name}</span>
+                        <span className="ml-auto text-xs text-gray-400 bg-white px-2 py-0.5 rounded-full border">{user?.role}</span>
+                      </div>
                       <div className="space-y-1"><Label>Payment Reference</Label><Input value={comment} onChange={ev => setComment(ev.target.value)} placeholder="Cheque no / UPI ref…" /></div>
                       <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={() => doAction("pay")} disabled={approveMutation.isPending}>
                         {approveMutation.isPending ? "Processing…" : "Mark as Paid"}
@@ -169,7 +204,40 @@ export default function ExpenseDetail() {
             )}
           </div>
         )}
+
+        {/* Non-approvers see a read-only role badge when claim is actionable */}
+        {isActionable && !canApprove && (
+          <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+            <Clock className="w-4 h-4 shrink-0" />
+            <span>Awaiting manager approval</span>
+          </div>
+        )}
       </div>
+
+      {/* RBAC info banner for non-approvers on submitted claims */}
+      {e.status === "submitted" && !canApprove && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <Lock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Pending Approval</p>
+            <p className="text-xs text-amber-700 mt-0.5">This claim is submitted and awaiting review by a Manager or Admin. You will be notified once it is processed.</p>
+          </div>
+        </div>
+      )}
+
+      {e.status === "rejected" && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+          <XCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-red-800">Claim Rejected</p>
+            {logs.filter(l => l.action === "rejected").slice(-1).map(l => (
+              <p key={l.id} className="text-xs text-red-700 mt-0.5">
+                {l.comment ? `"${l.comment}"` : "No reason provided."} — by {l.actorName}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-6">
         {/* Left: lines + approval history */}
@@ -225,11 +293,20 @@ export default function ExpenseDetail() {
                     </TableCell>
                     <TableCell className="text-right font-mono font-semibold text-gray-900">{formatCurrency(l.amount)}</TableCell>
                     <TableCell>
-                      {l.policyViolation && (
-                        <div title={l.violationReason}>
-                          <AlertTriangle className="w-4 h-4 text-amber-500" />
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {l.receiptUrl && (
+                          <a href={l.receiptUrl} target="_blank" rel="noopener noreferrer"
+                            title="View receipt"
+                            className="text-indigo-500 hover:text-indigo-700 transition-colors">
+                            <Paperclip className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        {l.policyViolation && (
+                          <div title={l.violationReason}>
+                            <AlertTriangle className="w-4 h-4 text-amber-500" />
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -289,6 +366,7 @@ export default function ExpenseDetail() {
             <h2 className="font-semibold text-gray-800">Claim Details</h2>
             {[
               { label: "Employee", value: e.employeeName, icon: null },
+              { label: "Reviewed By", value: e.reviewedBy, icon: <ShieldAlert className="w-3.5 h-3.5 text-gray-400" /> },
               { label: "Department", value: e.department, icon: <Building2 className="w-3.5 h-3.5 text-gray-400" /> },
               { label: "Project", value: e.project, icon: <FolderOpen className="w-3.5 h-3.5 text-gray-400" /> },
               { label: "Branch", value: e.branch, icon: <MapPin className="w-3.5 h-3.5 text-gray-400" /> },
@@ -309,6 +387,49 @@ export default function ExpenseDetail() {
             <div className="bg-gray-50 rounded-xl border border-gray-100 p-4">
               <p className="text-xs font-semibold text-gray-500 mb-1.5">Notes</p>
               <p className="text-sm text-gray-700">{e.notes}</p>
+            </div>
+          )}
+
+          {/* Linked Documents */}
+          {(documents.length > 0 || receiptLines.length > 0) && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <Paperclip className="w-4 h-4 text-indigo-500" />
+                Attachments
+                <span className="ml-auto text-xs font-normal text-gray-400">{documents.length + receiptLines.length}</span>
+              </h2>
+              <div className="space-y-2">
+                {documents.map((doc: any) => (
+                  <a
+                    key={doc.id}
+                    href={doc.fileUrl ?? "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 border border-gray-100 transition-colors group"
+                  >
+                    <span className="text-lg">{docIcon(doc.fileType)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-800 truncate group-hover:text-indigo-700">{doc.originalName || doc.name}</p>
+                      <p className="text-[10px] text-gray-400">{doc.docCategory} · {doc.uploadedBy}</p>
+                    </div>
+                  </a>
+                ))}
+                {receiptLines.map((l: any) => (
+                  <a
+                    key={`receipt-${l.id}`}
+                    href={l.receiptUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 border border-gray-100 transition-colors group"
+                  >
+                    <span className="text-lg">🧾</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-800 truncate group-hover:text-indigo-700">Receipt — {l.category}</p>
+                      <p className="text-[10px] text-gray-400">{formatDate(l.date)}</p>
+                    </div>
+                  </a>
+                ))}
+              </div>
             </div>
           )}
 

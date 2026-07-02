@@ -2,6 +2,7 @@ import { useCreateExpense, useListVendors, getListExpensesQueryKey } from "@work
 import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
@@ -59,8 +60,12 @@ export default function NewExpense() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
   const mutation = useCreateExpense();
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Admins/Super Admins (roleLevel ≤ 2) can submit on behalf of others; everyone else is locked to themselves
+  const canEditEmployee = !!user && user.roleLevel <= 2;
 
   const { data: vendorsData } = useListVendors({});
   const vendors: any[] = vendorsData ?? [];
@@ -71,8 +76,8 @@ export default function NewExpense() {
     meta: v.city || undefined,
   }));
 
-  // Header fields
-  const [employeeName, setEmployeeName] = useState("John Doe");
+  // Header fields — prefill from logged-in user
+  const [employeeName, setEmployeeName] = useState(user?.name ?? "");
   const [submittedDate, setSubmittedDate] = useState(new Date().toISOString().split("T")[0]);
   const [department, setDepartment] = useState("");
   const [project, setProject] = useState("");
@@ -187,12 +192,16 @@ export default function NewExpense() {
             <h2 className="font-semibold text-gray-800 flex items-center gap-2"><Receipt className="w-4 h-4 text-indigo-500" />Claim Details</h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label className="text-xs font-medium text-gray-500">Employee Name *</Label>
+                <Label className="text-xs font-medium text-gray-500">
+                  Employee Name *
+                  {!canEditEmployee && <span className="ml-2 text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded font-normal">auto-filled</span>}
+                </Label>
                 <Input
                   value={employeeName}
-                  onChange={e => { setEmployeeName(e.target.value); if (errors.employeeName) setErrors(p => ({ ...p, employeeName: "" })); }}
+                  onChange={e => { if (canEditEmployee) { setEmployeeName(e.target.value); if (errors.employeeName) setErrors(p => ({ ...p, employeeName: "" })); } }}
                   placeholder="Your full name"
-                  className={errors.employeeName ? "border-red-400" : ""}
+                  readOnly={!canEditEmployee}
+                  className={`${errors.employeeName ? "border-red-400" : ""} ${!canEditEmployee ? "bg-gray-50 cursor-default" : ""}`}
                 />
                 {errors.employeeName && <p className="text-xs text-red-500">{errors.employeeName}</p>}
               </div>

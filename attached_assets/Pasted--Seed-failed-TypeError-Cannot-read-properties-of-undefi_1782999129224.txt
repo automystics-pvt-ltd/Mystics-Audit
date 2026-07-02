@@ -1,0 +1,54 @@
+❌ Seed failed: TypeError: Cannot read properties of undefined (reading 'id')
+    at seedInvoices (eval at <anonymous> (file:///home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/[eval1]:4:7), <anonymous>:120:84)
+    at eval (eval at <anonymous> (file:///home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/[eval1]:4:7), <anonymous>:460:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/[eval1]:4:1
+root@srv1609330:/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech# sed 's|http://localhost:80/api|http://127.0.0.1:3500/api|' scripts/seed-demo.mjs > /tmp/seed-prod.mjs
+node /tmp/seed-prod.mjs
+POST /customers failed 500: {"error":"Failed to create customer"}
+POST /customers failed 500: {"error":"Failed to create customer"}
+POST /customers failed 500: {"error":"Failed to create customer"}
+POST /customers failed 500: {"error":"Failed to create customer"}
+POST /customers failed 500: {"error":"Failed to create customer"}
+POST /vendors failed 500: {"error":"Failed to create vendor"}
+POST /vendors failed 500: {"error":"Failed to create vendor"}
+POST /vendors failed 500: {"error":"Failed to create vendor"}
+POST /vendors failed 500: {"error":"Failed to create vendor"}
+POST /inventory/items failed 500: {"error":"Failed to create item"}
+POST /inventory/items failed 500: {"error":"Failed to create item"}
+POST /inventory/items failed 500: {"error":"Failed to create item"}
+POST /inventory/items failed 500: {"error":"Failed to create item"}
+POST /inventory/items failed 500: {"error":"Failed to create item"}
+POST /inventory/items failed 500: {"error":"Failed to create item"}
+❌ Seed failed: TypeError: Cannot read properties of undefined (reading 'id')
+    at seedInvoices (file:///tmp/seed-prod.mjs:120:84)
+    at file:///tmp/seed-prod.mjs:460:30
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+root@srv1609330:/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech# pm2 logs mystics-audit --lines 30 --nostream 2>&1 | grep -i "error\|fail\|customer" | head -20
+root@srv1609330:/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech# sudo -u postgres psql -d mystics_audit -c "\dt"
+Did not find any relations.
+root@srv1609330:/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech# pnpm --filter @workspace/db run push
+Cannot find module 'drizzle-kit'
+Require stack:
+- /home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech/lib/db/drizzle.config.ts
+- /usr/lib/node_modules/drizzle-kit/bin.cjs
+root@srv1609330:/home/automystics-mysticsaudit/htdocs/mysticsaudit.automystics.tech# node /tmp/seed-prod.mjs
+POST /customers failed 500: {"error":"Failed to create customer"}
+POST /customers failed 500: {"error":"Failed to create customer"}
+POST /customers failed 500: {"error":"Failed to create customer"}
+POST /customers failed 500: {"error":"Failed to create customer"}
+POST /customers failed 500: {"error":"Failed to create customer"}
+POST /vendors failed 500: {"error":"Failed to create vendor"}
+POST /vendors failed 500: {"error":"Failed to create vendor"}
+POST /vendors failed 500: {"error":"Failed to create vendor"}
+POST /vendors failed 500: {"error":"Failed to create vendor"}
+POST /inventory/items failed 500: {"error":"Failed to create item"}
+POST /inventory/items failed 500: {"error":"Failed to create item"}
+POST /inventory/items failed 500: {"error":"Failed to create item"}
+POST /inventory/items failed 500: {"error":"Failed to create item"}
+POST /inventory/items failed 500: {"error":"Failed to create item"}
+POST /inventory/items failed 500: {"error":"Failed to create item"}
+❌ Seed failed: TypeError: Cannot read properties of undefined (reading 'id')
+    at seedInvoices (file:///tmp/seed-prod.mjs:120:84)
+    at file:///tmp/seed-prod.mjs:460:30
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)

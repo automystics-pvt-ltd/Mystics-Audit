@@ -30,7 +30,7 @@ if (fs.existsSync(envFile)) {
 module.exports = {
   apps: [
     {
-      name: "mystics-api",
+      name: "mystics-audit",
       script: "./artifacts/api-server/dist/index.mjs",
 
       cwd: __dirname,

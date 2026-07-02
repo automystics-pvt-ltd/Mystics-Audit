@@ -188,7 +188,7 @@ pnpm --filter @workspace/db run push 2>&1 | tee -a "$LOG"
 
 # ── Step 5 — Start / restart PM2 ─────────────────────────────────────────────
 step "Starting services via PM2"
-if pm2 list | grep -q "mystics-api"; then
+if pm2 list | grep -q "mystics-audit"; then
   pm2 reload ecosystem.config.cjs --update-env 2>&1 | tee -a "$LOG"
 else
   pm2 start ecosystem.config.cjs 2>&1 | tee -a "$LOG"
